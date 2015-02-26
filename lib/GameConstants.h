@@ -52,7 +52,7 @@ namespace GameConstants
 	const int CREATURES_COUNT = 197;
 
 }
-
+#define PARAL_GAME
 class CArtifact;
 class CArtifactInstance;
 class CCreature;

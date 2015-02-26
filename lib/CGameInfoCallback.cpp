@@ -47,7 +47,7 @@ const CGHeroInstance* CGameInfoCallback::getSelectedHero( PlayerColor Player ) c
 
 const CGHeroInstance* CGameInfoCallback::getSelectedHero() const
 {
-	return getSelectedHero(gs->currentPlayer);
+	return NULL;//return getSelectedHero(gs->currentPlayer);
 }
 
 const PlayerSettings * CGameInfoCallback::getPlayerSettings(PlayerColor color) const
@@ -484,7 +484,7 @@ bool CGameInfoCallback::isOwnedOrVisited(const CGObjectInstance *obj) const
 
 PlayerColor CGameInfoCallback::getCurrentPlayer() const
 {
-	return gs->currentPlayer;
+	return PlayerColor::NEUTRAL;//gs->currentPlayer;
 }
 
 CGameInfoCallback::CGameInfoCallback()

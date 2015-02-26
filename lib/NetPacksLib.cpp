@@ -1642,7 +1642,7 @@ DLL_LINKAGE void BattleSetStackProperty::applyGs(CGameState *gs)
 
 DLL_LINKAGE void YourTurn::applyGs( CGameState *gs )
 {
-	gs->currentPlayer = player;
+	/*gs->currentPlayer = player;*/
 
 	//count days without town
 	auto & playerState = gs->players[player];
