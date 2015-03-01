@@ -908,7 +908,7 @@ struct IFPerformer : StandardReceiverVisitor<TUnusedType>
 	{
 		std::string msgToFormat = msg;
 		StringFormatter::format(msgToFormat);
-		acb->showInfoDialog(msgToFormat, icb->getLocalPlayer());
+		//acb->showInfoDialog(msgToFormat, icb->getLocalPlayer());
 	}
 };
 

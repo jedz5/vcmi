@@ -482,10 +482,10 @@ bool CGameInfoCallback::isOwnedOrVisited(const CGObjectInstance *obj) const
 	return visitor->ID == Obj::HERO && canGetFullInfo(visitor); //owned or allied hero is a visitor
 }
 
-PlayerColor CGameInfoCallback::getCurrentPlayer() const
-{
-	return PlayerColor::NEUTRAL;//gs->currentPlayer;
-}
+//PlayerColor CGameInfoCallback::getCurrentPlayer() const
+//{
+//	return PlayerColor::NEUTRAL;//gs->currentPlayer;
+//}
 
 CGameInfoCallback::CGameInfoCallback()
 {
@@ -681,10 +681,10 @@ const CGHeroInstance* CGameInfoCallback::getHeroWithSubid( int subid ) const
 	return nullptr;
 }
 
-PlayerColor CGameInfoCallback::getLocalPlayer() const
-{
-	return getCurrentPlayer();
-}
+//PlayerColor CGameInfoCallback::getLocalPlayer() const
+//{
+//	return getCurrentPlayer();
+//}
 
 bool CGameInfoCallback::isInTheMap(const int3 &pos) const
 {

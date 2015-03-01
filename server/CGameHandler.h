@@ -58,11 +58,12 @@ public:
 
 	void addPlayer(PlayerColor player);
 	PlayerStatus operator[](PlayerColor player);
+	bool makingOfTurn;
 	bool checkFlag(PlayerColor player, bool PlayerStatus::*flag);
 	void setFlag(PlayerColor player, bool PlayerStatus::*flag, bool val);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & players;
+		h & players & makingOfTurn;
 	}
 };
 

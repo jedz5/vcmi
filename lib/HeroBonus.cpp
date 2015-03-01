@@ -72,7 +72,7 @@ const std::map<std::string, TPropagatorPtr> bonusPropagatorMap = boost::assign::
 	("GLOBAL_EFFECT", make_shared<CPropagatorNodeType>(CBonusSystemNode::GLOBAL_EFFECTS)); //untested
 
 
-#define BONUS_LOG_LINE(x) logBonus->traceStream() << x
+#define BONUS_LOG_LINE(x) //logBonus->traceStream() << x
 
 int CBonusSystemNode::treeChanged = 1;
 const bool CBonusSystemNode::cachingEnabled = true;

@@ -162,7 +162,7 @@ public:
 	boost::thread *connectionHandler; //thread running run() method
 
 	//////////////////////////////////////////////////////////////////////////
-	virtual PlayerColor getLocalPlayer() const override;
+	//virtual PlayerColor getLocalPlayer() const override;
 
 	//////////////////////////////////////////////////////////////////////////
 	//not working yet, will be implement somewhen later with support for local-sim-based gameplay

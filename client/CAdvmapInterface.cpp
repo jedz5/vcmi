@@ -1112,7 +1112,7 @@ void CAdvMapInt::setPlayer(PlayerColor Player)
 void CAdvMapInt::startTurn()
 {
 	state = INGAME;
-	if(LOCPLINT->cb->getCurrentPlayer() == LOCPLINT->playerID)
+	//if(LOCPLINT->cb->getCurrentPlayer() == LOCPLINT->playerID)
 	{
 		adjustActiveness(false);
 		minimap.setAIRadar(false);
@@ -1121,10 +1121,18 @@ void CAdvMapInt::startTurn()
 
 void CAdvMapInt::endingTurn()
 {
+	
 	if(LOCPLINT->cingconsole->active)
 		LOCPLINT->cingconsole->deactivate();
 	LOCPLINT->makingTurn = false;
+	{
+		//boost::unique_lock<boost::recursive_mutex> guiLock(*LOCPLINT->pim);
+		logGlobal->traceStream() << "======================endingTurn  aiTurnStarted1()=================== ";
+		adventureInt->aiTurnStarted();
+		logGlobal->traceStream() << "======================endingTurn  aiTurnStarted2()=================== ";
+	}
 	LOCPLINT->cb->endTurn();
+	
 }
 
 const CGObjectInstance* CAdvMapInt::getActiveObject(const int3 &mapPos)
@@ -1506,7 +1514,7 @@ void CAdvMapInt::aiTurnStarted()
 	adjustActiveness(true);
 	CCS->musich->playMusicFromSet("enemy-turn", true);
 	adventureInt->minimap.setAIRadar(true);
-	adventureInt->infoBar.startEnemyTurn(LOCPLINT->cb->getCurrentPlayer());
+	adventureInt->infoBar.startEnemyTurn(PlayerColor::NEUTRAL);
 	adventureInt->infoBar.showAll(screen);//force refresh on inactive object
 }
 

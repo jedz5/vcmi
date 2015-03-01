@@ -162,13 +162,13 @@ void CPlayerInterface::yourTurn()
 			{
 				int index = getLastIndex("Newgame_Autosave_");
 				index %= SAVES_COUNT;
-				cb->save("Saves/Newgame_Autosave_" + boost::lexical_cast<std::string>(index + 1));
+				//cb->save("Saves/Newgame_Autosave_" + boost::lexical_cast<std::string>(index + 1));
 			}
 			firstCall = 0;
 		}
 		else
 		{
-			LOCPLINT->cb->save("Saves/Autosave_" + boost::lexical_cast<std::string>(autosaveCount++ + 1));
+			//LOCPLINT->cb->save("Saves/Autosave_" + boost::lexical_cast<std::string>(autosaveCount++ + 1));
 			autosaveCount %= 5;
 		}
 
@@ -2584,7 +2584,7 @@ void CPlayerInterface::playerStartsTurn(PlayerColor player)
 	if(player != playerID && this == LOCPLINT)
 	{
 		waitWhileDialog();
-		adventureInt->aiTurnStarted();
+		//adventureInt->aiTurnStarted();
 	}
 }
 

@@ -71,7 +71,7 @@ bool EndTurn::applyGh( CGameHandler *gh )
 	if(gh->queries.topQuery(player))
 		COMPLAIN_AND_RETURN("Cannot end turn before resolving queries!");
 
-	//gh->states.setFlag(GS(gh)->currentPlayer,&PlayerStatus::makingTurn,false);
+	gh->states.setFlag(player, &PlayerStatus::makingTurn, false);
 	return true;
 }
 

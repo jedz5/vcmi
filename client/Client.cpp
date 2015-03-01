@@ -662,12 +662,12 @@ void CClient::commitPackage( CPackForClient *pack )
 	sendRequest(&cp, PlayerColor::NEUTRAL);
 }
 
-PlayerColor CClient::getLocalPlayer() const
-{
-	if(LOCPLINT)
-		return LOCPLINT->playerID;
-	return getCurrentPlayer();
-}
+//PlayerColor CClient::getLocalPlayer() const
+//{
+//	//if(LOCPLINT)
+//		return LOCPLINT->playerID;
+//	//return getCurrentPlayer();
+//}
 
 void CClient::calculatePaths(const CGHeroInstance *h)
 {

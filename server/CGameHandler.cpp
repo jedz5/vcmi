@@ -153,6 +153,18 @@ void PlayerStatuses::setFlag(PlayerColor player, bool PlayerStatus::*flag, bool 
 	if(players.find(player) != players.end())
 	{
 		players[player].*flag = val;
+		makingOfTurn = false;
+		{
+			for (auto it = players.begin(); it != players.end(); it++)
+			{
+				auto playerColor = it->first;
+				//if (gs->players[playerColor].status == EPlayerStatus::INGAME)
+				{
+
+					makingOfTurn = makingOfTurn | players.at(playerColor).makingTurn;
+				}
+			}
+		}
 	}
 	else
 	{
@@ -1516,18 +1528,19 @@ void CGameHandler::run(bool resume)
 				YourTurn yt;
 				yt.player = playerColor;
 				applyAndSend(&yt);
-
-				checkVictoryLossConditionsForAll();
-
-				//wait till turn is done
-				boost::unique_lock<boost::mutex> lock(states.mx);
-				while(states.players.at(playerColor).makingTurn && !end2)
-				{
-					static time_duration p = milliseconds(200);
-					states.cv.timed_wait(lock,p);
-				}
 			}
 		}
+		checkVictoryLossConditionsForAll();
+
+		//wait till turn is done
+		boost::unique_lock<boost::mutex> lock(states.mx);
+		while (states.makingOfTurn && !end2)
+		{
+			static time_duration p = milliseconds(1000);
+			states.cv.timed_wait(lock, p);
+		}
+		
+
 	}
 	while(conns.size() && (*conns.begin())->isOpen())
 		boost::this_thread::sleep(boost::posix_time::milliseconds(5)); //give time client to close socket
@@ -2359,7 +2372,7 @@ PlayerColor CGameHandler::getPlayerAt( CConnection *c ) const
 	//		if(vstd::contains(all, gs->currentPlayer))
 	//			return gs->currentPlayer;
 	//		else
-	//			return PlayerColor::CANNOT_DETERMINE; //cannot say which player is it
+				return PlayerColor::CANNOT_DETERMINE; //cannot say which player is it
 	//	}
 	//}
 }
