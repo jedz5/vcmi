@@ -173,7 +173,7 @@ void CObjectClassesHandler::loadObjectEntry(const JsonNode & entry, ObjectContai
 		legacyTemplates.erase(range.first, range.second);
 	}
 
-	logGlobal->debugStream() << "Loaded object " << obj->id << ":" << id;
+	//logGlobal->debugStream() << "Loaded object " << obj->id << ":" << id;
 	assert(!obj->objects.count(id)); // DO NOT override
 	obj->objects[id] = handler;
 }

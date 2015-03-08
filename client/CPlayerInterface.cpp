@@ -241,7 +241,7 @@ void CPlayerInterface::heroMoved(const TryMoveHero & details)
 			return;
 	}
 
-	adventureInt->centerOn(hero); //actualizing screen pos
+	//adventureInt->centerOn(hero); //actualizing screen pos
 	adventureInt->minimap.redraw();
 	adventureInt->heroList.redraw();
 
@@ -313,9 +313,12 @@ void CPlayerInterface::heroMoved(const TryMoveHero & details)
 		movementPxStep(details, i, hp, hero);
 		adventureInt->updateScreen = true;
 		adventureInt->show(screen);
-		CSDL_Ext::update(screen);
+		if (GH.listInt.front() == adventureInt){
+			CSDL_Ext::update(screen);
+		}
 		GH.mainFPSmng->framerateDelay(); //for animation purposes
 	} //for(int i=1; i<32; i+=4)
+	
 	//main moving done
 
 	//finishing move
@@ -1878,8 +1881,9 @@ void CPlayerInterface::movementPxStep( const TryMoveHero &details, int i, const 
 	if(details.end.x+1 == details.start.x && details.end.y+1 == details.start.y) //tl
 	{
 		//setting advmap shift
-		adventureInt->terrain.moveX = i-32;
-		adventureInt->terrain.moveY = i-32;
+		//adventureInt->terrain.moveX = i-32;
+		//adventureInt->terrain.moveY = i-32;
+		
 
 		subRect(hp.x-3, hp.y-2, hp.z, genRect(32, 32, -31+i, -31+i), ho->id);
 		subRect(hp.x-2, hp.y-2, hp.z, genRect(32, 32, 1+i, -31+i), ho->id);
@@ -2024,6 +2028,8 @@ void CPlayerInterface::movementPxStep( const TryMoveHero &details, int i, const 
 		subRect(hp.x-1, hp.y, hp.z, genRect(32, 32, 33+i, 32), ho->id);
 		subRect(hp.x, hp.y, hp.z, genRect(32, 32, 65+i, 32), ho->id);
 	}
+	adventureInt->terrain.moveX = 0;
+	adventureInt->terrain.moveY = 0;
 }
 
 void CPlayerInterface::finishMovement( const TryMoveHero &details, const int3 &hp, const CGHeroInstance * ho )

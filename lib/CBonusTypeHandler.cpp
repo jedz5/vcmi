@@ -280,7 +280,7 @@ void CBonusTypeHandler::load(const JsonNode& config)
 			CBonusType& bt = bonusTypes[it->second];
 			
 			loadItem(node.second, bt);
-            logBonus->traceStream() << "Loaded bonus type " << node.first;
+            //logBonus->traceStream() << "Loaded bonus type " << node.first;
 		}	
 	}		
 }
