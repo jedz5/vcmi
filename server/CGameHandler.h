@@ -91,7 +91,6 @@ public:
 	std::map<PlayerColor, CConnection*> connections; //player color -> connection to client with interface of that player
 	PlayerStatuses states; //player color -> player state
 	std::set<CConnection*> conns;
-
 	//queries stuff
 	boost::recursive_mutex gsm;
 	ui32 QID;

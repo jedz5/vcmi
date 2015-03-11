@@ -1447,6 +1447,38 @@ void CGameHandler::newTurn()
 
 	synchronizeArtifactHandlerLists(); //new day events may have changed them. TODO better of managing that
 }
+int getLastIndex(std::string namePrefix)
+{
+	using namespace boost::filesystem;
+	using namespace boost::algorithm;
+
+	path gamesDir = VCMIDirs::get().userSavePath();
+	std::map<std::time_t, int> dates; //save number => datestamp
+
+	directory_iterator enddir;
+	if (!exists(gamesDir))
+		create_directory(gamesDir);
+
+	for (directory_iterator dir(gamesDir); dir != enddir; dir++)
+	{
+		if (is_regular(dir->status()))
+		{
+			std::string name = dir->path().leaf().string();
+			if (starts_with(name, namePrefix) && ends_with(name, ".vcgm1"))
+			{
+				char nr = name[namePrefix.size()];
+				if (std::isdigit(nr))
+				{
+					dates[last_write_time(dir->path())] = boost::lexical_cast<int>(nr);
+				}
+			}
+		}
+	}
+
+	if (!dates.empty())
+		return (--dates.end())->second; //return latest file number
+	return 0;
+}
 void CGameHandler::run(bool resume)
 {
 	LOG_TRACE_PARAMS(logGlobal, "resume=%d", resume);
@@ -1502,7 +1534,8 @@ void CGameHandler::run(bool resume)
 	}
 
 	auto playerTurnOrder = generatePlayerTurnOrder();
-
+	int autosaveCount = getLastIndex("Autosave_");
+	int firstCall = 1;
 	while(!end2)
 	{
 		if(!resume) newTurn();
@@ -1518,6 +1551,22 @@ void CGameHandler::run(bool resume)
 		}
 
 		resume = false;
+		if (firstCall)
+		{
+			if (firstCall > 0) //new game, not loaded
+			{
+				int index = getLastIndex("Newgame_Autosave_");
+				index %= 5;
+				save("Saves/Newgame_Autosave_" + boost::lexical_cast<std::string>(index + 1));
+			}
+			firstCall = 0;
+		}
+		else
+		{
+			save("Saves/Autosave_" + boost::lexical_cast<std::string>(autosaveCount++ + 1));
+			autosaveCount %= 5;
+		}
+		
 		for(; it != playerTurnOrder.end(); it++)
 		{
 			auto playerColor = *it;

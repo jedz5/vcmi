@@ -156,20 +156,20 @@ void CPlayerInterface::yourTurn()
 			if(howManyPeople == 1)
 				adventureInt->setPlayer(playerID);
 
-			autosaveCount = getLastIndex("Autosave_");
+			//autosaveCount = getLastIndex("Autosave_");
 
-			if(firstCall > 0) //new game, not loaded
-			{
-				int index = getLastIndex("Newgame_Autosave_");
-				index %= SAVES_COUNT;
-				//cb->save("Saves/Newgame_Autosave_" + boost::lexical_cast<std::string>(index + 1));
-			}
-			firstCall = 0;
+			//if(firstCall > 0) //new game, not loaded
+			//{
+			//	int index = getLastIndex("Newgame_Autosave_");
+			//	index %= SAVES_COUNT;
+			//	cb->save("Saves/Newgame_Autosave_" + boost::lexical_cast<std::string>(index + 1));
+			//}
+			//firstCall = 0;
 		}
 		else
 		{
 			//LOCPLINT->cb->save("Saves/Autosave_" + boost::lexical_cast<std::string>(autosaveCount++ + 1));
-			autosaveCount %= 5;
+			//autosaveCount %= 5;
 		}
 
 		if(adventureInt->player != playerID)

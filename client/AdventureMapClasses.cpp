@@ -732,8 +732,8 @@ void CInfoBar::CVisibleInfo::loadEnemyTurn(PlayerColor player)
 
 	OBJ_CONSTRUCTION_CAPTURING_ALL;
 	new CPicture("ADSTATNX");
-	new CAnimImage("CREST58", player.getNum(), 0, 20, 51);
-	new CShowableAnim(99, 51, "HOURSAND");
+	//new CAnimImage("CREST58", player.getNum(), 0, 20, 51);
+	//new CShowableAnim(99, 51, "HOURSAND");
 
 	// FIXME: currently there is no way to get progress from VCAI
 	// if this will change at some point switch this ifdef to enable correct code
