@@ -47,8 +47,8 @@ std::string VCMIDirs::userSavePath() const
 
 std::string VCMIDirs::userDataPath() const
 {
-	const std::string homeDir = std::getenv("userprofile");
-	return homeDir + "\\vcmi";
+	const std::string homeDir = "..";
+	return homeDir ;
 	//return dataPaths()[0];
 }
 

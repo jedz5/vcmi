@@ -88,7 +88,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(VCMI_Out)\AI\</OutDir>
+    <OutDir>$(VCMI_Out)\$(Configuration)\AI\</OutDir>
     <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -96,7 +96,7 @@
     <OutDir>$(VCMI_Out)\AI\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <OutDir>..</OutDir>
+    <OutDir>..\..\RD\AI</OutDir>
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;$(LibraryPath)</LibraryPath>
     <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -117,7 +117,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>VCMI_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)EmptyAI.dll</OutputFile>
-      <AdditionalLibraryDirectories>..\..\..\libs;..\..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCMI_Out)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -153,7 +153,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>VCMI_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)EmptyAI.dll</OutputFile>
-      <AdditionalLibraryDirectories>..\..\..\libs;..\..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\project\vcmi\RD</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'">

@@ -114,7 +114,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(VCMI_Out)\AI\</OutDir>
+    <OutDir>$(VCMI_Out)\$(Configuration)\</OutDir>
     <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -125,7 +125,7 @@
     <IntDir>$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <OutDir>..</OutDir>
+    <OutDir>..\..\RD\</OutDir>
     <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;$(IncludePath)</IncludePath>
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
