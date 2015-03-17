@@ -948,7 +948,8 @@ void startGame(StartInfo * options, CConnection *serv/* = nullptr*/)
 				elem.second.name = ais[i++];
 		}
 	}
-
+	CSaveFile startFile("startFile");
+	startFile << *options;
     client = new CClient;
 	CPlayerInterface::howManyPeople = 0;
 	switch(options->mode) //new game
