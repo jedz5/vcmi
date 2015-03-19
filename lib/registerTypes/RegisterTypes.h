@@ -253,7 +253,8 @@ void registerTypesClientPacks1(Serializer &s)
 template<typename Serializer>
 void registerTypesClientPacks2(Serializer &s)
 {
-	s.template registerType<CPackForClient, BattleStart>();
+	s.template registerType<CPackForClient, CBattleForClient>();
+	s.template registerType<CBattleForClient, BattleStart>();
 	s.template registerType<CPackForClient, BattleNextRound>();
 	s.template registerType<CPackForClient, BattleSetActiveStack>();
 	s.template registerType<CPackForClient, BattleResult>();

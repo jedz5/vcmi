@@ -1619,6 +1619,7 @@ void CGameHandler::setupBattle( int3 tile, const CArmedInstance *armies[2], cons
 
 	//send info about battles
 	BattleStart bs;
+	bs.battleId = armies[0]->tempOwner.getNum();
 	bs.info = gs->setupBattle(tile, armies, heroes, creatureBank,	town);
 	sendAndApply(&bs);
 }
@@ -2237,6 +2238,14 @@ void CGameHandler::applyAndSend(CPackForClient * info)
 {
 	gs->apply(info);
 	sendToAllClients(info);
+}
+void CGameHandler::sendAndApply(CBattleForClient * info)
+{
+	if (info->battleId < 0)
+	{
+		logGlobal->errorStream() << "!!!!!!!!!battleId < 0 : " << info->toString();
+	}
+	sendAndApply(static_cast<CPackForClient*>(info));
 }
 
 void CGameHandler::sendAndApply(CGarrisonOperationPack * info)

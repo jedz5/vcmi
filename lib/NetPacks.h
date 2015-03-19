@@ -1203,9 +1203,14 @@ struct ExchangeDialog : public Query//2005
 		h & queryID & heroes;
 	}
 };
-
+struct CBattleForClient : public CPackForClient//2999
+{
+	si8 battleId;
+	CBattleForClient(){ type = 2999; battleId = -1; };
+	
+};
 struct BattleInfo;
-struct BattleStart : public CPackForClient//3000
+struct BattleStart : public CBattleForClient//3000
 {
 	BattleStart(){type = 3000;};
 
@@ -1218,7 +1223,7 @@ struct BattleStart : public CPackForClient//3000
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & info;
+		h & info & battleId;
 	}
 };
 struct BattleNextRound : public CPackForClient//3001
