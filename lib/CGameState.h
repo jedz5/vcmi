@@ -382,7 +382,9 @@ public:
 
 	ConstTransitivePtr<StartInfo> scenarioOps, initialOpts; //second one is a copy of settings received from pregame (not randomized)
 	//PlayerColor currentPlayer; //ID of player currently having turn
-	ConstTransitivePtr<BattleInfo> curB; //current battle
+	std::map<PlayerColor, ConstTransitivePtr<BattleInfo>> curB; //current battle
+	PlayerColor curBattleId;
+	BattleInfo* curBattle;
 	ui32 day; //total number of days in game
 	ConstTransitivePtr<CMap> map;
 	std::map<PlayerColor, PlayerState> players;
@@ -394,7 +396,7 @@ public:
 	void giveHeroArtifact(CGHeroInstance *h, ArtifactID aid);
 
 	void apply(CPack *pack);
-	BFieldType battleGetBattlefieldType(int3 tile);
+	BFieldType battleGetBattlefieldType(int3 tile,PlayerColor color);
 	UpgradeInfo getUpgradeInfo(const CStackInstance &stack);
 	PlayerRelations::PlayerRelations getPlayerRelations(PlayerColor color1, PlayerColor color2);
 	bool checkForVisitableDir(const int3 & src, const int3 & dst) const; //check if src tile is visitable from dst tile

@@ -1205,12 +1205,12 @@ struct ExchangeDialog : public Query//2005
 };
 struct CBattleForClient : public CPackForClient//2999
 {
-	si8 battleId;
-	CBattleForClient(){ type = 2999; battleId = -1; };
+	PlayerColor battleId;
+	CBattleForClient(){ type = 2999; battleId = PlayerColor::CANNOT_DETERMINE; };
 	
 };
 struct BattleInfo;
-struct BattleStart : public CBattleForClient//3000
+struct BattleStart : public CPackForClient//3000
 {
 	BattleStart(){type = 3000;};
 
@@ -1219,14 +1219,14 @@ struct BattleStart : public CBattleForClient//3000
 	DLL_LINKAGE void applyGs(CGameState *gs);
 
 	BattleInfo * info;
-
+	PlayerColor battleId;
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & info & battleId;
+		h & info  & battleId;
 	}
 };
-struct BattleNextRound : public CPackForClient//3001
+struct BattleNextRound : public CBattleForClient//3001
 {
 	BattleNextRound(){type = 3001;};
 	void applyFirstCl(CClient *cl);
@@ -1236,10 +1236,10 @@ struct BattleNextRound : public CPackForClient//3001
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & round;
+		h & round & battleId;
 	}
 };
-struct BattleSetActiveStack : public CPackForClient//3002
+struct BattleSetActiveStack : public CBattleForClient//3002
 {
 	BattleSetActiveStack()
 	{
@@ -1255,10 +1255,10 @@ struct BattleSetActiveStack : public CPackForClient//3002
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stack & askPlayerInterface;
+		h & stack & askPlayerInterface & battleId;
 	}
 };
-struct BattleResult : public CPackForClient//3003
+struct BattleResult : public CBattleForClient//3003
 {
 	enum EResult {NORMAL = 0, ESCAPE = 1, SURRENDER = 2};
 
@@ -1274,11 +1274,11 @@ struct BattleResult : public CPackForClient//3003
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & result & winner & casualties[0] & casualties[1] & exp & artifacts;
+		h & result & winner & casualties[0] & casualties[1] & exp & artifacts & battleId;
 	}
 };
 
-struct BattleStackMoved : public CPackForClient//3004
+struct BattleStackMoved : public CBattleForClient//3004
 {
 	ui32 stack;
 	std::vector<BattleHex> tilesToMove;
@@ -1288,11 +1288,11 @@ struct BattleStackMoved : public CPackForClient//3004
 	void applyGs(CGameState *gs);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stack & tilesToMove & distance;
+		h & stack & tilesToMove & distance & battleId;
 	}
 };
 
-struct StacksHealedOrResurrected : public CPackForClient //3013
+struct StacksHealedOrResurrected : public CBattleForClient //3013
 {
 	StacksHealedOrResurrected(){type = 3013;}
 
@@ -1317,11 +1317,11 @@ struct StacksHealedOrResurrected : public CPackForClient //3013
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & healedStacks & lifeDrain & tentHealing & drainedFrom;
+		h & healedStacks & lifeDrain & tentHealing & drainedFrom & battleId;
 	}
 };
 
-struct BattleStackAttacked : public CPackForClient//3005
+struct BattleStackAttacked : public CBattleForClient//3005
 {
 	BattleStackAttacked(){flags = 0; type = 3005;};
 	void applyFirstCl(CClient * cl);
@@ -1363,7 +1363,7 @@ struct BattleStackAttacked : public CPackForClient//3005
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		h & stackAttacked & attackerID & newAmount & newHP & flags & killedAmount & damageAmount & effect
-			& healedStacks;
+			& healedStacks & battleId;
 	}
 	bool operator<(const BattleStackAttacked &b) const
 	{
@@ -1371,7 +1371,7 @@ struct BattleStackAttacked : public CPackForClient//3005
 	}
 };
 
-struct BattleAttack : public CPackForClient//3006
+struct BattleAttack : public CBattleForClient//3006
 {
 	BattleAttack(){flags = 0; type = 3006;};
 	void applyFirstCl(CClient *cl);
@@ -1413,11 +1413,11 @@ struct BattleAttack : public CPackForClient//3006
 	//}
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & bsa & stackAttacking & flags;
+		h & bsa & stackAttacking & flags & battleId;
 	}
 };
 
-struct StartAction : public CPackForClient//3007
+struct StartAction : public CBattleForClient//3007
 {
 	StartAction(){type = 3007;};
 	StartAction(const BattleAction &act){ba = act; type = 3007;};
@@ -1427,21 +1427,22 @@ struct StartAction : public CPackForClient//3007
 	BattleAction ba;
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & ba;
+		h & ba & battleId;
 	}
 };
 
-struct EndAction : public CPackForClient//3008
+struct EndAction : public CBattleForClient//3008
 {
 	EndAction(){type = 3008;};
 	void applyCl(CClient *cl);
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
+		h & battleId;
 	}
 };
 
-struct BattleSpellCast : public CPackForClient//3009
+struct BattleSpellCast : public CBattleForClient//3009
 {
 	BattleSpellCast(){type = 3009;};
 	DLL_LINKAGE void applyGs(CGameState *gs);
@@ -1460,11 +1461,11 @@ struct BattleSpellCast : public CPackForClient//3009
 	bool castedByHero; //if true - spell has been casted by hero, otherwise by a creature
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & dmgToDisplay & side & id & skill & spellCost & manaGained & tile & resisted & affectedCres & attackerType & castedByHero;
+		h & dmgToDisplay & side & id & skill & spellCost & manaGained & tile & resisted & affectedCres & attackerType & castedByHero & battleId;
 	}
 };
 
-struct SetStackEffect : public CPackForClient //3010
+struct SetStackEffect : public CBattleForClient //3010
 {
 	SetStackEffect(){type = 3010;};
 	DLL_LINKAGE void applyGs(CGameState *gs);
@@ -1475,11 +1476,11 @@ struct SetStackEffect : public CPackForClient //3010
 	std::vector<std::pair<ui32, Bonus> > uniqueBonuses; //bonuses per single stack
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stacks & effect & uniqueBonuses;
+		h & stacks & effect & uniqueBonuses & battleId;
 	}
 };
 
-struct StacksInjured : public CPackForClient //3011
+struct StacksInjured : public CBattleForClient //3011
 {
 	StacksInjured(){type = 3011;}
 	DLL_LINKAGE void applyGs(CGameState *gs);
@@ -1488,11 +1489,11 @@ struct StacksInjured : public CPackForClient //3011
 	std::vector<BattleStackAttacked> stacks;
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stacks;
+		h & stacks & battleId;
 	}
 };
 
-struct BattleResultsApplied : public CPackForClient //3012
+struct BattleResultsApplied : public CBattleForClient //3012
 {
 	BattleResultsApplied(){type = 3012;}
 
@@ -1501,11 +1502,11 @@ struct BattleResultsApplied : public CPackForClient //3012
 	void applyCl(CClient *cl);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & player1 & player2;
+		h & player1 & player2 & battleId;
 	}
 };
 
-struct ObstaclesRemoved : public CPackForClient //3014
+struct ObstaclesRemoved : public CBattleForClient //3014
 {
 	ObstaclesRemoved(){type = 3014;}
 
@@ -1516,11 +1517,11 @@ struct ObstaclesRemoved : public CPackForClient //3014
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & obstacles;
+		h & obstacles & battleId;
 	}
 };
 
-struct ELF_VISIBILITY CatapultAttack : public CPackForClient //3015
+struct ELF_VISIBILITY CatapultAttack : public CBattleForClient //3015
 
 {
 	struct AttackInfo
@@ -1549,13 +1550,13 @@ struct ELF_VISIBILITY CatapultAttack : public CPackForClient //3015
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & attackedParts & attacker;
+		h & attackedParts & attacker & battleId;
 	}
 };
 
 DLL_LINKAGE std::ostream & operator<<(std::ostream & out, const CatapultAttack::AttackInfo & attackInfo);
 
-struct BattleStacksRemoved : public CPackForClient //3016
+struct BattleStacksRemoved : public CBattleForClient //3016
 {
 	BattleStacksRemoved(){type = 3016;}
 
@@ -1566,11 +1567,11 @@ struct BattleStacksRemoved : public CPackForClient //3016
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stackIDs;
+		h & stackIDs & battleId;
 	}
 };
 
-struct BattleStackAdded : public CPackForClient //3017
+struct BattleStackAdded : public CBattleForClient //3017
 {
 	BattleStackAdded(){type = 3017;};
 
@@ -1585,11 +1586,11 @@ struct BattleStackAdded : public CPackForClient //3017
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & attacker & creID & amount & pos & summoned;
+		h & attacker & creID & amount & pos & summoned & battleId;
 	}
 };
 
-struct BattleSetStackProperty : public CPackForClient //3018
+struct BattleSetStackProperty : public CBattleForClient //3018
 {
 	BattleSetStackProperty(){type = 3018;};
 
@@ -1605,11 +1606,11 @@ struct BattleSetStackProperty : public CPackForClient //3018
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stackID & which & val & absolute;
+		h & stackID & which & val & absolute & battleId;
 	}
 };
 
-struct BattleTriggerEffect : public CPackForClient //3019
+struct BattleTriggerEffect : public CBattleForClient //3019
 { //activated at the beginning of turn
 	BattleTriggerEffect(){type = 3019;};
 
@@ -1625,11 +1626,11 @@ struct BattleTriggerEffect : public CPackForClient //3019
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & stackID & effect & val & additionalInfo;
+		h & stackID & effect & val & additionalInfo & battleId;
 	}
 };
 
-struct BattleObstaclePlaced : public CPackForClient //3020
+struct BattleObstaclePlaced : public CBattleForClient //3020
 { //activated at the beginning of turn
 	BattleObstaclePlaced(){type = 3020;};
 
@@ -1640,7 +1641,7 @@ struct BattleObstaclePlaced : public CPackForClient //3020
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & obstacle;
+		h & obstacle & battleId;
 	}
 };
 
@@ -1970,11 +1971,11 @@ struct MakeAction : public CPackForServer
 	MakeAction(){};
 	MakeAction(const BattleAction &BA):ba(BA){};
 	BattleAction ba;
-
+	PlayerColor battleId;
 	bool applyGh(CGameHandler *gh);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & ba;
+		h & ba & battleId;
 	}
 };
 
@@ -1983,11 +1984,11 @@ struct MakeCustomAction : public CPackForServer
 	MakeCustomAction(){};
 	MakeCustomAction(const BattleAction &BA):ba(BA){};
 	BattleAction ba;
-
+	PlayerColor battleId;
 	bool applyGh(CGameHandler *gh);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & ba;
+		h & ba & battleId;
 	}
 };
 

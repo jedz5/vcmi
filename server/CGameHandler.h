@@ -103,18 +103,18 @@ public:
 	bool isBlockedByQueries(const CPack *pack, PlayerColor player); 
 	bool isAllowedExchange(ObjectInstanceID id1, ObjectInstanceID id2);
 	void giveSpells(const CGTownInstance *t, const CGHeroInstance *h);
-	int moveStack(int stack, BattleHex dest); //returned value - travelled distance
-	void runBattle();
+	int moveStack(int stack, BattleHex dest, PlayerColor bId); //returned value - travelled distance
+	void runBattle(PlayerColor bId);
 
 	////used only in endBattle - don't touch elsewhere
 	bool visitObjectAfterVictory;
 	//
-	void endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2); //ends battle
-	void prepareAttack(BattleAttack &bat, const CStack *att, const CStack *def, int distance, int targetHex); //distance - number of hexes travelled before attacking
-	void applyBattleEffects(BattleAttack &bat, const CStack *att, const CStack *def, int distance, bool secondary); //damage, drain life & fire shield
-	void checkForBattleEnd();
+	void endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, PlayerColor bId); //ends battle
+	void prepareAttack(BattleAttack &bat, const CStack *att, const CStack *def, int distance, int targetHex, PlayerColor bId); //distance - number of hexes travelled before attacking
+	void applyBattleEffects(BattleAttack &bat, const CStack *att, const CStack *def, int distance, bool secondary, PlayerColor bId); //damage, drain life & fire shield
+	void checkForBattleEnd(PlayerColor bId);
 	void setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town);
-	void setBattleResult(BattleResult::EResult resultType, int victoriusSide);
+	void setBattleResult(BattleResult::EResult resultType, int victoriusSide, PlayerColor bId);
 	void duelFinished();
 
 	CGameHandler(void);
@@ -199,14 +199,14 @@ public:
 	PlayerColor getPlayerAt(CConnection *c) const;
 
 	void playerMessage( PlayerColor player, const std::string &message);
-	bool makeBattleAction(BattleAction &ba);
-	bool makeAutomaticAction(const CStack *stack, BattleAction &ba); //used when action is taken by stack without volition of player (eg. unguided catapult attack)
-	void handleSpellCasting(SpellID spellID, int spellLvl, BattleHex destination, ui8 casterSide, PlayerColor casterColor, const CGHeroInstance * caster, const CGHeroInstance * secHero,
+	bool makeBattleAction(BattleAction &ba, PlayerColor bId);
+	bool makeAutomaticAction(const CStack *stack, BattleAction &ba, PlayerColor bId); //used when action is taken by stack without volition of player (eg. unguided catapult attack)
+	void handleSpellCasting(PlayerColor bId, SpellID spellID, int spellLvl, BattleHex destination, ui8 casterSide, PlayerColor casterColor, const CGHeroInstance * caster, const CGHeroInstance * secHero,
 		int usedSpellPower, ECastingMode::ECastingMode mode, const CStack * stack, si32 selectedStack = -1);
-	bool makeCustomAction(BattleAction &ba);
-	void stackTurnTrigger(const CStack * stack);
-	void handleDamageFromObstacle(const CObstacleInstance &obstacle, const CStack * curStack); //checks if obstacle is land mine and handles possible consequences
-	void removeObstacle(const CObstacleInstance &obstacle);
+	bool makeCustomAction(BattleAction &ba, PlayerColor bId);
+	void stackTurnTrigger(const CStack * stack, PlayerColor bId);
+	void handleDamageFromObstacle(const CObstacleInstance &obstacle, const CStack * curStack, PlayerColor bId); //checks if obstacle is land mine and handles possible consequences
+	void removeObstacle(const CObstacleInstance &obstacle, PlayerColor bId);
 	bool queryReply( QueryID qid, ui32 answer, PlayerColor player );
 	bool hireHero( const CGObjectInstance *obj, ui8 hid, PlayerColor player );
 	bool buildBoat( ObjectInstanceID objid );
@@ -281,9 +281,9 @@ public:
 
 	void run(bool resume);
 	void newTurn();
-	void handleAttackBeforeCasting (const BattleAttack & bat);
-	void handleAfterAttackCasting (const BattleAttack & bat);
-	void attackCasting(const BattleAttack & bat, Bonus::BonusType attackMode, const CStack * attacker);
+	void handleAttackBeforeCasting (const BattleAttack & bat,PlayerColor bId);
+	void handleAfterAttackCasting(const BattleAttack & bat, PlayerColor bId);
+	void attackCasting(const BattleAttack & bat, Bonus::BonusType attackMode, const CStack * attacker, PlayerColor bId);
 	bool sacrificeArtifact(const IMarket * m, const CGHeroInstance * hero, ArtifactPosition slot);
 	void spawnWanderingMonsters(CreatureID creatureID);
 	friend class CVCMIServer;

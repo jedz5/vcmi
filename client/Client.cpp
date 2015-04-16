@@ -72,12 +72,22 @@ public:
 	void applyOnClAfter(CClient *cl, void *pack) const
 	{
 		T *ptr = static_cast<T*>(pack);
-		ptr->applyCl(cl);
+		CBattleForClient *p = dynamic_cast<CBattleForClient*>(ptr);
+		if (NULL == p || p->battleId == p->GS(cl)->curBattleId)
+		{
+			ptr->applyCl(cl);
+		}
+		
 	}
 	void applyOnClBefore(CClient *cl, void *pack) const
 	{
 		T *ptr = static_cast<T*>(pack);
-		ptr->applyFirstCl(cl);
+		CBattleForClient *p = dynamic_cast<CBattleForClient*>(ptr);
+		if (NULL == p || p->battleId == p->GS(cl)->curBattleId)
+		{
+			ptr->applyFirstCl(cl);
+		}
+		
 	}
 };
 
@@ -130,16 +140,16 @@ CClient::~CClient(void)
 	delete applier;
 }
 
-void CClient::waitForMoveAndSend(PlayerColor color)
+void CClient::waitForMoveAndSend(PlayerColor bId)
 {
 	try
 	{
 		setThreadName("CClient::waitForMoveAndSend");
-		assert(vstd::contains(battleints, color));
-		BattleAction ba = battleints[color]->activeStack(gs->curB->battleGetStackByID(gs->curB->activeStack, false));
+		assert(vstd::contains(battleints, bId));
+		BattleAction ba = battleints[bId]->activeStack(gs->curBattle->battleGetStackByID(gs->curBattle->activeStack, false));
 		logNetwork->traceStream() << "Send battle action to server: " << ba;
 		MakeAction temp_action(ba);
-		sendRequest(&temp_action, color);
+		sendRequest(&temp_action, bId);
 		return;
 	}
 	catch(boost::thread_interrupted&)
@@ -184,7 +194,7 @@ void CClient::run()
 
 void CClient::save(const std::string & fname)
 {
-	if(gs->curB)
+	if(gs->curBattle)
 	{
         logNetwork->errorStream() << "Game cannot be saved during battle!";
 		return;
@@ -428,7 +438,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 			installNewPlayerInterface(p, boost::none);
 			GH.curInt = p.get();
 		}
-		battleStarted(gs->curB);
+		battleStarted(gs->curBattle);
 	}
 	else
 	{
@@ -638,13 +648,13 @@ void CClient::battleStarted(const BattleInfo * info)
 
 	if(info->tacticDistance && vstd::contains(battleints,info->sides[info->tacticsSide].color))
 	{
-		boost::thread(&CClient::commenceTacticPhaseForInt, this, battleints[info->sides[info->tacticsSide].color]);
+		boost::thread(&CClient::commenceTacticPhaseForInt, this, battleints[info->sides[info->tacticsSide].color], info->sides[info->tacticsSide].color);
 	}
 }
 
 void CClient::battleFinished()
 {
-	for(auto & side : gs->curB->sides)
+	for(auto & side : gs->curBattle->sides)
 		if(battleCallbacks.count(side.color))
 			battleCallbacks[side.color]->setBattle(nullptr);
 }
@@ -676,15 +686,15 @@ void CClient::calculatePaths(const CGHeroInstance *h)
 	gs->calculatePaths(h, *pathInfo);
 }
 
-void CClient::commenceTacticPhaseForInt(shared_ptr<CBattleGameInterface> battleInt)
+void CClient::commenceTacticPhaseForInt(shared_ptr<CBattleGameInterface> battleInt,PlayerColor color)
 {
 	setThreadName("CClient::commenceTacticPhaseForInt");
 	try
 	{
-		battleInt->yourTacticPhase(gs->curB->tacticDistance);
-		if(gs && !!gs->curB && gs->curB->tacticDistance) //while awaiting for end of tactics phase, many things can happen (end of battle... or game)
+		battleInt->yourTacticPhase(gs->curBattle->tacticDistance);
+		if(gs && !!gs->curBattle && gs->curBattle->tacticDistance) //while awaiting for end of tactics phase, many things can happen (end of battle... or game)
 		{
-			MakeAction ma(BattleAction::makeEndOFTacticPhase(gs->curB->playerToSide(battleInt->playerID)));
+			MakeAction ma(BattleAction::makeEndOFTacticPhase(gs->curBattle->playerToSide(battleInt->playerID)));
 			sendRequest(&ma, battleInt->playerID);
 		}
 	} HANDLE_EXCEPTION

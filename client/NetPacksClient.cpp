@@ -89,8 +89,8 @@
 
 
 #define BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(function,...) 				\
-	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB->sides[0].color, function, __VA_ARGS__)	\
-	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB->sides[1].color, function, __VA_ARGS__)	\
+	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curBattle->sides[0].color, function, __VA_ARGS__)	\
+	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curBattle->sides[1].color, function, __VA_ARGS__)	\
 	BATTLE_INTERFACE_CALL_RECEIVERS(function, __VA_ARGS__)
 /*
  * NetPacksClient.cpp, part of VCMI engine
@@ -619,13 +619,13 @@ void BattleSetActiveStack::applyCl( CClient *cl )
 	if(!askPlayerInterface)
 		return;
 
-	const CStack * activated = GS(cl)->curB->battleGetStackByID(stack);
+	const CStack * activated = GS(cl)->curBattle->battleGetStackByID(stack);
 	PlayerColor playerToCall; //player that will move activated stack
 	if( activated->hasBonusOfType(Bonus::HYPNOTIZED) )
 	{
-		playerToCall = ( GS(cl)->curB->sides[0].color == activated->owner 
-			? GS(cl)->curB->sides[1].color 
-			: GS(cl)->curB->sides[0].color );
+		playerToCall = ( GS(cl)->curBattle->sides[0].color == activated->owner 
+			? GS(cl)->curBattle->sides[1].color 
+			: GS(cl)->curBattle->sides[0].color );
 	}
 	else
 	{
@@ -653,7 +653,7 @@ void BattleResult::applyFirstCl( CClient *cl )
 
 void BattleStackMoved::applyFirstCl( CClient *cl )
 {
-	const CStack * movedStack = GS(cl)->curB->battleGetStackByID(stack);
+	const CStack * movedStack = GS(cl)->curBattle->battleGetStackByID(stack);
 	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleStackMoved,movedStack,tilesToMove,distance);
 }
 
@@ -746,7 +746,7 @@ void BattleStacksRemoved::applyCl( CClient *cl )
 
 void BattleStackAdded::applyCl( CClient *cl )
 {
-	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleNewStackAppeared, GS(cl)->curB->stacks.back());
+	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleNewStackAppeared, GS(cl)->curBattle->stacks.back());
 }
 
 CGameState* CPackForClient::GS( CClient *cl )

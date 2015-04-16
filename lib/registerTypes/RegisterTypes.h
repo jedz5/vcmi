@@ -254,27 +254,27 @@ template<typename Serializer>
 void registerTypesClientPacks2(Serializer &s)
 {
 	s.template registerType<CPackForClient, CBattleForClient>();
-	s.template registerType<CBattleForClient, BattleStart>();
-	s.template registerType<CPackForClient, BattleNextRound>();
-	s.template registerType<CPackForClient, BattleSetActiveStack>();
-	s.template registerType<CPackForClient, BattleResult>();
-	s.template registerType<CPackForClient, BattleStackMoved>();
-	s.template registerType<CPackForClient, BattleStackAttacked>();
-	s.template registerType<CPackForClient, BattleAttack>();
-	s.template registerType<CPackForClient, StartAction>();
-	s.template registerType<CPackForClient, EndAction>();
-	s.template registerType<CPackForClient, BattleSpellCast>();
-	s.template registerType<CPackForClient, SetStackEffect>();
-	s.template registerType<CPackForClient, BattleTriggerEffect>();
-	s.template registerType<CPackForClient, BattleObstaclePlaced>();
-	s.template registerType<CPackForClient, BattleSetStackProperty>();
-	s.template registerType<CPackForClient, StacksInjured>();
-	s.template registerType<CPackForClient, BattleResultsApplied>();
-	s.template registerType<CPackForClient, StacksHealedOrResurrected>();
-	s.template registerType<CPackForClient, ObstaclesRemoved>();
-	s.template registerType<CPackForClient, CatapultAttack>();
-	s.template registerType<CPackForClient, BattleStacksRemoved>();
-	s.template registerType<CPackForClient, BattleStackAdded>();
+	s.template registerType<CPackForClient, BattleStart>();
+	s.template registerType<CBattleForClient, BattleNextRound>();
+	s.template registerType<CBattleForClient, BattleSetActiveStack>();
+	s.template registerType<CBattleForClient, BattleResult>();
+	s.template registerType<CBattleForClient, BattleStackMoved>();
+	s.template registerType<CBattleForClient, BattleStackAttacked>();
+	s.template registerType<CBattleForClient, BattleAttack>();
+	s.template registerType<CBattleForClient, StartAction>();
+	s.template registerType<CBattleForClient, EndAction>();
+	s.template registerType<CBattleForClient, BattleSpellCast>();
+	s.template registerType<CBattleForClient, SetStackEffect>();
+	s.template registerType<CBattleForClient, BattleTriggerEffect>();
+	s.template registerType<CBattleForClient, BattleObstaclePlaced>();
+	s.template registerType<CBattleForClient, BattleSetStackProperty>();
+	s.template registerType<CBattleForClient, StacksInjured>();
+	s.template registerType<CBattleForClient, BattleResultsApplied>();
+	s.template registerType<CBattleForClient, StacksHealedOrResurrected>();
+	s.template registerType<CBattleForClient, ObstaclesRemoved>();
+	s.template registerType<CBattleForClient, CatapultAttack>();
+	s.template registerType<CBattleForClient, BattleStacksRemoved>();
+	s.template registerType<CBattleForClient, BattleStackAdded>();
 
 	s.template registerType<CPackForClient, Query>();
 	s.template registerType<Query, HeroLevelUp>();

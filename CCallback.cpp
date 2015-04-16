@@ -447,7 +447,7 @@ CBattleCallback::CBattleCallback(CGameState *GS, boost::optional<PlayerColor> Pl
 
 bool CBattleCallback::battleMakeTacticAction( BattleAction * action )
 {
-	assert(cl->gs->curB->tacticDistance);
+	assert(gs->curBattle->tacticDistance);
 	MakeAction ma;
 	ma.ba = *action;
 	sendRequest(&ma);

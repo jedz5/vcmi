@@ -66,9 +66,12 @@ public:
 	void applyOnGS(CGameState *gs, void *pack) const
 	{
 		T *ptr = static_cast<T*>(pack);
-
-		boost::unique_lock<boost::shared_mutex> lock(*gs->mx);
-		ptr->applyGs(gs);
+		CBattleForClient *p = dynamic_cast<CBattleForClient*>(ptr);
+		if (NULL == p || p->battleId == gs->curBattleId)
+		{
+			boost::unique_lock<boost::shared_mutex> lock(*gs->mx);
+			ptr->applyGs(gs);
+		}
 	}
 };
 
@@ -721,7 +724,10 @@ CGameState::~CGameState()
 {
 	//delete mx;//TODO: crash on Linux (mutex must be unlocked before destruction)
 	map.dellNull();
-	curB.dellNull();
+	for (auto ptr: curB)
+	{
+		ptr.second.dellNull();
+	}
 	//delete scenarioOps; //TODO: fix for loading ind delete
 	//delete initialOpts;
 	delete applierGs;
@@ -738,7 +744,7 @@ BattleInfo * CGameState::setupBattle(int3 tile, const CArmedInstance *armies[2],
 	if(t.isCoastal() && !t.isWater())
 		terrain = ETerrainType::SAND;
 
-	BFieldType terType = battleGetBattlefieldType(tile);
+	BFieldType terType = battleGetBattlefieldType(tile, heroes[0]->getOwner());
 	if (heroes[0] && heroes[0]->boat && heroes[1] && heroes[1]->boat)
 		terType = BFieldType::SHIP_TO_SHIP;
 	return BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, town);
@@ -959,10 +965,10 @@ void CGameState::initDuel()
 				c->getBonusLocalFirst(Selector::type(Bonus::SHOTS))->val = cc.shoots;
 		}
 	}
-
-	curB = BattleInfo::setupBattle(int3(), dp.terType, dp.bfieldType, armies, heroes, false, town);
-	curB->obstacles = dp.obstacles;
-	curB->localInit();
+	PlayerColor color;
+	curB[color] = BattleInfo::setupBattle(int3(), dp.terType, dp.bfieldType, armies, heroes, false, town);
+	curB[color]->obstacles = dp.obstacles;
+	curB[color]->localInit();
 }
 
 void CGameState::checkMapChecksum()
@@ -1908,11 +1914,11 @@ void CGameState::initVisitingAndGarrisonedHeroes()
 	}
 }
 
-BFieldType CGameState::battleGetBattlefieldType(int3 tile)
+BFieldType CGameState::battleGetBattlefieldType(int3 tile, PlayerColor color)
 {
-	if(tile==int3() && curB)
-		tile = curB->tile;
-	else if(tile==int3() && !curB)
+	if (tile == int3() && curB[color])
+		tile = curB[color]->tile;
+	else if (tile == int3() && !curB[color])
 		return BFieldType::NONE;
 
 	const TerrainTile &t = map->getTile(tile);
