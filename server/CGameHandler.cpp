@@ -55,12 +55,12 @@ extern bool end2;
 #define COMPLAIN_RET_FALSE_IF(cond, txt) do {if(cond){complain(txt); return false;}} while(0)
 #define COMPLAIN_RET(txt) {complain(txt); return false;}
 #define COMPLAIN_RETF(txt, FORMAT) {complain(boost::str(boost::format(txt) % FORMAT)); return false;}
-#define NEW_ROUND 		BattleNextRound bnr;\
+#define NEW_ROUND 		BattleNextRound bnr;bnr.battleId = bId;\
 	bnr.round = gs->curB[bId]->round + 1; \
 		sendAndApply(&bnr);
 
-CondSh<bool> battleMadeAction;
-CondSh<BattleResult *> battleResult(nullptr);
+std::map<PlayerColor,CondSh<bool>> battleMadeAction;
+std::map<PlayerColor, CondSh<BattleResult *>> battleResult;
 template <typename T> class CApplyOnGH;
 
 class CBaseForGHApply
@@ -448,34 +448,39 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	LOG_TRACE(logGlobal);
 
 	//Fill BattleResult structure with exp info
-	giveExp(*battleResult.data);
+	giveExp(*battleResult[bId].data);
 
-	if (battleResult.get()->result == BattleResult::NORMAL) // give 500 exp for defeating hero, unless he escaped
+	if (battleResult[bId].get()->result == BattleResult::NORMAL) // give 500 exp for defeating hero, unless he escaped
 	{
 		if (hero1)
-			battleResult.data->exp[1] += 500;
+			battleResult[bId].data->exp[1] += 500;
 		if (hero2)
-			battleResult.data->exp[0] += 500;
+			battleResult[bId].data->exp[0] += 500;
 	}
 
 	if (hero1)
-		battleResult.data->exp[0] = hero1->calculateXp(battleResult.data->exp[0]);//scholar skill
+		battleResult[bId].data->exp[0] = hero1->calculateXp(battleResult[bId].data->exp[0]);//scholar skill
 	if (hero2)
-		battleResult.data->exp[1] = hero2->calculateXp(battleResult.data->exp[1]);
+		battleResult[bId].data->exp[1] = hero2->calculateXp(battleResult[bId].data->exp[1]);
 
 	const CArmedInstance *bEndArmy1 = gs->curB[bId]->sides.at(0).armyObject;
 	const CArmedInstance *bEndArmy2 = gs->curB[bId]->sides.at(1).armyObject;
-	const BattleResult::EResult result = battleResult.get()->result;
+	const BattleResult::EResult result = battleResult[bId].get()->result;
 
 	auto findBattleQuery = [this, bId]() -> shared_ptr<CBattleQuery>
 	{
 		for(auto &q : queries.allQueries())
 		{
 			if(auto bq = std::dynamic_pointer_cast<CBattleQuery>(q))
-				if(bq->bi == gs->curB[bId])
-					return bq;
+			if (bq->bi == gs->curB[bId]){
+				bq->battleId = bId;
+				return bq;
+			}
+					
 		}
-		return shared_ptr<CBattleQuery>();
+		auto bq = shared_ptr<CBattleQuery>();
+		bq->battleId = bId;
+		return bq;
 	};
 
 	auto battleQuery = findBattleQuery();
@@ -490,7 +495,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	if(battleQuery != queries.topQuery(gs->curB[bId]->sides[0].color))
 		complain("Player " + boost::lexical_cast<std::string>(gs->curB[bId]->sides[0].color) + " although in battle has no battle query at the top!");
 
-	battleQuery->result = *battleResult.data;
+	battleQuery->result = *battleResult[bId].data;
 
 	//Check how many battle queries were created (number of players blocked by battle)
 	const int queriedPlayers = battleQuery ? boost::count(queries.allQueries(), battleQuery) : 0;
@@ -502,7 +507,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	if(finishingBattle->duel)
 	{
 		duelFinished();
-		sendAndApply(battleResult.data); //after this point casualties objects are destroyed
+		sendAndApply(battleResult[bId].data); //after this point casualties objects are destroyed
 		return;
 	}
 
@@ -515,7 +520,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 		{
 			int maxLevel = eagleEyeLevel + 1;
 			double eagleEyeChance = finishingBattle->winnerHero->valOfBonuses(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::EAGLE_EYE);
-			for(const CSpell *sp : gs->curB[bId]->sides.at(!battleResult.data->winner).usedSpellsHistory)
+			for(const CSpell *sp : gs->curB[bId]->sides.at(!battleResult[bId].data->winner).usedSpellsHistory)
 				if(sp->level <= maxLevel && !vstd::contains(finishingBattle->winnerHero->spells, sp->id) && gs->getRandomGenerator().nextInt(99) < eagleEyeChance)
 					cs.spells.insert(sp->id);
 		}
@@ -569,7 +574,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 				}
 			}
 		}
-		for (auto armySlot : gs->curB[bId]->battleGetArmyObject(!battleResult.data->winner)->stacks)
+		for (auto armySlot : gs->curB[bId]->battleGetArmyObject(!battleResult[bId].data->winner)->stacks)
 		{
 			auto artifactsWorn = armySlot.second->artifactsWorn;
 			for (auto artSlot : artifactsWorn)
@@ -587,7 +592,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 		}
 	}
 
-	sendAndApply(battleResult.data); //after this point casualties objects are destroyed
+	battleResult[bId].data->battleId = bId; sendAndApply(battleResult[bId].data); //after this point casualties objects are destroyed
 
 	if (arts.size()) //display loot
 	{
@@ -651,29 +656,29 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	cab2.takeFromArmy(this); //take casualties after battle is deleted
 
 	//if one hero has lost we will erase him
-	if(battleResult.data->winner!=0 && hero1)
+	if(battleResult[bId].data->winner!=0 && hero1)
 	{
 		RemoveObject ro(hero1->id);
 		sendAndApply(&ro);
 	}
-	if(battleResult.data->winner!=1 && hero2)
+	if(battleResult[bId].data->winner!=1 && hero2)
 	{
 		RemoveObject ro(hero2->id);
 		sendAndApply(&ro);
 	}
 
 	//give exp
-	if (battleResult.data->exp[0] && hero1 && battleResult.get()->winner == 0)
-		changePrimSkill(hero1, PrimarySkill::EXPERIENCE, battleResult.data->exp[0]);
-	else if (battleResult.data->exp[1] && hero2 && battleResult.get()->winner == 1)
-		changePrimSkill(hero2, PrimarySkill::EXPERIENCE, battleResult.data->exp[1]);
+	if (battleResult[bId].data->exp[0] && hero1 && battleResult[bId].get()->winner == 0)
+		changePrimSkill(hero1, PrimarySkill::EXPERIENCE, battleResult[bId].data->exp[0]);
+	else if (battleResult[bId].data->exp[1] && hero2 && battleResult[bId].get()->winner == 1)
+		changePrimSkill(hero2, PrimarySkill::EXPERIENCE, battleResult[bId].data->exp[1]);
 
 	queries.popIfTop(battleQuery);
 
 	//--> continuation (battleAfterLevelUp) occurs after level-up queries are handled or on removing query (above)
 }
 
-void CGameHandler::battleAfterLevelUp( const BattleResult &result )
+void CGameHandler::battleAfterLevelUp( const BattleResult &result,PlayerColor bId)
 {
 	LOG_TRACE(logGlobal);
 
@@ -690,7 +695,7 @@ void CGameHandler::battleAfterLevelUp( const BattleResult &result )
 	// Still, it looks like a hole.
 
 	// Necromancy if applicable.
-	const CStackBasicDescriptor raisedStack = finishingBattle->winnerHero ? finishingBattle->winnerHero->calculateNecromancy(*battleResult.data) : CStackBasicDescriptor();
+	const CStackBasicDescriptor raisedStack = finishingBattle->winnerHero ? finishingBattle->winnerHero->calculateNecromancy(*battleResult[bId].data) : CStackBasicDescriptor();
 	// Give raised units to winner and show dialog, if any were raised,
 	// units will be given after casualties are taken
 	const SlotID necroSlot = raisedStack.type ? finishingBattle->winnerHero->getSlotFor(raisedStack.type) : SlotID();
@@ -701,7 +706,7 @@ void CGameHandler::battleAfterLevelUp( const BattleResult &result )
 		addToSlot(StackLocation(finishingBattle->winnerHero, necroSlot), raisedStack.type, raisedStack.count);
 	}
 
-	BattleResultsApplied resultsApplied;
+	BattleResultsApplied resultsApplied; resultsApplied.battleId = bId;
 	resultsApplied.player1 = finishingBattle->victor;
 	resultsApplied.player2 = finishingBattle->loser;
 	sendAndApply(&resultsApplied);
@@ -812,7 +817,7 @@ void CGameHandler::prepareAttack(BattleAttack &bat, const CStack *att, const CSt
 }
 void CGameHandler::applyBattleEffects(BattleAttack &bat, const CStack *att, const CStack *def, int distance, bool secondary, PlayerColor bId) //helper function for prepareAttack
 {
-	BattleStackAttacked bsa;
+	BattleStackAttacked bsa; bsa.battleId = bId;
 	if (secondary)
 		bsa.flags |= BattleStackAttacked::SECONDARY; //all other targets do not suffer from spells & spell-like abilities
 	bsa.attackerID = att->ID;
@@ -846,7 +851,7 @@ void CGameHandler::applyBattleEffects(BattleAttack &bat, const CStack *att, cons
 	//fire shield handling
 	if (!bat.shot() && def->hasBonusOfType(Bonus::FIRE_SHIELD) && !att->hasBonusOfType (Bonus::FIRE_IMMUNITY) && !bsa.killed() )
 	{
-		BattleStackAttacked bsa2;
+		BattleStackAttacked bsa2; bsa2.battleId = bId;
 		bsa2.stackAttacked = att->ID; //invert
 		bsa2.attackerID = def->ID;
 		bsa2.flags |= BattleStackAttacked::EFFECT; //FIXME: play anmation upon efreet and not attacker
@@ -983,7 +988,7 @@ int CGameHandler::moveStack(int stack, BattleHex dest, PlayerColor bId)
 		if(path.second <= creSpeed && path.first.size() > 0)
 		{
 			//inform clients about move
-			BattleStackMoved sm;
+			BattleStackMoved sm; sm.battleId = bId;
 			sm.stack = curStack->ID;
 			std::vector<BattleHex> tiles;
 			tiles.push_back(path.first[0]);
@@ -1018,7 +1023,7 @@ startWalking:
 		if (tiles.size() > 0)
 		{
 			//commit movement
-			BattleStackMoved sm;
+			BattleStackMoved sm; sm.battleId = bId;
 			sm.stack = curStack->ID;
 			sm.distance = path.second;
 			sm.teleporting = false;
@@ -1612,21 +1617,21 @@ std::list<PlayerColor> CGameHandler::generatePlayerTurnOrder() const
 	return std::move(playerTurnOrder);
 }
 
-void CGameHandler::setupBattle( int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town )
+void CGameHandler::setupBattle( int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town ,PlayerColor bId)
 {
-	battleResult.set(nullptr);
+	battleResult[bId].set(nullptr);
 
 	//send info about battles
-	BattleStart bs;
+	BattleStart bs; bs.battleId = bId;
 	bs.info = gs->setupBattle(tile, armies, heroes, creatureBank,	town);
 	sendAndApply(&bs);
 }
 
-void CGameHandler::checkForBattleEnd(PlayerColor color)
+void CGameHandler::checkForBattleEnd(PlayerColor bId)
 {
 	if(auto result = battleIsFinished())
 	{
-		setBattleResult(BattleResult::NORMAL, *result,color);
+		setBattleResult(BattleResult::NORMAL, *result, bId);
 	}
 }
 
@@ -2033,6 +2038,9 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 	{
 		bId = army2->tempOwner;
 	}
+
+	battleMadeAction[bId] = CondSh<bool>();
+	battleResult[bId] = CondSh<BattleResult *>(nullptr);
 	static const CArmedInstance *armies[2];
 	armies[0] = army1;
 	armies[1] = army2;
@@ -2041,7 +2049,7 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 	heroes[1] = hero2;
 
 
-	setupBattle(tile, armies, heroes, creatureBank, town); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
+	setupBattle(tile, armies, heroes, creatureBank, town,bId); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
 
 	auto battleQuery = make_shared<CBattleQuery>(gs->curB[bId]);
 	queries.addQuery(battleQuery);
@@ -3315,7 +3323,7 @@ bool CGameHandler::queryReply(QueryID qid, ui32 answer, PlayerColor player)
 	return true;
 }
 
-static EndAction end_action;
+//static EndAction end_action;
 
 bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 {
@@ -3376,27 +3384,27 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 	case Battle::END_TACTIC_PHASE: //wait
 	case Battle::BAD_MORALE:
 	case Battle::NO_ACTION:
-		{
-			StartAction start_action(ba);
+	{
+							  StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	case Battle::WALK:
 		{
-			StartAction start_action(ba);
+						 StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action); //start movement
 			int walkedTiles = moveStack(ba.stackNumber, ba.destinationTile, bId); //move
 			if(!walkedTiles)
 				complain("Stack failed movement!");
 
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	case Battle::DEFEND:
 		{
 			//defensive stance //TODO: remove this bonus when stack becomes active
-			SetStackEffect sse;
+						   SetStackEffect sse; sse.battleId = bId;
 			sse.effect.push_back( Bonus(Bonus::STACK_GETS_TURN, Bonus::PRIMARY_SKILL, Bonus::OTHER, 20, -1, PrimarySkill::DEFENSE, Bonus::PERCENT_TO_ALL) );
 			sse.effect.push_back( Bonus(Bonus::STACK_GETS_TURN, Bonus::PRIMARY_SKILL, Bonus::OTHER, gs->curB[bId]->stacks.at(ba.stackNumber)->valOfBonuses(Bonus::DEFENSIVE_STANCE),
 				 -1, PrimarySkill::DEFENSE, Bonus::ADDITIVE_VALUE));
@@ -3407,9 +3415,9 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 		}
 	case Battle::WAIT:
 		{
-			StartAction start_action(ba);
+						 StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	case Battle::RETREAT: //retreat/flee
@@ -3437,12 +3445,12 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 		}
 	case Battle::WALK_AND_ATTACK: //walk or attack
 		{
-			StartAction start_action(ba);
+									  StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action); //start movement and attack
 
 			if(!stack || !destinationStack)
 			{
-				sendAndApply(&end_action);
+				EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 				break;
 			}
 
@@ -3461,7 +3469,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
                 logGlobal->warnStream() << problem;
 				complain(problem);
 				ok = false;
-				sendAndApply(&end_action);
+				EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 				break;
 			}
 
@@ -3474,14 +3482,14 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 			{
 				complain(boost::str(boost::format("walk and attack error: no stack at additionalInfo tile (%d)!\n") % ba.additionalInfo));
 				ok = false;
-				sendAndApply(&end_action);
+				EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 				break;
 			}
 
 			if( !CStack::isMeleeAttackPossible(stack, destinationStack) )
 			{
 				complain("Attack cannot be performed!");
-				sendAndApply(&end_action);
+				EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 				ok = false;
 				break;
 			}
@@ -3497,7 +3505,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 					stack->alive() && //move can cause death, eg. by walking into the moat
 					destinationStack->alive())
 				{
-					BattleAttack bat;
+					BattleAttack bat; bat.battleId = bId;
 					prepareAttack(bat, stack, destinationStack, (i ? 0 : distance), ba.additionalInfo, bId); //no distance travelled on second attack
 					//prepareAttack(bat, stack, stackAtEnd, 0, ba.additionalInfo);
 					handleAttackBeforeCasting(bat, bId); //only before first attack
@@ -3511,7 +3519,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 					&& destinationStack->ableToRetaliate()
 					&& stack->alive()) //attacker may have died (fire shield)
 				{
-					BattleAttack bat;
+					BattleAttack bat; bat.battleId = bId;
 					prepareAttack(bat, destinationStack, stack, 0, stack->position, bId);
 					bat.flags |= BattleAttack::COUNTER;
 					sendAndApply(&bat);
@@ -3526,7 +3534,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				//NOTE: curStack->ID == ba.stackNumber (rev 1431)
 			}
 
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	case Battle::SHOOT:
@@ -3537,11 +3545,11 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				break;
 			}
 
-			StartAction start_action(ba);
+			StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action); //start shooting
 
 			{
-				BattleAttack bat;
+				BattleAttack bat; bat.battleId = bId;
 				bat.flags |= BattleAttack::SHOT;
 				prepareAttack(bat, stack, destinationStack, 0, ba.destinationTile, bId);
 				handleAttackBeforeCasting(bat, bId);
@@ -3558,7 +3566,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 			    && (attackingHero->getSecSkillLevel(SecondarySkill::ARTILLERY) >= SecSkillLevel::ADVANCED)
 			   )
 			{
-				BattleAttack bat2;
+				BattleAttack bat2; bat2.battleId = bId;
 				bat2.flags |= BattleAttack::SHOT;
 				prepareAttack(bat2, stack, destinationStack, 0, ba.destinationTile, bId);
 				sendAndApply(&bat2);
@@ -3575,7 +3583,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 					&& stack->shots
 					)
 				{
-					BattleAttack bat;
+					BattleAttack bat; bat.battleId = bId;
 					bat.flags |= BattleAttack::SHOT;
 					prepareAttack(bat, stack, destinationStack, 0, ba.destinationTile, bId);
 					sendAndApply(&bat);
@@ -3583,7 +3591,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				}
 			}
 
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	case Battle::CATAPULT:
@@ -3609,9 +3617,9 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				}
 			};
 
-			StartAction start_action(ba);
+			StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
-			auto onExit = vstd::makeScopeGuard([&]{ sendAndApply(&end_action); }); //if we started than we have to finish
+			EndAction end_action; end_action.battleId = bId; auto onExit = vstd::makeScopeGuard([&]{ sendAndApply(&end_action); }); //if we started than we have to finish
 
 			const CGHeroInstance * attackingHero = gs->curB[bId]->battleGetFightingHero(ba.side);
 			CHeroHandler::SBallisticsLevelInfo sbi = VLC->heroh->ballistics.at(attackingHero->getSecSkillLevel(SecondarySkill::BALLISTICS));
@@ -3664,7 +3672,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				if (!hitSuccessfull) // break triggered - no target to shoot at
 					break;
 
-				CatapultAttack ca; //package for clients
+				CatapultAttack ca; ca.battleId = bId;//package for clients
 				CatapultAttack::AttackInfo attack;
 				attack.attackedPart = attackedPart;
 				attack.destinationTile = ba.destinationTile;
@@ -3709,7 +3717,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 						break;
 					}
 
-					BattleStacksRemoved bsr;
+					BattleStacksRemoved bsr; bsr.battleId = bId;
 					for(auto & elem : gs->curB[bId]->stacks)
 					{
 						if(elem->position == posRemove)
@@ -3731,7 +3739,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 		}
 		case Battle::STACK_HEAL: //healing with First Aid Tent
 		{
-			StartAction start_action(ba);
+									 StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
 			const CGHeroInstance * attackingHero = gs->curB[bId]->battleGetFightingHero(ba.side);
 			const CStack *healer = gs->curB[bId]->battleGetStackByID(ba.stackNumber),
@@ -3767,20 +3775,20 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 			}
 
 
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 		case Battle::DAEMON_SUMMONING:
 			//TODO: From Strategija:
 			//Summon Demon is a level 2 spell.
 		{
-			StartAction start_action(ba);
+										 StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
 
 			const CStack *summoner = gs->curB[bId]->battleGetStackByID(ba.stackNumber),
 				*destStack = gs->curB[bId]->battleGetStackByPos(ba.destinationTile, false);
 
-			BattleStackAdded bsa;
+			BattleStackAdded bsa; bsa.battleId = bId;
 			bsa.attacker = summoner->attackerOwned;
 
 			bsa.creID = CreatureID(summoner->getBonusLocalFirst(Selector::type(Bonus::DAEMON_SUMMONING))->subtype); //in case summoner can summon more than one type of monsters... scream!
@@ -3797,12 +3805,12 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 
 			if (bsa.amount) //there's rare possibility single creature cannot rise desired type
 			{
-				BattleStacksRemoved bsr; //remove body
+				BattleStacksRemoved bsr; bsr.battleId = bId;//remove body
 				bsr.stackIDs.insert(destStack->ID);
 				sendAndApply(&bsr);
 				sendAndApply(&bsa);
 
-				BattleSetStackProperty ssp;
+				BattleSetStackProperty ssp; ssp.battleId = bId;
 				ssp.stackID = ba.stackNumber;
 				ssp.which = BattleSetStackProperty::CASTS; //reduce number of casts
 				ssp.val = -1;
@@ -3810,12 +3818,12 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 				sendAndApply(&ssp);
 			}
 
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 		case Battle::MONSTER_SPELL:
 		{
-			StartAction start_action(ba);
+									  StartAction start_action(ba); start_action.battleId = bId;
 			sendAndApply(&start_action);
 
 			const CStack * stack = gs->curB[bId]->battleGetStackByID(ba.stackNumber);
@@ -3845,12 +3853,12 @@ bool CGameHandler::makeBattleAction(BattleAction &ba, PlayerColor bId)
 
 				handleSpellCasting(bId, spellID, spellLvl, destination, casterSide, stack->owner, nullptr, secHero, 0, ECastingMode::CREATURE_ACTIVE_CASTING, stack);
 			}
-			sendAndApply(&end_action);
+			EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 			break;
 		}
 	}
-	if(ba.stackNumber == gs->curB[bId]->activeStack  ||  battleResult.get()) //active stack has moved or battle has finished
-		battleMadeAction.setn(true);
+	if(ba.stackNumber == gs->curB[bId]->activeStack  ||  battleResult[bId].get()) //active stack has moved or battle has finished
+		battleMadeAction[bId].setn(true);
 	return ok;
 }
 
@@ -4055,12 +4063,12 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		obstacle->casterSpellPower = usedSpellPower;
 		obstacle->uniqueID = obstacleIdToGive++;
 
-		BattleObstaclePlaced bop;
+		BattleObstaclePlaced bop; bop.battleId = bId;
 		bop.obstacle = obstacle;
 		sendAndApply(&bop);
 	};
 
-	BattleSpellCast sc;
+	BattleSpellCast sc; sc.battleId = bId;
 	sc.side = casterSide;
 	sc.id = spellID;
 	sc.skill = spellLvl;
@@ -4145,7 +4153,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		if (spellID == SpellID::DEATH_STARE)
 			vstd::amin(sc.dmgToDisplay, (*attackedCres.begin())->count); //stack is already reduced after attack
 	}
-	StacksInjured si;
+	StacksInjured si; si.battleId = bId;
 
 	//applying effects
 
@@ -4169,7 +4177,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 			if(vstd::contains(sc.resisted, (attackedCre)->ID)) //this creature resisted the spell
 				continue;
 
-			BattleStackAttacked bsa;
+			BattleStackAttacked bsa; bsa.battleId = bId;
 			if ((destination > -1 && (attackedCre)->coversPos(destination)) || (spell->getLevelInfo(spellLvl).range == "X" || mode == ECastingMode::ENCHANTER_CASTING))
 				//display effect only upon primary target of area spell
 				//FIXME: if no stack is attacked, there is no animation and interface freezes
@@ -4204,7 +4212,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 			{
 				stackSpellPower = stack->valOfBonuses(Bonus::CREATURE_ENCHANT_POWER);
 			}
-			SetStackEffect sse;
+			SetStackEffect sse; sse.battleId = bId;
 			Bonus pseudoBonus;
 			pseudoBonus.sid = spellID;
 			pseudoBonus.val = spellLvl;
@@ -4322,7 +4330,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 				{
 					//makeStackDoNothing(gs->curB[bId]->getStack (selectedStack));
 
-					BattleSetActiveStack sas;
+					BattleSetActiveStack sas; sas.battleId = bId;
 
 					//std::vector<const CStack *> hlp;
 					//battleGetStackQueue(hlp, 1, selectedStack); //next after this one
@@ -4337,7 +4345,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 					sendAndApply(&sas);
 
 				}
-				BattleStacksRemoved bsr;
+				BattleStacksRemoved bsr; bsr.battleId = bId;
 				bsr.stackIDs.insert (selectedStack); //somehow it works for teleport?
 				sendAndApply(&bsr);
 			}
@@ -4379,7 +4387,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		break;
 	case SpellID::TELEPORT:
 		{
-			BattleStackMoved bsm;
+			BattleStackMoved bsm; bsm.battleId = bId;
 			bsm.distance = -1;
 			bsm.stack = selectedStack;
 			std::vector<BattleHex> tiles;
@@ -4411,7 +4419,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 					break;
 			}
 
-			BattleStackAdded bsa;
+			BattleStackAdded bsa; bsa.battleId = bId;
 			bsa.creID = creID;
 			bsa.attacker = !(bool)casterSide;
 			bsa.summoned = true;
@@ -4440,7 +4448,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 				break;
 			}
 
-			BattleStackAdded bsa;
+			BattleStackAdded bsa; bsa.battleId = bId;
 			bsa.creID = clonedStack->type->idNumber;
 			bsa.attacker = !(bool)casterSide;
 			bsa.summoned = true;
@@ -4448,7 +4456,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 			bsa.amount = clonedStack->count;
 			sendAndApply (&bsa);
 
-			BattleSetStackProperty ssp;
+			BattleSetStackProperty ssp; ssp.battleId = bId;
 			ssp.stackID = gs->curB[bId]->stacks.back()->ID; //how to get recent stack?
 			ssp.which = BattleSetStackProperty::CLONED; //using enum values
 			ssp.val = 0;
@@ -4460,7 +4468,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		{
 			if(auto obstacleToRemove = battleGetObstacleOnPos(destination, false))
 			{
-				ObstaclesRemoved obr;
+				ObstaclesRemoved obr; obr.battleId = bId;
 				obr.obstacles.insert(obstacleToRemove->uniqueID);
 				sendAndApply(&obr);
 			}
@@ -4472,7 +4480,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		{
 			for(auto & attackedCre : attackedCres)
 			{
-				BattleStackAttacked bsa;
+				BattleStackAttacked bsa; bsa.battleId = bId;
 				bsa.flags |= BattleStackAttacked::EFFECT;
 				bsa.effect = spell->mainEffectAnim; //from config\spell-Info.txt
 				bsa.damageAmount = usedSpellPower * (attackedCre)->valOfBonuses(Bonus::STACK_HEALTH);
@@ -4487,7 +4495,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 		{
 			for(auto & attackedCre : attackedCres) //no immunities
 			{
-				BattleStackAttacked bsa;
+				BattleStackAttacked bsa; bsa.battleId = bId;
 				bsa.flags |= BattleStackAttacked::EFFECT;
 				bsa.effect = spell->mainEffectAnim;
 				bsa.damageAmount = usedSpellPower; //damage times the number of attackers
@@ -4506,7 +4514,7 @@ void CGameHandler::handleSpellCasting(PlayerColor bId, SpellID spellID, int spel
 
 	if (mode == ECastingMode::CREATURE_ACTIVE_CASTING || mode == ECastingMode::ENCHANTER_CASTING) //reduce number of casts remaining
 	{
-		BattleSetStackProperty ssp;
+		BattleSetStackProperty ssp; ssp.battleId = bId;
 		ssp.stackID = stack->ID;
 		ssp.which = BattleSetStackProperty::CASTS;
 		ssp.val = -1;
@@ -4583,22 +4591,22 @@ bool CGameHandler::makeCustomAction(BattleAction &ba, PlayerColor bId)
 					return false;
 				}
 
-				StartAction start_action(ba);
+				StartAction start_action(ba); start_action.battleId = bId;
 				sendAndApply(&start_action); //start spell casting
 
 				handleSpellCasting(bId, SpellID(ba.additionalInfo), skill, ba.destinationTile, ba.side, h->tempOwner,
 									h, secondHero, h->getPrimSkillLevel(PrimarySkill::SPELL_POWER),
 									ECastingMode::HERO_CASTING, nullptr, ba.selectedStack);
 
-				sendAndApply(&end_action);
+				EndAction end_action; end_action.battleId = bId; sendAndApply(&end_action);
 				if( !gs->curB[bId]->battleGetStackByID(gs->curB[bId]->activeStack, true))
 				{
-					battleMadeAction.setn(true);
+					battleMadeAction[bId].setn(true);
 				}
 				checkForBattleEnd(bId);
-				if(battleResult.get())
+				if(battleResult[bId].get())
 				{
-					battleMadeAction.setn(true);
+					battleMadeAction[bId].setn(true);
 					//battle will be ended by startBattle function
 					//endBattle(gs->curB[bId]->tile, gs->curB[bId]->heroes[0], gs->curB[bId]->heroes[1]);
 				}
@@ -4617,7 +4625,7 @@ bool CGameHandler::makeCustomAction(BattleAction &ba, PlayerColor bId)
 
 void CGameHandler::stackTurnTrigger(const CStack * st, PlayerColor bId)
 {
-	BattleTriggerEffect bte;
+	BattleTriggerEffect bte; bte.battleId = bId;
 	bte.stackID = st->ID;
 	bte.effect = -1;
 	bte.val = 0;
@@ -4644,7 +4652,7 @@ void CGameHandler::stackTurnTrigger(const CStack * st, PlayerColor bId)
 			}
 			if (unbind)
 			{
-				BattleSetStackProperty ssp;
+				BattleSetStackProperty ssp; ssp.battleId = bId;
 				ssp.which = BattleSetStackProperty::UNBIND;
 				ssp.stackID = st->ID;
 				sendAndApply(&ssp);
@@ -4726,7 +4734,7 @@ void CGameHandler::stackTurnTrigger(const CStack * st, PlayerColor bId)
 				const CGHeroInstance * enemyHero = gs->curB[bId]->getHero(gs->curB[bId]->theOtherPlayer(st->owner));
 				handleSpellCasting(bId, spellID, spellLeveL, -1, side, st->owner, nullptr, enemyHero, 0, ECastingMode::ENCHANTER_CASTING, st);
 
-				BattleSetStackProperty ssp;
+				BattleSetStackProperty ssp; ssp.battleId = bId;
 				ssp.which = BattleSetStackProperty::ENCHANTER_COUNTER;
 				ssp.absolute = false;
 				ssp.val = bonus->additionalInfo; //increase cooldown counter
@@ -4737,7 +4745,7 @@ void CGameHandler::stackTurnTrigger(const CStack * st, PlayerColor bId)
 		bl = *(st->getBonuses(Selector::type(Bonus::ENCHANTED)));
 		for (auto b : bl)
 		{
-			SetStackEffect sse;
+			SetStackEffect sse; sse.battleId = bId;
 			int val = bl.valOfBonuses (Selector::typeSubtype(b->type, b->subtype));
 			if (val > 3)
 			{
@@ -4800,7 +4808,7 @@ void CGameHandler::handleDamageFromObstacle(const CObstacleInstance &obstacle, c
 		return;
 	}
 
-	BattleStackAttacked bsa;
+	BattleStackAttacked bsa; bsa.battleId = bId;
 	if(effect >= 0)
 	{
 		bsa.flags |= BattleStackAttacked::EFFECT;
@@ -4811,7 +4819,7 @@ void CGameHandler::handleDamageFromObstacle(const CObstacleInstance &obstacle, c
 	bsa.attackerID = -1;
 	curStack->prepareAttacked(bsa, gameState()->getRandomGenerator());
 
-	StacksInjured si;
+	StacksInjured si; si.battleId = bId;
 	si.stacks.push_back(bsa);
 	sendAndApply(&si);
 
@@ -5914,7 +5922,7 @@ void CGameHandler::runBattle(PlayerColor bId)
 
 	//tactic round
 	{
-		while(gs->curB[bId]->tacticDistance && !battleResult.get())
+		while(gs->curB[bId]->tacticDistance && !battleResult[bId].get())
 			boost::this_thread::sleep(boost::posix_time::milliseconds(50));
 	}
 
@@ -5933,7 +5941,7 @@ void CGameHandler::runBattle(PlayerColor bId)
 	}
 
 	//main loop
-	while(!battleResult.get()) //till the end of the battle ;]
+	while(!battleResult[bId].get()) //till the end of the battle ;]
 	{
 		NEW_ROUND;
 		auto obstacles = gs->curB[bId]->obstacles; //we copy container, because we're going to modify it
@@ -5955,14 +5963,14 @@ void CGameHandler::runBattle(PlayerColor bId)
 		}
 		for (auto stack : stacksToRemove)
 		{
-			BattleStacksRemoved bsr;
+			BattleStacksRemoved bsr; bsr.battleId = bId;
 			bsr.stackIDs.insert(stack->ID);
 			sendAndApply(&bsr);
 		}
 		//stack loop
 
 		const CStack *next;
-		while(!battleResult.get() && (next = curB.getNextStack()) && next->willMove())
+		while(!battleResult[bId].get() && (next = curB.getNextStack()) && next->willMove())
 		{
 
 			//check for bad morale => freeze
@@ -6085,7 +6093,7 @@ void CGameHandler::runBattle(PlayerColor bId)
 			bool breakOuter = false;
 			do
 			{//ask interface and wait for answer
-				if(!battleResult.get())
+				if(!battleResult[bId].get())
 				{
 					stackTurnTrigger(next, bId); //various effects
 
@@ -6096,18 +6104,18 @@ void CGameHandler::runBattle(PlayerColor bId)
 					else
 					{
                         logGlobal->traceStream() << "Activating " << next->nodeName();
-						BattleSetActiveStack sas;
+						BattleSetActiveStack sas; sas.battleId = bId;
 						sas.stack = next->ID;
 						sendAndApply(&sas);
-						boost::unique_lock<boost::mutex> lock(battleMadeAction.mx);
-						battleMadeAction.data = false;
+						boost::unique_lock<boost::mutex> lock(battleMadeAction[bId].mx);
+						battleMadeAction[bId].data = false;
 						while (next->alive() && //next is invalid after sacrificing current stack :?
-							(!battleMadeAction.data  &&  !battleResult.get())) //active stack hasn't made its action and battle is still going
-							battleMadeAction.cond.wait(lock);
+							(!battleMadeAction[bId].data  &&  !battleResult[bId].get())) //active stack hasn't made its action and battle is still going
+							battleMadeAction[bId].cond.wait(lock);
 					}
 				}
 
-				if(battleResult.get()) //don't touch it, battle could be finished while waiting got action
+				if(battleResult[bId].get()) //don't touch it, battle could be finished while waiting got action
 				{
 					breakOuter = true;
 					break;
@@ -6131,7 +6139,7 @@ void CGameHandler::runBattle(PlayerColor bId)
 					if(gs->getRandomGenerator().nextInt(23) < nextStackMorale) //this stack hasn't got morale this turn
 
 						{
-							BattleTriggerEffect bte;
+							BattleTriggerEffect bte; bte.battleId = bId;
 							bte.stackID = next->ID;
 							bte.effect = Bonus::MORALE;
 							bte.val = 1;
@@ -6156,15 +6164,15 @@ void CGameHandler::runBattle(PlayerColor bId)
 	endBattle(gs->curB[bId]->tile, gs->curB[bId]->battleGetFightingHero(0), gs->curB[bId]->battleGetFightingHero(1), bId);
 }
 
-bool CGameHandler::makeAutomaticAction(const CStack *stack, BattleAction &ba,PlayerColor color)
+bool CGameHandler::makeAutomaticAction(const CStack *stack, BattleAction &ba, PlayerColor bId)
 {
-	BattleSetActiveStack bsa;
+	BattleSetActiveStack bsa; bsa.battleId = bId;
 	bsa.stack = stack->ID;
 	bsa.askPlayerInterface = false;
 	sendAndApply(&bsa);
 
-	bool ret = makeBattleAction(ba, color);
-	checkForBattleEnd(color);
+	bool ret = makeBattleAction(ba, bId);
+	checkForBattleEnd(bId);
 	return ret;
 }
 
@@ -6227,16 +6235,16 @@ void CGameHandler::giveHeroNewArtifact(const CGHeroInstance *h, const CArtifact 
 
 void CGameHandler::setBattleResult(BattleResult::EResult resultType, int victoriusSide, PlayerColor bId)
 {
-	if(battleResult.get())
+	if(battleResult[bId].get())
 	{
 		complain("There is already set result?");
 		return;
 	}
-	auto br = new BattleResult;
+	auto br = new BattleResult; br->battleId = bId;
 	br->result = resultType;
 	br->winner = victoriusSide; //surrendering side loses
 	gs->curB[bId]->calculateCasualties(br->casualties);
-	battleResult.set(br);
+	battleResult[bId].set(br);
 }
 
 void CGameHandler::commitPackage( CPackForClient *pack )
@@ -6264,7 +6272,7 @@ void CGameHandler::spawnWanderingMonsters(CreatureID creatureID)
 
 void CGameHandler::removeObstacle(const CObstacleInstance &obstacle,PlayerColor bId)
 {
-	ObstaclesRemoved obsRem;
+	ObstaclesRemoved obsRem; obsRem.battleId = bId;
 	obsRem.obstacles.insert(obstacle.uniqueID);
 	sendAndApply(&obsRem);
 }
@@ -6366,9 +6374,9 @@ void CGameHandler::duelFinished()
 
 	int casualtiesPoints = 0;
 	logGlobal->debugStream() << boost::format("Winner side %d\nWinner casualties:")
-		% (int)battleResult.data->winner;
+		% (int)battleResult[bId].data->winner;
 
-	for(auto & elem : battleResult.data->casualties[battleResult.data->winner])
+	for(auto & elem : battleResult[bId].data->casualties[battleResult[bId].data->winner])
 	{
 		const CCreature *c = VLC->creh->creatures[elem.first];
 		logGlobal->debugStream() << boost::format("\t* %d of %s") % elem.second % c->namePl;
@@ -6384,7 +6392,7 @@ void CGameHandler::duelFinished()
 	if(out)
 	{
 		out << boost::format("%s\t%s\t%s\t%d\t%d\t%d\t%s\n") % si->mapname % getName(0) % getName(1)
-			% battleResult.data->winner % battleResult.data->result % casualtiesPoints
+			% battleResult[bId].data->winner % battleResult[bId].data->result % casualtiesPoints
 			% asctime(localtime(&timeNow));
 	}
 	else
@@ -6393,9 +6401,9 @@ void CGameHandler::duelFinished()
 	}
 
 	CSaveFile resultFile("result.vdrst");
-	resultFile << *battleResult.data;
+	resultFile << *battleResult[bId].data;
 
-	BattleResultsApplied resultsApplied;
+	BattleResultsApplied resultsApplied; resultsApplied.battleId = bId;
 	resultsApplied.player1 = finishingBattle->victor;
 	resultsApplied.player2 = finishingBattle->loser;
 	sendAndApply(&resultsApplied);

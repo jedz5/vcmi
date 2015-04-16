@@ -249,7 +249,7 @@ bool CBattleQuery::blocksPack(const CPack *pack) const
 
 void CBattleQuery::onRemoval(CGameHandler *gh, PlayerColor color)
 {
-	gh->battleAfterLevelUp(*result);
+	gh->battleAfterLevelUp(*result,battleId);
 }
 
 void CGarrisonDialogQuery::notifyObjectAboutRemoval(const CObjectVisitQuery &objectVisit) const 

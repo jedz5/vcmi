@@ -1057,7 +1057,7 @@ std::pair<ui32, ui32> CBattleInfoCallback::battleEstimateDamage(const BattleAtta
 			ui32 TDmgRange::* pairElems[] = {&TDmgRange::first, &TDmgRange::second};
 			for (int i=0; i<2; ++i)
 			{
-				BattleStackAttacked bsa;
+				BattleStackAttacked bsa; //TODO¡¡battleId?
 				bsa.damageAmount = ret.*pairElems[i];
 				bai.defender->prepareAttacked(bsa, gs->getRandomGenerator(), bai.defenderCount);
 

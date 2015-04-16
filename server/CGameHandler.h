@@ -113,7 +113,7 @@ public:
 	void prepareAttack(BattleAttack &bat, const CStack *att, const CStack *def, int distance, int targetHex, PlayerColor bId); //distance - number of hexes travelled before attacking
 	void applyBattleEffects(BattleAttack &bat, const CStack *att, const CStack *def, int distance, bool secondary, PlayerColor bId); //damage, drain life & fire shield
 	void checkForBattleEnd(PlayerColor bId);
-	void setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town);
+	void setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town, PlayerColor bId);
 	void setBattleResult(BattleResult::EResult resultType, int victoriusSide, PlayerColor bId);
 	void duelFinished();
 
@@ -277,7 +277,7 @@ public:
 
 	unique_ptr<FinishingBattleHelper> finishingBattle;
 
-	void battleAfterLevelUp(const BattleResult &result);
+	void battleAfterLevelUp(const BattleResult &result, PlayerColor bId);
 
 	void run(bool resume);
 	void newTurn();

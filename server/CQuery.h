@@ -76,6 +76,7 @@ public:
 	std::array<const CArmedInstance *,2> belligerents;
 
 	const BattleInfo *bi;
+	PlayerColor battleId;
 	boost::optional<BattleResult> result;
 
 	CBattleQuery();
