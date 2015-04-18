@@ -179,7 +179,7 @@ bool CCallback::buildBuilding(const CGTownInstance *town, BuildingID buildingID)
 int CBattleCallback::battleMakeAction(BattleAction* action)
 {
 	assert(action->actionType == Battle::HERO_SPELL);
-	MakeCustomAction mca(*action);
+	MakeCustomAction mca(*action); mca.battleId = gs->curBattleId;
 	sendRequest(&mca);
 	return 0;
 }
@@ -448,7 +448,7 @@ CBattleCallback::CBattleCallback(CGameState *GS, boost::optional<PlayerColor> Pl
 bool CBattleCallback::battleMakeTacticAction( BattleAction * action )
 {
 	assert(gs->curBattle->tacticDistance);
-	MakeAction ma;
+	MakeAction ma; ma.battleId = gs->curBattleId;
 	ma.ba = *action;
 	sendRequest(&ma);
 	return true;

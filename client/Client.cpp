@@ -148,7 +148,7 @@ void CClient::waitForMoveAndSend(PlayerColor bId)
 		assert(vstd::contains(battleints, bId));
 		BattleAction ba = battleints[bId]->activeStack(gs->curBattle->battleGetStackByID(gs->curBattle->activeStack, false));
 		logNetwork->traceStream() << "Send battle action to server: " << ba;
-		MakeAction temp_action(ba);
+		MakeAction temp_action(ba); temp_action.battleId = gs->curBattleId;
 		sendRequest(&temp_action, bId);
 		return;
 	}

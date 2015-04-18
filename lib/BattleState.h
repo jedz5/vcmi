@@ -12,7 +12,7 @@
 #include "GameConstants.h"
 #include "CBattleCallback.h"
 #include "int3.h"
-
+#include "CondSh.h"
 /*
  * BattleState.h, part of VCMI engine
  *
@@ -88,7 +88,8 @@ struct DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallb
 	std::vector<CStack*> stacks;
 	std::vector<shared_ptr<CObstacleInstance> > obstacles;
 	SiegeInfo si;
-
+	CondSh<bool> battleMadeAction;
+	CondSh<BattleResult *> battleResult;
 	BFieldType battlefieldType; //like !!BA:B
 	ETerrainType terrainType; //used for some stack nativity checks (not the bonus limiters though that have their own copy)
 

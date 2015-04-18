@@ -241,31 +241,40 @@ bool QueryReply::applyGh( CGameHandler *gh )
 bool MakeAction::applyGh( CGameHandler *gh )
 {
 	const BattleInfo *b = GS(gh)->curB[battleId];
-	if(!b) ERROR_AND_RETURN;
+	if(!b) 
+		ERROR_AND_RETURN;
 	
 	if(b->tacticDistance)
 	{
 		if(ba.actionType != Battle::WALK  &&  ba.actionType != Battle::END_TACTIC_PHASE  
 			&& ba.actionType != Battle::RETREAT && ba.actionType != Battle::SURRENDER)
 			ERROR_AND_RETURN;
-		if(gh->connections[b->sides[b->tacticsSide].color] != c) 
+		PlayerColor owner = b->sides[b->tacticsSide].color;
+		if (gh->connections[owner] != c)
 			ERROR_AND_RETURN;
 	}
-	else if(gh->connections[b->battleGetStackByID(b->activeStack)->owner] != c) 
-		ERROR_AND_RETURN;
-
+	else{
+		PlayerColor owner = b->battleGetStackByID(b->activeStack)->owner;
+		if (gh->connections[owner] != c)
+			return false;// ERROR_AND_RETURN;
+	}
 	return gh->makeBattleAction(ba, battleId);
 }
 
 bool MakeCustomAction::applyGh( CGameHandler *gh )
 {
 	const BattleInfo *b = GS(gh)->curB[player];
-	if(!b) ERROR_AND_RETURN;
-	if(b->tacticDistance) ERROR_AND_RETURN;
+	if(!b) 
+		ERROR_AND_RETURN;
+	if(b->tacticDistance) 
+		ERROR_AND_RETURN;
 	const CStack *active = GS(gh)->curB[player]->battleGetStackByID(GS(gh)->curB[player]->activeStack);
-	if(!active) ERROR_AND_RETURN;
-	if(gh->connections[active->owner] != c) ERROR_AND_RETURN;
-	if(ba.actionType != Battle::HERO_SPELL) ERROR_AND_RETURN;
+	if(!active) 
+		ERROR_AND_RETURN;
+	if (gh->connections[active->owner] != c)
+		return false;// ERROR_AND_RETURN;
+	if(ba.actionType != Battle::HERO_SPELL) 
+		ERROR_AND_RETURN;
 	return gh->makeCustomAction(ba, player);
 }
 
