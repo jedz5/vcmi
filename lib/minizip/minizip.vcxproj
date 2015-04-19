@@ -92,16 +92,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(VCMI_Out)\</OutDir>
+    <OutDir>D:\project\vcmi\Debug</OutDir>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(VCMI_Out)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <IncludePath>$(SolutionDir)..\include;$(IncludePath)</IncludePath>
-    <OutDir>..</OutDir>
-    <LibraryPath>$(SolutionDir)..\libs\$(PlatformShortName);$(VCMI_Out);$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\project\sdl\include;D:\project\boost_1_57_0;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
+    <OutDir>..\..\Debug</OutDir>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'">
     <LibraryPath>$(SolutionDir)..\libs\$(PlatformShortName);$(VCMI_Out);$(LibraryPath)</LibraryPath>
@@ -156,7 +158,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\..\libs;..\..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\libs;..\..；D:\project\vcmi\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

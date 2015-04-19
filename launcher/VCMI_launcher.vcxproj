@@ -44,17 +44,18 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>.\GeneratedFiles;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtANGLE;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>D:\project\vcmi\Debug</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
     <LinkIncremental>
     </LinkIncremental>
-    <IncludePath>.\GeneratedFiles;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtANGLE;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\project\sdl\include;D:\project\boost_1_57_0;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
-    <LibraryPath>D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>..</OutDir>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>..\..\Debug</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -65,7 +66,7 @@
     <Link />
     <Link>
       <AdditionalDependencies>VCMI_lib.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;Qt5Networkd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\libs;..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\libs;..;D:\project\vcmi\Debug</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">

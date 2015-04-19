@@ -71,11 +71,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30128.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\project\vcmi\Debug</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">..</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">..\..\Debug</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(Configuration)\</IntDir>
@@ -94,9 +94,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LibraryWPath />
+    <IncludePath>D:\project\boost_1_57_0;D:\project\sdl\include;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <IncludePath>$(SolutionDir)\..\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\project\sdl\include;D:\project\boost_1_57_0;D:\project\ffmpeg-20150110--win32-dev\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\sdl\libs\x86;D:\project\ffmpeg-20150110--win32-dev\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -104,7 +107,7 @@
       </Optimization>
       <DisableSpecificWarnings>4251;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP4 /Zm150</AdditionalOptions>
       <AdditionalIncludeDirectories>$(FFMPEGDIR)\include;.</AdditionalIncludeDirectories>
@@ -114,7 +117,8 @@
       <ShowProgress>NotSet</ShowProgress>
       <OptimizeReferences>true</OptimizeReferences>
       <Profile>true</Profile>
-      <AdditionalLibraryDirectories>$(FFMPEGDIR)\lib;.;..\..\libs;..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\project\ffmpeg-20150110--win32-dev\lib;D:\project\vcmi\Debug</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(ProjectDir)DPIaware.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
@@ -148,12 +152,12 @@
       <AdditionalIncludeDirectories>$(FFMPEGDIR)\include;.;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;zlib.lib;SDL2.lib;SDL2main.lib;VCMI_lib.lib;SDL2_mixer.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;zlib.lib;SDL.lib;SDLmain.lib;VCMI_lib.lib;SDL_mixer.lib;SDL_image.lib;SDL_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Driver>NotSet</Driver>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <ShowProgress>NotSet</ShowProgress>
-      <AdditionalLibraryDirectories>$(FFMPEGDIR)\lib;.;..\..\libs;..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(FFMPEGDIR)\lib;.;..\..\libs;..;D:\project\vcmi\Debug</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalOptions>/LTCG %(AdditionalOptions)</AdditionalOptions>
