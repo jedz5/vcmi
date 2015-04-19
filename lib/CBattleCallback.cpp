@@ -102,14 +102,14 @@ boost::shared_mutex& CCallbackBase::getGsMutex()
 	return *gs->mx;
 }
 
-bool CCallbackBase::duringBattle() const
+bool CCallbackBase::duringBattle(PlayerColor bId) const
 {
-	return getBattle() != nullptr;
+	return getBattle(bId) != nullptr;
 }
 
-void CCallbackBase::setBattle(const BattleInfo *B)
+void CCallbackBase::setBattle(PlayerColor bId,const BattleInfo *B)
 {
-	battle = B;
+	battle[bId.getNum()] = B;
 }
 
 boost::optional<PlayerColor> CCallbackBase::getPlayerID() const
@@ -117,19 +117,19 @@ boost::optional<PlayerColor> CCallbackBase::getPlayerID() const
 	return player;
 }
 
-ETerrainType CBattleInfoEssentials::battleTerrainType() const
+ETerrainType CBattleInfoEssentials::battleTerrainType(PlayerColor bId) const
 {
 	RETURN_IF_NOT_BATTLE(ETerrainType::WRONG);
 	return getBattle()->terrainType;
 }
 
-BFieldType CBattleInfoEssentials::battleGetBattlefieldType() const
+BFieldType CBattleInfoEssentials::battleGetBattlefieldType(PlayerColor bId) const
 {
 	RETURN_IF_NOT_BATTLE(BFieldType::NONE);
 	return getBattle()->battlefieldType;
 }
 
-std::vector<shared_ptr<const CObstacleInstance> > CBattleInfoEssentials::battleGetAllObstacles(boost::optional<BattlePerspective::BattlePerspective> perspective /*= boost::none*/) const
+std::vector<shared_ptr<const CObstacleInstance> > CBattleInfoEssentials::battleGetAllObstacles(PlayerColor bId,boost::optional<BattlePerspective::BattlePerspective> perspective /*= boost::none*/) const
 {
 	std::vector<shared_ptr<const CObstacleInstance> > ret;
 	RETURN_IF_NOT_BATTLE(ret);
@@ -158,7 +158,7 @@ std::vector<shared_ptr<const CObstacleInstance> > CBattleInfoEssentials::battleG
 	return ret;
 }
 
-bool CBattleInfoEssentials::battleIsObstacleVisibleForSide(const CObstacleInstance & coi, BattlePerspective::BattlePerspective side) const
+bool CBattleInfoEssentials::battleIsObstacleVisibleForSide(PlayerColor bId,const CObstacleInstance & coi, BattlePerspective::BattlePerspective side) const
 {
 	RETURN_IF_NOT_BATTLE(false);
 	return side == BattlePerspective::ALL_KNOWING || coi.visibleForSide(side, battleHasNativeStack(side));
@@ -177,12 +177,12 @@ bool CBattleInfoEssentials::battleHasNativeStack(ui8 side) const
 	return false;
 }
 
-TStacks CBattleInfoEssentials::battleGetAllStacks(bool includeTurrets /*= false*/) const
+TStacks CBattleInfoEssentials::battleGetAllStacks(PlayerColor bId,bool includeTurrets /*= false*/) const
 {
 	return battleGetStacksIf([](const CStack * s){return true;},includeTurrets);
 }
 
-TStacks CBattleInfoEssentials::battleGetStacksIf(TStackFilter predicate, bool includeTurrets /*= false*/) const
+TStacks CBattleInfoEssentials::battleGetStacksIf(PlayerColor bId,TStackFilter predicate, bool includeTurrets /*= false*/) const
 {
 	TStacks ret;
 	RETURN_IF_NOT_BATTLE(ret);

@@ -38,11 +38,11 @@ class CBattleInfoEssentials;
 //Basic class for various callbacks (interfaces called by players to get info about game and so forth)
 class DLL_LINKAGE CCallbackBase
 {
-	const BattleInfo *battle; //battle to which the player is engaged, nullptr if none or not applicable
+	const BattleInfo* battle[8]; //battle to which the player is engaged, nullptr if none or not applicable
 
-	const BattleInfo * getBattle() const
+	const BattleInfo * getBattle(PlayerColor bId) const
 	{
-		return battle;
+		return battle[bId.getNum()];
 	}
 
 protected:
@@ -50,14 +50,24 @@ protected:
 	boost::optional<PlayerColor> player; // not set gives access to all information, otherwise callback provides only information "visible" for player
 
 	CCallbackBase(CGameState *GS, boost::optional<PlayerColor> Player)
-		: battle(nullptr), gs(GS), player(Player)
-	{}
+		: gs(GS), player(Player)
+	{
+		for (const BattleInfo* p : battle)
+		{
+			p = nullptr;
+		}
+	}
 	CCallbackBase()
-		: battle(nullptr), gs(nullptr)
-	{}
+		: gs(nullptr)
+	{
+		for (const BattleInfo* p : battle)
+		{
+			p = nullptr;
+		}
+	}
 
-	void setBattle(const BattleInfo *B);
-	bool duringBattle() const;
+	void setBattle(PlayerColor bId,const BattleInfo *B);
+	bool duringBattle(PlayerColor bId) const;
 
 public:
 	boost::shared_mutex &getGsMutex(); //just return a reference to mutex, does not lock nor anything
@@ -157,18 +167,18 @@ struct DLL_LINKAGE ReachabilityInfo
 class DLL_LINKAGE CBattleInfoEssentials : public virtual CCallbackBase
 {
 protected:
-	bool battleDoWeKnowAbout(ui8 side) const;
+	bool battleDoWeKnowAbout(PlayerColor bId,ui8 side) const;
 public:
 	enum EStackOwnership
 	{
 		ONLY_MINE, ONLY_ENEMY, MINE_AND_ENEMY
 	};
 
-	BattlePerspective::BattlePerspective battleGetMySide() const;
+	BattlePerspective::BattlePerspective battleGetMySide(PlayerColor bId) const;
 
-	ETerrainType battleTerrainType() const;
-	BFieldType battleGetBattlefieldType() const;
-	std::vector<shared_ptr<const CObstacleInstance> > battleGetAllObstacles(boost::optional<BattlePerspective::BattlePerspective> perspective = boost::none) const; //returns all obstacles on the battlefield
+	ETerrainType battleTerrainType(PlayerColor bId) const;
+	BFieldType battleGetBattlefieldType(PlayerColor bId) const;
+	std::vector<shared_ptr<const CObstacleInstance> > battleGetAllObstacles(PlayerColor bId,boost::optional<BattlePerspective::BattlePerspective> perspective = boost::none) const; //returns all obstacles on the battlefield
     
     /** @brief Main method for getting battle stacks
      *
@@ -176,10 +186,10 @@ public:
      * @return filtered stacks
      *
      */                             	
-	TStacks battleGetStacksIf(TStackFilter predicate, bool includeTurrets = false) const;
+	TStacks battleGetStacksIf(PlayerColor bId,TStackFilter predicate, bool includeTurrets = false) const;
 	
-	bool battleHasNativeStack(ui8 side) const;
-	int battleGetMoatDmg() const; //what dmg unit will suffer if ending turn in the moat
+	bool battleHasNativeStack(PlayerColor bId,ui8 side) const;
+	int battleGetMoatDmg(PlayerColor bId) const; //what dmg unit will suffer if ending turn in the moat
 	const CGTownInstance * battleGetDefendedTown() const; //returns defended town if current battle is a siege, nullptr instead
 	const CStack *battleActiveStack() const;
 	si8 battleTacticDist() const; //returns tactic distance in current tactics phase; 0 if not in tactics phase
@@ -187,20 +197,20 @@ public:
 	bool battleCanFlee(PlayerColor player) const;
 	bool battleCanSurrender(PlayerColor player) const;
 	ui8 playerToSide(PlayerColor player) const;
-	ui8 battleGetSiegeLevel() const; //returns 0 when there is no siege, 1 if fort, 2 is citadel, 3 is castle
-	bool battleHasHero(ui8 side) const;
-	int battleCastSpells(ui8 side) const; //how many spells has given side casted
-	const CGHeroInstance * battleGetFightingHero(ui8 side) const; //depracated for players callback, easy to get wrong
-	const CArmedInstance * battleGetArmyObject(ui8 side) const; 
-	InfoAboutHero battleGetHeroInfo(ui8 side) const;
+	ui8 battleGetSiegeLevel(PlayerColor bId) const; //returns 0 when there is no siege, 1 if fort, 2 is citadel, 3 is castle
+	bool battleHasHero(PlayerColor bId,ui8 side) const;
+	int battleCastSpells(PlayerColor bId,ui8 side) const; //how many spells has given side casted
+	const CGHeroInstance * battleGetFightingHero(PlayerColor bId,ui8 side) const; //depracated for players callback, easy to get wrong
+	const CArmedInstance * battleGetArmyObject(PlayerColor bId,ui8 side) const;
+	InfoAboutHero battleGetHeroInfo(PlayerColor bId,ui8 side) const;
 
 	// for determining state of a part of the wall; format: parameter [0] - keep, [1] - bottom tower, [2] - bottom wall,
 	// [3] - below gate, [4] - over gate, [5] - upper wall, [6] - uppert tower, [7] - gate; returned value: 1 - intact, 2 - damaged, 3 - destroyed; 0 - no battle
-	si8 battleGetWallState(int partOfWall) const;
+	si8 battleGetWallState(PlayerColor bId,int partOfWall) const;
 
 	//helpers
 	///returns all stacks, alive or dead or undead or mechanical :)
-	TStacks battleGetAllStacks(bool includeTurrets = false) const;
+	TStacks battleGetAllStacks(PlayerColor bId,bool includeTurrets = false) const;
 	
 	///returns all alive stacks excluding turrets
 	TStacks battleAliveStacks() const;
