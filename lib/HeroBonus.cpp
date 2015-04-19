@@ -20,6 +20,7 @@
 #include "BattleState.h"
 #include "CArtHandler.h"
 #include "GameConstants.h"
+#include <boost\assign\list_of.hpp>
 
 #define FOREACH_PARENT(pname) 	TNodes lparents; getParents(lparents); for(CBonusSystemNode *pname : lparents)
 #define FOREACH_CPARENT(pname) 	TCNodes lparents; getParents(lparents); for(const CBonusSystemNode *pname : lparents)
@@ -38,46 +39,38 @@
 	const std::map<std::string, Bonus::BonusSource> bonusSourceMap = { BONUS_SOURCE_LIST };
 #undef BONUS_SOURCE
 
-#define BONUS_ITEM(x) { #x, Bonus::x },
+#define BONUS_ITEM(x) ( #x, Bonus::x )
 
-const std::map<std::string, ui16> bonusDurationMap = 
-{
-	BONUS_ITEM(PERMANENT)
-	BONUS_ITEM(ONE_BATTLE)
-	BONUS_ITEM(ONE_DAY)
-	BONUS_ITEM(ONE_WEEK)
-	BONUS_ITEM(N_TURNS)
-	BONUS_ITEM(N_DAYS)
-	BONUS_ITEM(UNITL_BEING_ATTACKED)
-	BONUS_ITEM(UNTIL_ATTACK)
-	BONUS_ITEM(STACK_GETS_TURN)
-	BONUS_ITEM(COMMANDER_KILLED)
-};
+	const std::map<std::string, ui16> bonusDurationMap = boost::assign::map_list_of
+		BONUS_ITEM(PERMANENT)
+		BONUS_ITEM(ONE_BATTLE)
+		BONUS_ITEM(ONE_DAY)
+		BONUS_ITEM(ONE_WEEK)
+		BONUS_ITEM(N_TURNS)
+		BONUS_ITEM(N_DAYS)
+		BONUS_ITEM(UNITL_BEING_ATTACKED)
+		BONUS_ITEM(UNTIL_ATTACK)
+		BONUS_ITEM(STACK_GETS_TURN)
+		BONUS_ITEM(COMMANDER_KILLED);
 
-const std::map<std::string, Bonus::LimitEffect> bonusLimitEffect = 
-{
-	BONUS_ITEM(NO_LIMIT)
-	BONUS_ITEM(ONLY_DISTANCE_FIGHT)
-	BONUS_ITEM(ONLY_MELEE_FIGHT)
-	BONUS_ITEM(ONLY_ENEMY_ARMY)
-};
+	const std::map<std::string, Bonus::LimitEffect> bonusLimitEffect = boost::assign::map_list_of
+		BONUS_ITEM(NO_LIMIT)
+		BONUS_ITEM(ONLY_DISTANCE_FIGHT)
+		BONUS_ITEM(ONLY_MELEE_FIGHT)
+		BONUS_ITEM(ONLY_ENEMY_ARMY);
 
-const std::map<std::string, TLimiterPtr> bonusLimiterMap =
-{
-	{"SHOOTER_ONLY", make_shared<HasAnotherBonusLimiter>(Bonus::SHOOTER)},
-	{"DRAGON_NATURE", make_shared<HasAnotherBonusLimiter>(Bonus::DRAGON_NATURE)},
-	{"IS_UNDEAD", make_shared<HasAnotherBonusLimiter>(Bonus::UNDEAD)}
-};
+	const std::map<std::string, TLimiterPtr> bonusLimiterMap = boost::assign::map_list_of
+		("SHOOTER_ONLY", make_shared<HasAnotherBonusLimiter>(Bonus::SHOOTER))
+		("DRAGON_NATURE", make_shared<HasAnotherBonusLimiter>(Bonus::DRAGON_NATURE))
+		("IS_UNDEAD", make_shared<HasAnotherBonusLimiter>(Bonus::UNDEAD));
 
-const std::map<std::string, TPropagatorPtr> bonusPropagatorMap =
-{
-	{"BATTLE_WIDE", make_shared<CPropagatorNodeType>(CBonusSystemNode::BATTLE)},
-	{"VISITED_TOWN_AND_VISITOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::TOWN_AND_VISITOR)},
-	{"PLAYER_PROPAGATOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::PLAYER)},
-	{"HERO", make_shared<CPropagatorNodeType>(CBonusSystemNode::HERO)},
-	{"TEAM_PROPAGATOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::TEAM)}, //untested
-	{"GLOBAL_EFFECT", make_shared<CPropagatorNodeType>(CBonusSystemNode::GLOBAL_EFFECTS)}
-}; //untested
+const std::map<std::string, TPropagatorPtr> bonusPropagatorMap = boost::assign::map_list_of
+("BATTLE_WIDE", make_shared<CPropagatorNodeType>(CBonusSystemNode::BATTLE))
+("VISITED_TOWN_AND_VISITOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::TOWN_AND_VISITOR))
+("PLAYER_PROPAGATOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::PLAYER))
+("HERO", make_shared<CPropagatorNodeType>(CBonusSystemNode::HERO))
+("TEAM_PROPAGATOR", make_shared<CPropagatorNodeType>(CBonusSystemNode::TEAM)) //untested
+("GLOBAL_EFFECT", make_shared<CPropagatorNodeType>(CBonusSystemNode::GLOBAL_EFFECTS)); //untested
 
 
 #define BONUS_LOG_LINE(x) logBonus->traceStream() << x
