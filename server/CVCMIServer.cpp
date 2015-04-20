@@ -377,17 +377,70 @@ void CVCMIServer::newPregame()
 		delete cps;
 		return;
 	}
+	void init(StartInfo* si,CGameState* gst){
+		if (si->seedToBeUsed == 0)
+		{
+			si->seedToBeUsed = std::time(nullptr);
+		}
 
+		logGlobal->infoStream() << "Gamestate created!";
+		gst->init(si);
+		logGlobal->infoStream() << "Gamestate initialized!";
+
+		// reset seed, so that clients can't predict any following random values
+		gst->getRandomGenerator().resetSeed();
+
+		
+	}
 	if(cps->state == CPregameServer::ENDING_AND_STARTING_GAME)
 	{
-		CGameHandler gh;
-		gh.conns = cps->connections;
-		gh.init(cps->curStartInfo);
+		CGameState *gs = new CGameState();
+		init(cps->curStartInfo,gs);
+		CGameHandler* firstGh;
+		for (CConnection *c : cps->connections){
+			
+			CGameHandler gh;
+			if (c == firstConnection)
+			{
+				firstGh = &gh;
+			}
+			gh.player = PlayerColor(c->connectionID);//TODO
+			gh.conns.insert(c);
+			gh.init(gs);
+			c->addStdVecItems(gs);
+			gh.run(false);
+		}
+		for (auto & elem : gs->players)
+		{
+			firstGh->states.addPlayer(elem.first);
+		}
+		while (!end2)
+		{
+			firstGh->newTurn();
+			for (; it != playerTurnOrder.end(); it++)
+			{
+				auto playerColor = *it;
+				if (gs->players[playerColor].status == EPlayerStatus::INGAME)
+				{
+					firstGh->states.setFlag(playerColor, &PlayerStatus::makingTurn, true);
 
-		for(CConnection *c : gh.conns)
-			c->addStdVecItems(gh.gs);
+					YourTurn yt;
+					yt.player = playerColor;
+					firstGh->applyAndSend(&yt);
+				}
+			}
+			firstGh->checkVictoryLossConditionsForAll();
 
-		gh.run(false);
+			//wait till turn is done
+			boost::unique_lock<boost::mutex> lock(states.mx);
+			while (states.players.at(playerColor).makingTurn && !end2) //TODO
+			{
+				static time_duration p = milliseconds(200);
+				states.cv.timed_wait(lock, p);
+			}
+		}
+		while (conns.size() && (*conns.begin())->isOpen())
+			boost::this_thread::sleep(boost::posix_time::milliseconds(5)); //give time client to close socket
 	}
 }
 

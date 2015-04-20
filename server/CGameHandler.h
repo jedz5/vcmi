@@ -90,7 +90,7 @@ public:
 
 	CVCMIServer *s;
 	std::map<PlayerColor, CConnection*> connections; //player color -> connection to client with interface of that player
-	PlayerStatuses states; //player color -> player state
+	static PlayerStatuses states; //player color -> player state
 	std::set<CConnection*> conns;
 
 	//queries stuff

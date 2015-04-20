@@ -1096,28 +1096,12 @@ CGameHandler::~CGameHandler(void)
 	delete spellEnv;
 	delete applier;
 	applier = nullptr;
-	delete gs;
+	//delete gs;
 }
 
-void CGameHandler::init(StartInfo *si)
+void CGameHandler::init(CGameState *gst)
 {
-	if(si->seedToBeUsed == 0)
-	{
-		si->seedToBeUsed = std::time(nullptr);
-	}
-
-	gs = new CGameState();
-    logGlobal->infoStream() << "Gamestate created!";
-	gs->init(si);
-    logGlobal->infoStream() << "Gamestate initialized!";
-
-	// reset seed, so that clients can't predict any following random values
-	gs->getRandomGenerator().resetSeed();
-
-	for(auto & elem : gs->players)
-	{
-		states.addPlayer(elem.first);
-	}
+	gs = gst;
 }
 
 static bool evntCmp(const CMapEvent &a, const CMapEvent &b)
@@ -1530,46 +1514,8 @@ void CGameHandler::run(bool resume)
 
 	auto playerTurnOrder = generatePlayerTurnOrder();
 
-	while(!end2)
-	{
-		if(!resume) newTurn();
-
-		std::list<PlayerColor>::iterator it;
-		if(resume)
-		{
-			it = std::find(playerTurnOrder.begin(), playerTurnOrder.end(), gs->currentPlayer);
-		}
-		else
-		{
-			it = playerTurnOrder.begin();
-		}
-
-		resume = false;
-		for(; it != playerTurnOrder.end(); it++)
-		{
-			auto playerColor = *it;
-			if(gs->players[playerColor].status == EPlayerStatus::INGAME)
-			{
-				states.setFlag(playerColor, &PlayerStatus::makingTurn, true);
-
-				YourTurn yt;
-				yt.player = playerColor;
-				applyAndSend(&yt);
-
-				checkVictoryLossConditionsForAll();
-
-				//wait till turn is done
-				boost::unique_lock<boost::mutex> lock(states.mx);
-				while(states.players.at(playerColor).makingTurn && !end2)
-				{
-					static time_duration p = milliseconds(200);
-					states.cv.timed_wait(lock,p);
-				}
-			}
-		}
-	}
-	while(conns.size() && (*conns.begin())->isOpen())
-		boost::this_thread::sleep(boost::posix_time::milliseconds(5)); //give time client to close socket
+	
+		
 }
 
 std::list<PlayerColor> CGameHandler::generatePlayerTurnOrder() const
