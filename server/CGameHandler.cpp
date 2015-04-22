@@ -1615,7 +1615,7 @@ bool CGameHandler::moveHero( ObjectInstanceID hid, int3 dst, ui8 teleporting, bo
 {
 	const CGHeroInstance *h = getHero(hid);
 
-	if(!h  || (asker != PlayerColor::NEUTRAL && (teleporting  ||   h->getOwner() != gs->currentPlayer)) //not turn of that hero or player can't simply teleport hero (at least not with this function)
+	if(!h  || (asker != PlayerColor::NEUTRAL && (teleporting  /*||   h->getOwner() != gs->currentPlayer*/)) //not turn of that hero or player can't simply teleport hero (at least not with this function)
 	  )
 	{
         logGlobal->errorStream() << "Illegal call to move hero!";
@@ -1786,7 +1786,7 @@ bool CGameHandler::teleportHero(ObjectInstanceID hid, ObjectInstanceID dstid, ui
 	const CGHeroInstance *h = getHero(hid);
 	const CGTownInstance *t = getTown(dstid);
 
-	if ( !h || !t || h->getOwner() != gs->currentPlayer )
+	if ( !h || !t /*|| h->getOwner() != gs->currentPlayer*/ )
         logGlobal->errorStream()<<"Invalid call to teleportHero!";
 
 	const CGTownInstance *from = h->visitedTown;
@@ -2345,7 +2345,7 @@ bool CGameHandler::arrangeStacks( ObjectInstanceID id1, ObjectInstanceID id2, ui
 	return true;
 }
 
-PlayerColor CGameHandler::getPlayerAt( CConnection *c ) const
+/*PlayerColor CGameHandler::getPlayerAt( CConnection *c ) const
 {
 	std::set<PlayerColor> all;
 	for(auto i=connections.cbegin(); i!=connections.cend(); i++)
@@ -2367,7 +2367,7 @@ PlayerColor CGameHandler::getPlayerAt( CConnection *c ) const
 				return PlayerColor::CANNOT_DETERMINE; //cannot say which player is it
 		}
 	}
-}
+}*/
 
 bool CGameHandler::disbandCreature( ObjectInstanceID id, SlotID pos )
 {
@@ -4714,13 +4714,13 @@ void CGameHandler::checkVictoryLossConditionsForPlayer(PlayerColor player)
 			checkVictoryLossConditions(playerColors);
 		}
 
-		auto playerInfo = gs->getPlayer(gs->currentPlayer, false);
+		/*auto playerInfo = gs->getPlayer(gs->currentPlayer, false);
 		// If we are called before the actual game start, there might be no current player
 		if(playerInfo && playerInfo->status != EPlayerStatus::INGAME)
 		{
 			// If player making turn has lost his turn must be over as well
 			states.setFlag(gs->currentPlayer, &PlayerStatus::makingTurn, false);
-		}
+		}*/
 	}
 }
 

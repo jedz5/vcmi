@@ -9,7 +9,7 @@
 #include "../lib/BattleAction.h"
 
 
-#define PLAYER_OWNS(id) (gh->getPlayerAt(c)==gh->getOwner(id))
+#define PLAYER_OWNS(id) (true)//(gh->getPlayerAt(c)==gh->getOwner(id))
 #define ERROR_AND_RETURN												\
 	do { if(c) {														\
 			SystemMessage temp_message("You are not allowed to perform this action!"); \
@@ -19,13 +19,13 @@
         logNetwork->errorStream()<<"Player is not allowed to perform this action!";		\
 		return false;} while(0)
 
-#define WRONG_PLAYER_MSG(expectedplayer) do {std::ostringstream oss;\
+#define WRONG_PLAYER_MSG(expectedplayer) /*do {std::ostringstream oss;\
 			oss << "You were identified as player " << gh->getPlayerAt(c) << " while expecting " << expectedplayer;\
             logNetwork->errorStream() << oss.str(); \
-			if(c) { SystemMessage temp_message(oss.str()); boost::unique_lock<boost::mutex> lock(*c->wmx); *c << &temp_message; } } while(0)
+			if(c) { SystemMessage temp_message(oss.str()); boost::unique_lock<boost::mutex> lock(*c->wmx); *c << &temp_message; } } while(0)*/
 
 #define ERROR_IF_NOT_OWNS(id)	do{if(!PLAYER_OWNS(id)){WRONG_PLAYER_MSG(gh->getOwner(id)); ERROR_AND_RETURN; }}while(0)
-#define ERROR_IF_NOT(player)	do{if(player != gh->getPlayerAt(c)){WRONG_PLAYER_MSG(player); ERROR_AND_RETURN; }}while(0)
+#define ERROR_IF_NOT(player)	//do{if(player != gh->getPlayerAt(c)){WRONG_PLAYER_MSG(player); ERROR_AND_RETURN; }}while(0)
 #define COMPLAIN_AND_RETURN(txt)	{ gh->complain(txt); ERROR_AND_RETURN; }
 
 /*
@@ -65,12 +65,12 @@ bool CloseServer::applyGh( CGameHandler *gh )
 
 bool EndTurn::applyGh( CGameHandler *gh )
 {
-	PlayerColor player = GS(gh)->currentPlayer;
+	//PlayerColor player = GS(gh)->currentPlayer;
 	ERROR_IF_NOT(player);
 	if(gh->queries.topQuery(player))
 		COMPLAIN_AND_RETURN("Cannot end turn before resolving queries!");
 
-	gh->states.setFlag(GS(gh)->currentPlayer,&PlayerStatus::makingTurn,false);
+	gh->states.setFlag(player, &PlayerStatus::makingTurn, false);
 	return true;
 }
 
@@ -83,20 +83,20 @@ bool DismissHero::applyGh( CGameHandler *gh )
 bool MoveHero::applyGh( CGameHandler *gh )
 {
 	ERROR_IF_NOT_OWNS(hid);
-	return gh->moveHero(hid,dest,0,transit,gh->getPlayerAt(c));
+	return gh->moveHero(hid,dest,0,transit,player);
 }
 
 bool CastleTeleportHero::applyGh( CGameHandler *gh )
 {
 	ERROR_IF_NOT_OWNS(hid);
 	
-	return gh->teleportHero(hid,dest,source,gh->getPlayerAt(c));
+	return gh->teleportHero(hid, dest, source, player);
 }
 
 bool ArrangeStacks::applyGh( CGameHandler *gh )
 {
 	//checks for owning in the gh func
-	return gh->arrangeStacks(id1,id2,what,p1,p2,val,gh->getPlayerAt(c));
+	return gh->arrangeStacks(id1, id2, what, p1, p2, val, player);
 }
 
 bool DisbandCreature::applyGh( CGameHandler *gh )
@@ -283,7 +283,7 @@ bool CastAdvSpell::applyGh( CGameHandler *gh )
 bool PlayerMessage::applyGh( CGameHandler *gh )
 {
 	ERROR_IF_NOT(player);
-	if(gh->getPlayerAt(c) != player) ERROR_AND_RETURN;
+	//if(gh->getPlayerAt(c) != player) ERROR_AND_RETURN;
 	gh->playerMessage(player,text, currObj);
 	return true;
 }

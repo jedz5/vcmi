@@ -344,8 +344,8 @@ public:
 	void init(StartInfo * si);
 
 	ConstTransitivePtr<StartInfo> scenarioOps, initialOpts; //second one is a copy of settings received from pregame (not randomized)
-	PlayerColor currentPlayer; //ID of player currently having turn
-	ConstTransitivePtr<BattleInfo> curB; //current battle
+	//PlayerColor currentPlayer; //ID of player currently having turn
+	std::map<PlayerColor,ConstTransitivePtr<BattleInfo>> curB; //current battle
 	ui32 day; //total number of days in game
 	ConstTransitivePtr<CMap> map;
 	std::map<PlayerColor, PlayerState> players;
@@ -388,7 +388,7 @@ public:
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & scenarioOps & initialOpts & currentPlayer & day & map & players & teams & hpool & globalEffects & rand;
+		h & scenarioOps & initialOpts /*& currentPlayer*/ & day & map & players & teams & hpool & globalEffects & rand;
 		BONUS_TREE_DESERIALIZATION_FIX
 	}
 

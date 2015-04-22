@@ -97,7 +97,7 @@ public:
 	boost::recursive_mutex gsm;
 	ui32 QID;
 	Queries queries;
-
+	PlayerColor handlerID;
 	//TODO get rid of cfunctionlist (or similar) and use serialziable callback structure
 	std::map<ui32, CFunctionList<void(ui32)> > callbacks; //query id => callback function - for selection and yes/no dialogs
 
@@ -199,7 +199,7 @@ public:
 
 	void init(StartInfo *si);
 	void handleConnection(std::set<PlayerColor> players, CConnection &c);
-	PlayerColor getPlayerAt(CConnection *c) const;
+	//PlayerColor getPlayerAt(CConnection *c) const;
 
 	void playerMessage( PlayerColor player, const std::string &message, ObjectInstanceID currObj);
 	bool makeBattleAction(BattleAction &ba);

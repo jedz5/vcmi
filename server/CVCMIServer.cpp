@@ -404,7 +404,7 @@ void CVCMIServer::newPregame()
 			{
 				firstGh = &gh;
 			}
-			gh.player = PlayerColor(c->connectionID);//TODO
+			gh.handlerID = PlayerColor(c->connectionID);//TODO
 			gh.conns.insert(c);
 			gh.init(gs);
 			c->addStdVecItems(gs);

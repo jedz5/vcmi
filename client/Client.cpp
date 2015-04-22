@@ -436,7 +436,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	for(auto & elem : gs->scenarioOps->playerInfos)//initializing interfaces for players
 	{
 		PlayerColor color = elem.first;
-		gs->currentPlayer = color;
+		//gs->currentPlayer = color;
 		if(!vstd::contains(myPlayers, color))
 			continue;
 
