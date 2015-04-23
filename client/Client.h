@@ -127,6 +127,7 @@ public:
 	std::map<PlayerColor,std::vector<shared_ptr<IGameEventsReceiver>>> additionalPlayerInts;
 	std::map<PlayerColor,std::vector<shared_ptr<IBattleEventsReceiver>>> additionalBattleInts;
 
+	
 	bool hotSeat;
 	CConnection *serv;
 
@@ -166,7 +167,7 @@ public:
 	boost::thread *connectionHandler; //thread running run() method
 
 	//////////////////////////////////////////////////////////////////////////
-	virtual PlayerColor getLocalPlayer() const override;
+	//virtual PlayerColor getLocalPlayer() const override;
 
 	//////////////////////////////////////////////////////////////////////////
 	//not working yet, will be implement somewhen later with support for local-sim-based gameplay
@@ -230,7 +231,7 @@ public:
 	friend class CBattleCallback; //handling players actions
 
 	int sendRequest(const CPack *request, PlayerColor player); //returns ID given to that request
-
+	//int sendRequest(const CbattleForServer *request, PlayerColor player); //returns ID given to that request
 	void handlePack( CPack * pack ); //applies the given pack and deletes it
 	void battleStarted(const BattleInfo * info);
 	void commenceTacticPhaseForInt(shared_ptr<CBattleGameInterface> battleInt); //will be called as separate thread

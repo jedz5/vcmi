@@ -1073,21 +1073,21 @@ DLL_LINKAGE void CommanderLevelUp::applyGs (CGameState *gs)
 
 DLL_LINKAGE void BattleStart::applyGs( CGameState *gs )
 {
-	gs->curB = info;
-	gs->curB->localInit();
+	gs->curB[handlerID] = info;
+	gs->curB[handlerID]->localInit();
 }
 
 DLL_LINKAGE void BattleNextRound::applyGs( CGameState *gs )
 {
 	for (int i = 0; i < 2; ++i)
 	{
-		gs->curB->sides[i].castSpellsCount = 0;
-		vstd::amax(--gs->curB->sides[i].enchanterCounter, 0);
+		gs->curB[handlerID]->sides[i].castSpellsCount = 0;
+		vstd::amax(--gs->curB[handlerID]->sides[i].enchanterCounter, 0);
 	}
 
-	gs->curB->round = round;
+	gs->curB[handlerID]->round = round;
 
-	for(CStack *s : gs->curB->stacks)
+	for(CStack *s : gs->curB[handlerID]->stacks)
 	{
 		s->state -= EBattleStackState::DEFENDING;
 		s->state -= EBattleStackState::WAITING;
@@ -1100,14 +1100,14 @@ DLL_LINKAGE void BattleNextRound::applyGs( CGameState *gs )
 		s->battleTurnPassed();
 	}
 
-	for(auto &obst : gs->curB->obstacles)
+	for(auto &obst : gs->curB[handlerID]->obstacles)
 		obst->battleTurnPassed();
 }
 
 DLL_LINKAGE void BattleSetActiveStack::applyGs( CGameState *gs )
 {
-	gs->curB->activeStack = stack;
-	CStack *st = gs->curB->getStack(stack);
+	gs->curB[handlerID]->activeStack = stack;
+	CStack *st = gs->curB[handlerID]->getStack(stack);
 
 	//remove bonuses that last until when stack gets new turn
 	st->getBonusList().remove_if(Bonus::UntilGetsTurn);
@@ -1118,7 +1118,7 @@ DLL_LINKAGE void BattleSetActiveStack::applyGs( CGameState *gs )
 
 DLL_LINKAGE void BattleTriggerEffect::applyGs( CGameState *gs )
 {
-	CStack *st = gs->curB->getStack(stackID);
+	CStack *st = gs->curB[handlerID]->getStack(stackID);
 	switch (effect)
 	{
 		case Bonus::HP_REGENERATION:
@@ -1153,12 +1153,12 @@ DLL_LINKAGE void BattleTriggerEffect::applyGs( CGameState *gs )
 
 DLL_LINKAGE void BattleObstaclePlaced::applyGs( CGameState *gs )
 {
-	gs->curB->obstacles.push_back(obstacle);
+	gs->curB[handlerID]->obstacles.push_back(obstacle);
 }
 
 void BattleResult::applyGs( CGameState *gs )
 {
-	for (CStack *s : gs->curB->stacks)
+	for (CStack *s : gs->curB[handlerID]->stacks)
 	{
 		if (s->base && s->base->armyObj && vstd::contains(s->state, EBattleStackState::SUMMONED))
 		{
@@ -1167,13 +1167,13 @@ void BattleResult::applyGs( CGameState *gs )
 			const_cast<CArmedInstance*>(s->base->armyObj)->eraseStack(s->slot);
 		}
 	}
-	for (auto & elem : gs->curB->stacks)
+	for (auto & elem : gs->curB[handlerID]->stacks)
 		delete elem;
 
 
 	for(int i = 0; i < 2; ++i)
 	{
-		if(auto h = gs->curB->battleGetFightingHero(i))
+		if(auto h = gs->curB[handlerID]->battleGetFightingHero(i))
 		{
 			h->popBonuses(Bonus::OneBattle); 	//remove any "until next battle" bonuses
 			if (h->commander && h->commander->alive)
@@ -1190,25 +1190,25 @@ void BattleResult::applyGs( CGameState *gs )
 	{
 		for(int i = 0; i < 2; i++)
 			if(exp[i])
-				gs->curB->battleGetArmyObject(i)->giveStackExp(exp[i]);
+				gs->curB[handlerID]->battleGetArmyObject(i)->giveStackExp(exp[i]);
 
 		CBonusSystemNode::treeHasChanged();
 	}
 
 	for(int i = 0; i < 2; i++)
-		gs->curB->battleGetArmyObject(i)->battle = nullptr;
+		gs->curB[handlerID]->battleGetArmyObject(i)->battle = nullptr;
 
-	gs->curB.dellNull();
+	gs->curB[handlerID].dellNull();
 }
 
 void BattleStackMoved::applyGs( CGameState *gs )
 {
-	CStack *s = gs->curB->getStack(stack);
+	CStack *s = gs->curB[handlerID]->getStack(stack);
 	assert(s);
 	BattleHex dest = tilesToMove.back();
 
 	//if unit ended movement on quicksands that were created by enemy, that quicksand patch becomes visible for owner
-	for(auto &oi : gs->curB->obstacles)
+	for(auto &oi : gs->curB[handlerID]->obstacles)
 	{
 		if(oi->obstacleType == CObstacleInstance::QUICKSAND
 		&& vstd::contains(oi->getAffectedTiles(), tilesToMove.back()))
@@ -1224,7 +1224,7 @@ void BattleStackMoved::applyGs( CGameState *gs )
 
 DLL_LINKAGE void BattleStackAttacked::applyGs( CGameState *gs )
 {
-	CStack * at = gs->curB->getStack(stackAttacked);
+	CStack * at = gs->curB[handlerID]->getStack(stackAttacked);
 	assert(at);
 	at->count = newAmount;
 	at->firstHPleft = newHP;
@@ -1253,7 +1253,7 @@ DLL_LINKAGE void BattleStackAttacked::applyGs( CGameState *gs )
 
 DLL_LINKAGE void BattleAttack::applyGs( CGameState *gs )
 {
-	CStack *attacker = gs->curB->getStack(stackAttacking);
+	CStack *attacker = gs->curB[handlerID]->getStack(stackAttacking);
 	if(counter())
 		attacker->counterAttacks--;
 
@@ -1261,7 +1261,7 @@ DLL_LINKAGE void BattleAttack::applyGs( CGameState *gs )
 	{
 		//don't remove ammo if we have a working ammo cart
 		bool hasAmmoCart = false;
-		for(const CStack * st : gs->curB->stacks)
+		for(const CStack * st : gs->curB[handlerID]->stacks)
 		{
 			if(st->owner == attacker->owner && st->getCreature()->idNumber == CreatureID::AMMO_CART && st->alive())
 			{
@@ -1282,7 +1282,7 @@ DLL_LINKAGE void BattleAttack::applyGs( CGameState *gs )
 
 	for(auto & elem : bsa)
 	{
-		CStack * stack = gs->curB->getStack(elem.stackAttacked, false);
+		CStack * stack = gs->curB[handlerID]->getStack(elem.stackAttacked, false);
 		if (stack) //cloned stack is already gone
 			stack->getBonusList().remove_if(Bonus::UntilBeingAttacked);
 	}
@@ -1290,15 +1290,15 @@ DLL_LINKAGE void BattleAttack::applyGs( CGameState *gs )
 
 DLL_LINKAGE void StartAction::applyGs( CGameState *gs )
 {
-	CStack *st = gs->curB->getStack(ba.stackNumber);
+	CStack *st = gs->curB[handlerID]->getStack(ba.stackNumber);
 
 	if(ba.actionType == Battle::END_TACTIC_PHASE)
 	{
-		gs->curB->tacticDistance = 0;
+		gs->curB[handlerID]->tacticDistance = 0;
 		return;
 	}
 
-	if(gs->curB->tacticDistance)
+	if(gs->curB[handlerID]->tacticDistance)
 	{
 		// moves in tactics phase do not affect creature status
 		// (tactics stack queue is managed by client)
@@ -1311,7 +1311,7 @@ DLL_LINKAGE void StartAction::applyGs( CGameState *gs )
 	}
 	else
 	{
-		gs->curB->sides[ba.side].usedSpellsHistory.push_back(SpellID(ba.additionalInfo).toSpell());
+		gs->curB[handlerID]->sides[ba.side].usedSpellsHistory.push_back(SpellID(ba.additionalInfo).toSpell());
 	}
 
 	switch(ba.actionType)
@@ -1335,11 +1335,11 @@ DLL_LINKAGE void StartAction::applyGs( CGameState *gs )
 
 DLL_LINKAGE void BattleSpellCast::applyGs( CGameState *gs )
 {
-	assert(gs->curB);
+	assert(gs->curB[handlerID]);
 
 	const CSpell * spell = SpellID(id).toSpell();
 
-	spell->applyBattle(gs->curB, this);
+	spell->applyBattle(gs->curB[handlerID], this);
 }
 
 void actualizeEffect(CStack * s, const std::vector<Bonus> & ef)
@@ -1380,7 +1380,7 @@ DLL_LINKAGE void SetStackEffect::applyGs( CGameState *gs )
 
 	for(ui32 id : stacks)
 	{
-		CStack *s = gs->curB->getStack(id);
+		CStack *s = gs->curB[handlerID]->getStack(id);
 		if(s)
 		{
 			if(spellid == SpellID::DISRUPTING_RAY || spellid == SpellID::ACID_BREATH_DEFENSE || !s->hasBonus(Selector::source(Bonus::SPELL_EFFECT, spellid)))//disrupting ray or acid breath or not on the list - just add
@@ -1402,7 +1402,7 @@ DLL_LINKAGE void SetStackEffect::applyGs( CGameState *gs )
 	typedef std::pair<ui32, Bonus> p;
 	for(p para : uniqueBonuses)
 	{
-		CStack *s = gs->curB->getStack(para.first);
+		CStack *s = gs->curB[handlerID]->getStack(para.first);
 		if (s)
 		{
 			if (!s->hasBonus(Selector::source(Bonus::SPELL_EFFECT, spellid).And(Selector::typeSubtype(para.second.type, para.second.subtype))))
@@ -1425,10 +1425,10 @@ DLL_LINKAGE void StacksHealedOrResurrected::applyGs( CGameState *gs )
 {
 	for(auto & elem : healedStacks)
 	{
-		CStack * changedStack = gs->curB->getStack(elem.stackID, false);
+		CStack * changedStack = gs->curB[handlerID]->getStack(elem.stackID, false);
 
 		//checking if we resurrect a stack that is under a living stack
-		auto accessibility = gs->curB->getAccesibility();
+		auto accessibility = gs->curB[handlerID]->getAccesibility();
 
 		if(!changedStack->alive() && !accessibility.accessible(changedStack->position, changedStack))
 		{
@@ -1487,15 +1487,15 @@ DLL_LINKAGE void StacksHealedOrResurrected::applyGs( CGameState *gs )
 
 DLL_LINKAGE void ObstaclesRemoved::applyGs( CGameState *gs )
 {
-	if(gs->curB) //if there is a battle
+	if(gs->curB[handlerID]) //if there is a battle
 	{
 		for(const si32 rem_obst :obstacles)
 		{
-			for(int i=0; i<gs->curB->obstacles.size(); ++i)
+			for(int i=0; i<gs->curB[handlerID]->obstacles.size(); ++i)
 			{
-				if(gs->curB->obstacles[i]->uniqueID == rem_obst) //remove this obstacle
+				if(gs->curB[handlerID]->obstacles[i]->uniqueID == rem_obst) //remove this obstacle
 				{
-					gs->curB->obstacles.erase(gs->curB->obstacles.begin() + i);
+					gs->curB[handlerID]->obstacles.erase(gs->curB[handlerID]->obstacles.begin() + i);
 					break;
 				}
 			}
@@ -1515,12 +1515,12 @@ DLL_LINKAGE CatapultAttack::~CatapultAttack()
 
 DLL_LINKAGE void CatapultAttack::applyGs( CGameState *gs )
 {
-	if(gs->curB && gs->curB->town && gs->curB->town->fortLevel() != CGTownInstance::NONE) //if there is a battle and it's a siege
+	if(gs->curB[handlerID] && gs->curB[handlerID]->town && gs->curB[handlerID]->town->fortLevel() != CGTownInstance::NONE) //if there is a battle and it's a siege
 	{
 		for(const auto &it :attackedParts)
 		{
-			gs->curB->si.wallState[it.attackedPart] =
-			        SiegeInfo::applyDamage(EWallState::EWallState(gs->curB->si.wallState[it.attackedPart]), it.damageDealt);
+			gs->curB[handlerID]->si.wallState[it.attackedPart] =
+			        SiegeInfo::applyDamage(EWallState::EWallState(gs->curB[handlerID]->si.wallState[it.attackedPart]), it.damageDealt);
 		}
 	}
 }
@@ -1543,16 +1543,16 @@ DLL_LINKAGE std::string CatapultAttack::toString() const
 
 DLL_LINKAGE void BattleStacksRemoved::applyGs( CGameState *gs )
 {
-	if(!gs->curB)
+	if(!gs->curB[handlerID])
 		return;
 	for(ui32 rem_stack : stackIDs)
 	{
-		for(int b=0; b<gs->curB->stacks.size(); ++b) //find it in vector of stacks
+		for(int b=0; b<gs->curB[handlerID]->stacks.size(); ++b) //find it in vector of stacks
 		{
-			if(gs->curB->stacks[b]->ID == rem_stack) //if found
+			if(gs->curB[handlerID]->stacks[b]->ID == rem_stack) //if found
 			{
-				CStack *toRemove = gs->curB->stacks[b];
-				gs->curB->stacks.erase(gs->curB->stacks.begin() + b); //remove
+				CStack *toRemove = gs->curB[handlerID]->stacks[b];
+				gs->curB[handlerID]->stacks.erase(gs->curB[handlerID]->stacks.begin() + b); //remove
 
 				toRemove->detachFromAll();
 				delete toRemove;
@@ -1572,19 +1572,19 @@ DLL_LINKAGE void BattleStackAdded::applyGs(CGameState *gs)
 	}
 
 	CStackBasicDescriptor csbd(creID, amount);
-	CStack * addedStack = gs->curB->generateNewStack(csbd, attacker, SlotID(255), pos); //TODO: netpacks?
+	CStack * addedStack = gs->curB[handlerID]->generateNewStack(csbd, attacker, SlotID(255), pos); //TODO: netpacks?
 	if (summoned)
 		addedStack->state.insert(EBattleStackState::SUMMONED);
 
-	gs->curB->localInitStack(addedStack);
-	gs->curB->stacks.push_back(addedStack); //the stack is not "SUMMONED", it is permanent
+	gs->curB[handlerID]->localInitStack(addedStack);
+	gs->curB[handlerID]->stacks.push_back(addedStack); //the stack is not "SUMMONED", it is permanent
 
 	newStackID = addedStack->ID;
 }
 
 DLL_LINKAGE void BattleSetStackProperty::applyGs(CGameState *gs)
 {
-	CStack * stack = gs->curB->getStack(stackID);
+	CStack * stack = gs->curB[handlerID]->getStack(stackID);
 	switch (which)
 	{
 		case CASTS:
@@ -1598,7 +1598,7 @@ DLL_LINKAGE void BattleSetStackProperty::applyGs(CGameState *gs)
 		}
 		case ENCHANTER_COUNTER:
 		{
-			auto & counter = gs->curB->sides[gs->curB->whatSide(stack->owner)].enchanterCounter;
+			auto & counter = gs->curB[handlerID]->sides[gs->curB[handlerID]->whatSide(stack->owner)].enchanterCounter;
 			if (absolute)
 				counter = val;
 			else

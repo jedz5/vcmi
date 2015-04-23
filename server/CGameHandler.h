@@ -92,12 +92,10 @@ public:
 	std::map<PlayerColor, CConnection*> connections; //player color -> connection to client with interface of that player
 	static PlayerStatuses states; //player color -> player state
 	std::set<CConnection*> conns;
-
 	//queries stuff
 	boost::recursive_mutex gsm;
 	ui32 QID;
 	Queries queries;
-	PlayerColor handlerID;
 	//TODO get rid of cfunctionlist (or similar) and use serialziable callback structure
 	std::map<ui32, CFunctionList<void(ui32)> > callbacks; //query id => callback function - for selection and yes/no dialogs
 
@@ -197,7 +195,7 @@ public:
 
 	void commitPackage(CPackForClient *pack) override;
 
-	void init(StartInfo *si);
+	void init(CGameState *gs);
 	void handleConnection(std::set<PlayerColor> players, CConnection &c);
 	//PlayerColor getPlayerAt(CConnection *c) const;
 
@@ -250,6 +248,7 @@ public:
 	void sendMessageToAll(const std::string &message);
 	void sendMessageTo(CConnection &c, const std::string &message);
 	void sendToAllClients(CPackForClient * info);
+	void sendToAllClients(BattleForClient * info);
 	void sendAndApply(CPackForClient * info);
 	void applyAndSend(CPackForClient * info);
 	void sendAndApply(CGarrisonOperationPack * info);

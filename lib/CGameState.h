@@ -357,7 +357,7 @@ public:
 	void giveHeroArtifact(CGHeroInstance *h, ArtifactID aid);
 
 	void apply(CPack *pack);
-	BFieldType battleGetBattlefieldType(int3 tile);
+	BFieldType battleGetBattlefieldType(int3 tile,PlayerColor handlerID);
 	UpgradeInfo getUpgradeInfo(const CStackInstance &stack);
 	PlayerRelations::PlayerRelations getPlayerRelations(PlayerColor color1, PlayerColor color2);
 	bool checkForVisitableDir(const int3 & src, const int3 & dst) const; //check if src tile is visitable from dst tile
@@ -374,7 +374,7 @@ public:
 
 	void obtainPlayersStats(SThievesGuildInfo & tgi, int level); //fills tgi with info about other players that is available at given level of thieves' guild
 	std::map<ui32, ConstTransitivePtr<CGHeroInstance> > unusedHeroesFromPool(); //heroes pool without heroes that are available in taverns
-	BattleInfo * setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, const CGTownInstance *town);
+	BattleInfo * setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, const CGTownInstance *town,PlayerColor handlerID);
 
 	bool isVisible(int3 pos, PlayerColor player);
 	bool isVisible(const CGObjectInstance *obj, boost::optional<PlayerColor> player);

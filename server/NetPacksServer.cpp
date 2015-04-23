@@ -239,7 +239,7 @@ bool QueryReply::applyGh( CGameHandler *gh )
 
 bool MakeAction::applyGh( CGameHandler *gh )
 {
-	const BattleInfo *b = GS(gh)->curB;
+	const BattleInfo *b = GS(gh)->curB[handlerID];
 	if(!b) ERROR_AND_RETURN;
 	
 	if(b->tacticDistance)
@@ -258,10 +258,10 @@ bool MakeAction::applyGh( CGameHandler *gh )
 
 bool MakeCustomAction::applyGh( CGameHandler *gh )
 {
-	const BattleInfo *b = GS(gh)->curB;
+	const BattleInfo *b = GS(gh)->curB[handlerID];
 	if(!b) ERROR_AND_RETURN;
 	if(b->tacticDistance) ERROR_AND_RETURN;
-	const CStack *active = GS(gh)->curB->battleGetStackByID(GS(gh)->curB->activeStack);
+	const CStack *active = GS(gh)->curB[handlerID]->battleGetStackByID(GS(gh)->curB[handlerID]->activeStack);
 	if(!active) ERROR_AND_RETURN;
 	if(gh->connections[active->owner] != c) ERROR_AND_RETURN;
 	if(ba.actionType != Battle::HERO_SPELL) ERROR_AND_RETURN;

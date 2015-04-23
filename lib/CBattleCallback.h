@@ -40,6 +40,7 @@ class DLL_LINKAGE CCallbackBase
 {
 	const BattleInfo *battle; //battle to which the player is engaged, nullptr if none or not applicable
 
+	
 	const BattleInfo * getBattle() const
 	{
 		return battle;
@@ -58,12 +59,11 @@ protected:
 	
 	void setBattle(const BattleInfo *B);
 	bool duringBattle() const;
-
 public:
 	boost::shared_mutex &getGsMutex(); //just return a reference to mutex, does not lock nor anything
 	boost::optional<PlayerColor> getPlayerID() const;
-
 	friend class CBattleInfoEssentials;
+	PlayerColor handlerID;
 };
 
 

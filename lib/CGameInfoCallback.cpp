@@ -159,8 +159,8 @@ int CGameInfoCallback::getSpellCost(const CSpell * sp, const CGHeroInstance * ca
 	//boost::shared_lock<boost::shared_mutex> lock(*gs->mx);
 	ERROR_RET_VAL_IF(!canGetFullInfo(caster), "Cannot get info about caster!", -1);
 	//if there is a battle
-	if(gs->curB)
-		return gs->curB->battleGetSpellCost(sp, caster);
+	if(gs->curB[handlerID])
+		return gs->curB[handlerID]->battleGetSpellCost(sp, caster);
 
 	//if there is no battle
 	return caster->getSpellCost(sp);
@@ -261,7 +261,7 @@ bool CGameInfoCallback::getHeroInfo(const CGObjectInstance * hero, InfoAboutHero
 	
 	//DISGUISED bonus implementation
 	
-	if(getPlayerRelations(getLocalPlayer(), hero->tempOwner) == PlayerRelations::ENEMIES)
+	if(getPlayerRelations(handlerID, hero->tempOwner) == PlayerRelations::ENEMIES)
 	{
 		//todo: bonus cashing	
 		int disguiseLevel = h->valOfBonuses(Selector::typeSubtype(Bonus::DISGUISED, 0));
@@ -770,10 +770,10 @@ const CGHeroInstance* CGameInfoCallback::getHeroWithSubid( int subid ) const
 	return nullptr;
 }
 
-PlayerColor CGameInfoCallback::getLocalPlayer() const
-{
-	return getCurrentPlayer();
-}
+//PlayerColor CGameInfoCallback::getLocalPlayer() const
+//{
+//	return getCurrentPlayer();
+//}
 
 bool CGameInfoCallback::isInTheMap(const int3 &pos) const
 {

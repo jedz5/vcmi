@@ -500,7 +500,7 @@ void SacrificeMechanics::applyBattleEffects(const SpellCastEnvironment * env, Ba
 	//set another active stack than the one removed, or bad things will happen
 	//TODO: make that part of BattleStacksRemoved? what about client update?
 	{
-		//makeStackDoNothing(gs->curB->getStack (selectedStack));
+		//makeStackDoNothing(gs->curB[handlerID]->getStack (selectedStack));
 
 		BattleSetActiveStack sas;
 

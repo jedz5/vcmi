@@ -139,7 +139,7 @@ void CClient::waitForMoveAndSend(PlayerColor color)
 	{
 		setThreadName("CClient::waitForMoveAndSend");
 		assert(vstd::contains(battleints, color));
-		BattleAction ba = battleints[color]->activeStack(gs->curB->battleGetStackByID(gs->curB->activeStack, false));
+		BattleAction ba = battleints[color]->activeStack(gs->curB[handlerID]->battleGetStackByID(gs->curB[handlerID]->activeStack, false));
 		logNetwork->traceStream() << "Send battle action to server: " << ba;
 		MakeAction temp_action(ba);
 		sendRequest(&temp_action, color);
@@ -191,7 +191,7 @@ void CClient::run()
 
 void CClient::save(const std::string & fname)
 {
-	if(gs->curB)
+	if(gs->curB[handlerID])
 	{
         logNetwork->errorStream() << "Game cannot be saved during battle!";
 		return;
@@ -472,7 +472,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 			installNewPlayerInterface(p, boost::none);
 			GH.curInt = p.get();
 		}
-		battleStarted(gs->curB);
+		battleStarted(gs->curB[handlerID]);
 	}
 	else
 	{
@@ -755,7 +755,7 @@ void CClient::battleStarted(const BattleInfo * info)
 
 void CClient::battleFinished()
 {
-	for(auto & side : gs->curB->sides)
+	for(auto & side : gs->curB[handlerID]->sides)
 		if(battleCallbacks.count(side.color))
 			battleCallbacks[side.color]->setBattle(nullptr);
 }
@@ -773,22 +773,22 @@ void CClient::commitPackage( CPackForClient *pack )
 	sendRequest(&cp, PlayerColor::NEUTRAL);
 }
 
-PlayerColor CClient::getLocalPlayer() const
-{
-	if(LOCPLINT)
-		return LOCPLINT->playerID;
-	return getCurrentPlayer();
-}
+//PlayerColor CClient::getLocalPlayer() const
+//{
+	//if(LOCPLINT)
+	//	return LOCPLINT->playerID;
+	//return getCurrentPlayer();
+//}
 
 void CClient::commenceTacticPhaseForInt(shared_ptr<CBattleGameInterface> battleInt)
 {
 	setThreadName("CClient::commenceTacticPhaseForInt");
 	try
 	{
-		battleInt->yourTacticPhase(gs->curB->tacticDistance);
-		if(gs && !!gs->curB && gs->curB->tacticDistance) //while awaiting for end of tactics phase, many things can happen (end of battle... or game)
+		battleInt->yourTacticPhase(gs->curB[handlerID]->tacticDistance);
+		if(gs && !!gs->curB[handlerID] && gs->curB[handlerID]->tacticDistance) //while awaiting for end of tactics phase, many things can happen (end of battle... or game)
 		{
-			MakeAction ma(BattleAction::makeEndOFTacticPhase(gs->curB->playerToSide(battleInt->playerID)));
+			MakeAction ma(BattleAction::makeEndOFTacticPhase(gs->curB[handlerID]->playerToSide(battleInt->playerID)));
 			sendRequest(&ma, battleInt->playerID);
 		}
 	}

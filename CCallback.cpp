@@ -183,7 +183,10 @@ int CBattleCallback::battleMakeAction(BattleAction* action)
 	sendRequest(&mca);
 	return 0;
 }
-
+int CBattleCallback::sendRequest(CbattleForServer *request){
+	request->handlerID = handlerID;
+	return sendRequest(static_cast<CPackForServer*>(request));
+}
 int CBattleCallback::sendRequest(const CPack *request)
 {
 	int requestID = cl->sendRequest(request, *player);
@@ -368,11 +371,12 @@ CBattleCallback::CBattleCallback(CGameState *GS, boost::optional<PlayerColor> Pl
 	gs = GS;
 	player = Player;
 	cl = C;
+	handlerID = *Player;
 }
 
 bool CBattleCallback::battleMakeTacticAction( BattleAction * action )
 {
-	assert(cl->gs->curB->tacticDistance);
+	assert(cl->gs->curB[cl->handlerID]->tacticDistance);
 	MakeAction ma;
 	ma.ba = *action;
 	sendRequest(&ma);

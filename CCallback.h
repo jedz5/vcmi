@@ -79,11 +79,12 @@ public:
 };
 
 struct CPack;
-
+struct CbattleForServer;
 class CBattleCallback : public IBattleCallback, public CPlayerBattleCallback
 {
 protected:
 	int sendRequest(const CPack *request); //returns requestID (that'll be matched to requestID in PackageApplied)
+	int sendRequest(CbattleForServer *request);
 	CClient *cl;
 	//virtual bool hasAccess(int playerId) const;
 

@@ -91,8 +91,8 @@
 
 
 #define BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(function,...) 				\
-	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB->sides[0].color, function, __VA_ARGS__)	\
-	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB->sides[1].color, function, __VA_ARGS__)	\
+	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB[handlerID]->sides[0].color, function, __VA_ARGS__)	\
+	CALL_ONLY_THAT_BATTLE_INTERFACE(GS(cl)->curB[handlerID]->sides[1].color, function, __VA_ARGS__)	\
 	BATTLE_INTERFACE_CALL_RECEIVERS(function, __VA_ARGS__)
 /*
  * NetPacksClient.cpp, part of VCMI engine
@@ -631,13 +631,13 @@ void BattleSetActiveStack::applyCl( CClient *cl )
 	if(!askPlayerInterface)
 		return;
 
-	const CStack * activated = GS(cl)->curB->battleGetStackByID(stack);
+	const CStack * activated = GS(cl)->curB[handlerID]->battleGetStackByID(stack);
 	PlayerColor playerToCall; //player that will move activated stack
 	if( activated->hasBonusOfType(Bonus::HYPNOTIZED) )
 	{
-		playerToCall = ( GS(cl)->curB->sides[0].color == activated->owner 
-			? GS(cl)->curB->sides[1].color 
-			: GS(cl)->curB->sides[0].color );
+		playerToCall = ( GS(cl)->curB[handlerID]->sides[0].color == activated->owner 
+			? GS(cl)->curB[handlerID]->sides[1].color 
+			: GS(cl)->curB[handlerID]->sides[0].color );
 	}
 	else
 	{
@@ -665,7 +665,7 @@ void BattleResult::applyFirstCl( CClient *cl )
 
 void BattleStackMoved::applyFirstCl( CClient *cl )
 {
-	const CStack * movedStack = GS(cl)->curB->battleGetStackByID(stack);
+	const CStack * movedStack = GS(cl)->curB[handlerID]->battleGetStackByID(stack);
 	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleStackMoved,movedStack,tilesToMove,distance);
 }
 
@@ -697,7 +697,7 @@ void BattleAttack::applyCl( CClient *cl )
 
 void StartAction::applyFirstCl( CClient *cl )
 {
-	cl->curbaction = ba;
+	cl->curBaction = ba;
 	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(actionStarted, ba);
 }
 
@@ -758,7 +758,7 @@ void BattleStacksRemoved::applyCl( CClient *cl )
 
 void BattleStackAdded::applyCl( CClient *cl )
 {
-	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleNewStackAppeared, GS(cl)->curB->stacks.back());
+	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(battleNewStackAppeared, GS(cl)->curB[handlerID]->stacks.back());
 }
 
 CGameState* CPackForClient::GS( CClient *cl )
@@ -768,8 +768,8 @@ CGameState* CPackForClient::GS( CClient *cl )
 
 void EndAction::applyCl( CClient *cl )
 {
-	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(actionFinished, *cl->curbaction);
-	cl->curbaction.reset();
+	BATTLE_INTERFACE_CALL_IF_PRESENT_FOR_BOTH_SIDES(actionFinished, *cl->curBaction);
+	cl->curBaction.reset();
 }
 
 void PackageApplied::applyCl( CClient *cl )

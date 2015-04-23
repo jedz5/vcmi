@@ -345,7 +345,7 @@ CGameHandler * CVCMIServer::initGhFromHostingConnection(CConnection &c)
 
 	c << ui8(0); //OK!
 
-	gh->init(&si);
+	//gh->init(&si);
 	gh->conns.insert(&c);
 
 	return gh;
@@ -367,7 +367,21 @@ void CVCMIServer::newGame()
 
 	gh->run(false);
 }
+void init(StartInfo* si, CGameState* gst){
+	if (si->seedToBeUsed == 0)
+	{
+		si->seedToBeUsed = std::time(nullptr);
+	}
 
+	logGlobal->infoStream() << "Gamestate created!";
+	gst->init(si);
+	logGlobal->infoStream() << "Gamestate initialized!";
+
+	// reset seed, so that clients can't predict any following random values
+	gst->getRandomGenerator().resetSeed();
+
+
+}
 void CVCMIServer::newPregame()
 {
 	auto cps = new CPregameServer(firstConnection, acceptor);
@@ -377,21 +391,7 @@ void CVCMIServer::newPregame()
 		delete cps;
 		return;
 	}
-	void init(StartInfo* si,CGameState* gst){
-		if (si->seedToBeUsed == 0)
-		{
-			si->seedToBeUsed = std::time(nullptr);
-		}
-
-		logGlobal->infoStream() << "Gamestate created!";
-		gst->init(si);
-		logGlobal->infoStream() << "Gamestate initialized!";
-
-		// reset seed, so that clients can't predict any following random values
-		gst->getRandomGenerator().resetSeed();
-
-		
-	}
+	
 	if(cps->state == CPregameServer::ENDING_AND_STARTING_GAME)
 	{
 		CGameState *gs = new CGameState();
@@ -417,9 +417,9 @@ void CVCMIServer::newPregame()
 		while (!end2)
 		{
 			firstGh->newTurn();
-			for (; it != playerTurnOrder.end(); it++)
+			for (auto & elem : gs->players)
 			{
-				auto playerColor = *it;
+				auto playerColor = elem.first;
 				if (gs->players[playerColor].status == EPlayerStatus::INGAME)
 				{
 					firstGh->states.setFlag(playerColor, &PlayerStatus::makingTurn, true);
