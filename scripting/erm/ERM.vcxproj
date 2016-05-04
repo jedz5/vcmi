@@ -74,13 +74,17 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..</OutDir>
+    <OutDir>.</OutDir>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(VCMI_Out)\Scripting\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
     <OutDir>..\..\..\Scripting</OutDir>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'">
     <OutDir>$(VCMI_Out)\Scripting\</OutDir>

@@ -111,15 +111,7 @@
     <ClCompile Include="..\CCallback.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CQuestLog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="VCMI_client.rc" />
-    <ClInclude Include="CQuestLog.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vcmi.ico" />

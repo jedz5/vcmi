@@ -944,6 +944,7 @@ void CServerHandler::waitForServer()
 CConnection * CServerHandler::connectToServer()
 {
 #ifndef VCMI_ANDROID
+	shared->sr->ready = true;
 	if(!shared->sr->ready)
 		waitForServer();
 #else
