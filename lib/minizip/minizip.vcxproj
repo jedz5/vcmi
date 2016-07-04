@@ -100,7 +100,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
     <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
-    <OutDir>$(VCMI_Out)\$(Configuration)</OutDir>
+    <OutDir>$(VCMI_Out)\debug</OutDir>
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-12.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'">
