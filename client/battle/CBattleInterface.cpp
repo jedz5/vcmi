@@ -1306,7 +1306,7 @@ void CBattleInterface::spellCast( const BattleSpellCast * sc )
 			int dy = (destcoord.y - srccoord.y - animDef->ourImages[0].bitmap->h)/steps;
 
 			delete animDef;
-			addNewAnim(new CSpellEffectAnimation(this, animToDisplay, srccoord.x, srccoord.y, dx, dy, Vflip));
+			addNewAnim(new CSpellEffectAnimation(this, animToDisplay, sc->tile, Vflip));
 		}
 	}	
 	waitForAnims();

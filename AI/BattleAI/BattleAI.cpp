@@ -110,7 +110,7 @@ static bool thereRemainsEnemy()
 
 BattleAction CBattleAI::activeStack( const CStack * stack )
 {
-	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName())	;
+	//LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName())	;
 
 	cbc = cb; //TODO: make solid sure that AIs always use their callbacks (need to take care of event handlers too)
 	try

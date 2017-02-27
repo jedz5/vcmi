@@ -34,6 +34,7 @@ class CScriptingModule;
 struct CPathsInfo;
 class CISer;
 class COSer;
+class CPlayerInterface;
 namespace boost { class thread; }
 
 /// structure to handle running server and connecting to it

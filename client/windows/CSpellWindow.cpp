@@ -635,8 +635,9 @@ void CSpellWindow::SpellArea::clickLeft(tribool down, bool previousState)
 			{
 			case ESpellCastProblem::OK:
 				{
+					SpellID spell = mySpell;
 					owner->fexitb();
-					owner->myInt->battleInt->castThisSpell(mySpell);
+					owner->myInt->battleInt->castThisSpell(spell);
 				}
 				break;
 			case ESpellCastProblem::ANOTHER_ELEMENTAL_SUMMONED:

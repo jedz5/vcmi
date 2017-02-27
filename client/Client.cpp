@@ -457,8 +457,8 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 		}
 		else
 		{
-			std::string AItoGive = aiNameForPlayer(elem.second, true);
-			installNewBattleInterface(CDynLibHandler::getNewBattleAI(AItoGive), color);
+			/*std::string AItoGive = aiNameForPlayer(elem.second, true);
+			installNewBattleInterface(CDynLibHandler::getNewBattleAI(AItoGive), color);*/
 		}
 	}
 
@@ -468,12 +468,19 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 		if(!gNoGUI)
 		{
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
-			p = make_shared<CPlayerInterface>(PlayerColor::NEUTRAL);
+			p = make_shared<CPlayerInterface>(PlayerColor(0));
 			p->observerInDuelMode = true;
-			installNewPlayerInterface(p, PlayerColor::NEUTRAL);
+			installNewPlayerInterface(p, PlayerColor(0));
 			GH.curInt = p.get();
+			std::string AItoGive = aiNameForPlayer(gs->scenarioOps->playerInfos[PlayerColor(1)], true);
+			installNewBattleInterface(CDynLibHandler::getNewBattleAI(AItoGive), PlayerColor(1));
+			battleStarted(gs->curB, NULL);
+
 		}
-		battleStarted(gs->curB,p);
+		else
+		{
+			battleStarted(gs->curB, NULL);
+		}
 	}
 	else
 	{
@@ -746,7 +753,7 @@ void CClient::battleStarted(const BattleInfo * info, shared_ptr<CPlayerInterface
 
 	callBattleStart(leftSide.color, 0);
 	callBattleStart(rightSide.color, 1);
-	callBattleStart(PlayerColor::UNFLAGGABLE, 1);
+	callBattleStart(PlayerColor::NEUTRAL, 1);
 
 	if(info->tacticDistance && vstd::contains(battleints,info->sides[info->tacticsSide].color))
 	{

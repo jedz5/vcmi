@@ -476,7 +476,10 @@ int main(int argc, char** argv)
 		si->mode = StartInfo::DUEL;
 		si->mapname = vm["battle"].as<std::string>();
 		si->playerInfos[PlayerColor(0)].color = PlayerColor(0);
+		si->playerInfos[PlayerColor(0)].name = "EnigmaAI";
+
 		si->playerInfos[PlayerColor(1)].color = PlayerColor(1);
+		si->playerInfos[PlayerColor(1)].name = "BattleAI";
 		startGame(si);
 	}
 

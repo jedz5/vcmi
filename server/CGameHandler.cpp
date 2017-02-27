@@ -5289,12 +5289,13 @@ void CGameHandler::runBattle()
 			sendAndApply(&bsr);
 		}
 		//stack loop
-
+		int ii = 0;
 		const CStack *next;
 		while(!battleResult.get() && (next = curB.getNextStack()) && next->willMove())
 		{
-
+			
 			//check for bad morale => freeze
+			
 			int nextStackMorale = next->MoraleVal();
 			if( nextStackMorale < 0 &&
 				!(NBonus::hasOfType(gs->curB->battleGetFightingHero(0), Bonus::BLOCK_MORALE)
@@ -5483,6 +5484,20 @@ void CGameHandler::runBattle()
 	}
 
 	endBattle(gs->curB->tile, gs->curB->battleGetFightingHero(0), gs->curB->battleGetFightingHero(1));
+}
+void recordBattleField(CStack* next,BattleInfo& bi,int ii,BattleAction &ba){
+	std::stringstream s;
+	s << ii << ".txt";
+	JsonNode ns;
+	ns["id"].String() = next->getCreature()->nameRef;
+	ns["maxDamage"].Float() = next->base->getMaxDamage();
+	ns["minDamage"].Float() = next->base->getMinDamage();
+	ns["firstHPleft"].Float() = next->firstHPleft;
+	ns["name"].String() = next->getCreature()->nameSing;
+	//ns["attack"].Float() = next->base->get;
+	std::ofstream of(s.str(), std::ofstream::trunc);
+	of << ns;
+	std::cout << ns;
 }
 
 bool CGameHandler::makeAutomaticAction(const CStack *stack, BattleAction &ba)
