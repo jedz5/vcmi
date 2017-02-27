@@ -232,7 +232,7 @@ public:
 	int sendRequest(const CPack *request, PlayerColor player); //returns ID given to that request
 
 	void handlePack( CPack * pack ); //applies the given pack and deletes it
-	void battleStarted(const BattleInfo * info);
+	void battleStarted(const BattleInfo * info, shared_ptr<CPlayerInterface> cur);
 	void commenceTacticPhaseForInt(shared_ptr<CBattleGameInterface> battleInt); //will be called as separate thread
 
 	void commitPackage(CPackForClient *pack) override;

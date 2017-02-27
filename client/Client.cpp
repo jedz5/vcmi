@@ -464,15 +464,16 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 
 	if(si->mode == StartInfo::DUEL)
 	{
+		shared_ptr<CPlayerInterface> p;
 		if(!gNoGUI)
 		{
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
-			auto p = make_shared<CPlayerInterface>(PlayerColor::NEUTRAL);
+			p = make_shared<CPlayerInterface>(PlayerColor::NEUTRAL);
 			p->observerInDuelMode = true;
-			installNewPlayerInterface(p, boost::none);
+			installNewPlayerInterface(p, PlayerColor::NEUTRAL);
 			GH.curInt = p.get();
 		}
-		battleStarted(gs->curB);
+		battleStarted(gs->curB,p);
 	}
 	else
 	{
@@ -700,7 +701,7 @@ void CClient::stopConnection()
 	}
 }
 
-void CClient::battleStarted(const BattleInfo * info)
+void CClient::battleStarted(const BattleInfo * info, shared_ptr<CPlayerInterface> cur)
 {
 	for(auto &battleCb : battleCallbacks)
 	{
@@ -733,7 +734,7 @@ void CClient::battleStarted(const BattleInfo * info)
 		boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
 		auto bi = new CBattleInterface(leftSide.armyObject, rightSide.armyObject, leftSide.hero, rightSide.hero,
 			Rect((screen->w - 800)/2, 
-			     (screen->h - 600)/2, 800, 600), att, def);
+			     (screen->h - 600)/2, 800, 600), att, def,cur);
 
 		GH.pushInt(bi);
 	}

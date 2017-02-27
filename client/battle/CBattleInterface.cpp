@@ -95,11 +95,11 @@ void CBattleInterface::addNewAnim(CBattleAnimation * anim)
 CBattleInterface::CBattleInterface(const CCreatureSet * army1, const CCreatureSet * army2,
 								   const CGHeroInstance *hero1, const CGHeroInstance *hero2,
 								   const SDL_Rect & myRect,
-								   shared_ptr<CPlayerInterface> att, shared_ptr<CPlayerInterface> defen)
+								   shared_ptr<CPlayerInterface> att, shared_ptr<CPlayerInterface> defen, shared_ptr<CPlayerInterface> cur)
 	: background(nullptr), queue(nullptr), attackingHeroInstance(hero1), defendingHeroInstance(hero2), animCount(0),
       activeStack(nullptr), mouseHoveredStack(nullptr), stackToActivate(nullptr), selectedStack(nullptr), previouslyHoveredHex(-1),
 	  currentlyHoveredHex(-1), attackingHex(-1), stackCanCastSpell(false), creatureCasting(false), spellDestSelectMode(false), spellSelMode(NO_LOCATION), spellToCast(nullptr), sp(nullptr),
-	  siegeH(nullptr), attackerInt(att), defenderInt(defen), curInt(att), animIDhelper(0),
+	  siegeH(nullptr), attackerInt(att), defenderInt(defen),curInt(cur), animIDhelper(0),
 	  givenCommand(nullptr), myTurn(false), resWindow(nullptr), moveStarted(false), moveSoundHander(-1), bresult(nullptr)
 {
 	OBJ_CONSTRUCTION;
@@ -107,6 +107,10 @@ CBattleInterface::CBattleInterface(const CCreatureSet * army1, const CCreatureSe
 	if(!curInt)
 	{
 		//May happen when we are defending during network MP game -> attacker interface is just not present
+		curInt = attackerInt;
+	}
+	else if (!curInt)
+	{
 		curInt = defenderInt;
 	}
 

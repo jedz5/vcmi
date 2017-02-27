@@ -613,7 +613,7 @@ void BattleStart::applyFirstCl( CClient *cl )
 
 void BattleStart::applyCl( CClient *cl )
 {
-	cl->battleStarted(info);
+	cl->battleStarted(info,NULL);
 }
 
 void BattleNextRound::applyFirstCl(CClient *cl)
