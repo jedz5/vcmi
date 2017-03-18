@@ -40,9 +40,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EnigmaAI", "AI\EnigmaAI\EnigmaAI.vcxproj", "{3CB87896-BBE1-40C5-96D3-111B3EC70DEB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsonTest", "jsonTest\jsonTest.vcxproj", "{C04E9E95-EA37-434F-9495-82201031A338}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B952FFC5-3039-4DE1-9F08-90ACDA483D8F} = {B952FFC5-3039-4DE1-9F08-90ACDA483D8F}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

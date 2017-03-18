@@ -107,7 +107,7 @@ public:
 	void giveSpells(const CGTownInstance *t, const CGHeroInstance *h);
 	int moveStack(int stack, BattleHex dest); //returned value - travelled distance
 	void runBattle();
-
+	void recordBattleField(BattleInfo* bi, BattleAction &ba, const CGHeroInstance *h);
 	////used only in endBattle - don't touch elsewhere
 	bool visitObjectAfterVictory;
 	//
@@ -299,6 +299,7 @@ private:
 	void checkVictoryLossConditionsForPlayer(PlayerColor player);
 	void checkVictoryLossConditions(const std::set<PlayerColor> & playerColors);
 	void checkVictoryLossConditionsForAll();
+	JsonNode toJsonNode(const CStack* stack);
 };
 
 void makeStackDoNothing();
