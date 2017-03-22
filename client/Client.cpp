@@ -973,6 +973,7 @@ void CServerHandler::waitForServer()
 CConnection * CServerHandler::connectToServer()
 {
 #ifndef VCMI_ANDROID
+    //shared->sr->ready = true;
 	if(!shared->sr->ready)
 		waitForServer();
 #else
@@ -1030,9 +1031,11 @@ void CServerHandler::callServer()
 		logNetwork->infoStream() << "Server closed correctly";
 	else
 	{
-		logNetwork->errorStream() << "Error: server failed to close correctly or crashed!";
-		logNetwork->errorStream() << "Check " << logName << " for more info";
-		exit(1);// exit in case of error. Othervice without working server VCMI will hang
+        shared->sr->ready = true;
+        shared->sr->cond.notify_all();
+        //logNetwork->errorStream() << "Error: server failed to close correctly or crashed!";
+        //logNetwork->errorStream() << "Check " << logName << " for more info";
+        //exit(1);// exit in case of error. Othervice without working server VCMI will hang
 	}
 }
 

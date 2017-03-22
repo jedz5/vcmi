@@ -3766,7 +3766,8 @@ bool CGameHandler::makeBattleAction(BattleAction &ba)
 		}
 	}
 
-
+    BattleInfo* bi = gs->curB;
+    recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
 	switch(ba.actionType)
 	{
 	case Battle::END_TACTIC_PHASE: //wait
@@ -4347,7 +4348,8 @@ bool CGameHandler::makeCustomAction(BattleAction &ba)
 				logGlobal->warn("Spell cannot be cast! Problem: %d", escp);
 				return false;
 			}
-
+            BattleInfo* bi = gs->curB;
+            recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
 			StartAction start_action(ba);
 			sendAndApply(&start_action); //start spell casting
 
@@ -5585,7 +5587,7 @@ void CGameHandler::runBattle()
 		const BattleInfo & curB = *gs->curB;
 
 		//stack loop
-
+        gs->curB->moveInRound = 0;
 		const CStack *next;
 		while (!battleResult.get() && (next = curB.getNextStack()) && next->willMove())
 		{
@@ -5740,6 +5742,11 @@ void CGameHandler::runBattle()
 					}
 					else
 					{
+                        PlayerColor c = next->owner;
+                        if (c != PlayerColor(255) && gs->players[c].human)
+                        {
+                            gs->curB->moveInRound++;
+                        }
 						logGlobal->trace("Activating %s", next->nodeName());
 						auto nextId = next->ID;
 						BattleSetActiveStack sas;
@@ -5816,7 +5823,156 @@ void CGameHandler::runBattle()
 
 	endBattle(gs->curB->tile, gs->curB->battleGetFightingHero(0), gs->curB->battleGetFightingHero(1));
 }
+JsonNode CGameHandler::toJsonNode(const CStack* next){
+    JsonNode ns;
+    ns["amount"].Float() = next->count;
+    ns["attack"].Float() = next->Attack();
+    ns["defense"].Float() = next->Defense();
+    ns["maxDamage"].Float() = next->getMaxDamage();
+    ns["minDamage"].Float() = next->getMinDamage();
+    ns["firstHPleft"].Float() = next->firstHPleft;
+    ns["health"].Float() = next->valOfBonuses(Bonus::STACK_HEALTH);
+    ns["name"].String() = next->getCreature()->nameSing;
+    ns["isWide"].Bool() = next->doubleWide();
+    ns["x"].Float() = next->getHexes()[0].getX();
+    ns["y"].Float() = next->getHexes()[0].getY();
+    ns["speed"].Float() = next->Speed();
+    ns["isRetaliate"].Bool() = next->ableToRetaliate();
+    PlayerColor c = next->owner;
+    ns["isHuman"].Bool() = (c != PlayerColor(255) && gs->players[c].human);
+    ns["isWaited"].Bool() = next->waited();
+    ns["isMoved"].Bool() = next->moved();
+    ns["isCanMove"].Bool() = next->canMove();
+    ns["isCanShoot"].Bool() = next->hasBonusOfType(Bonus::SHOOTER) && next->shots;
+    return ns;
+}
+void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGHeroInstance *h){
+    try
+    {
+        if (battleTacticDist())
+        {
+            logGlobal->info("battleTacticDist, skip");
+            return;
+        }
+        const CStack* next = battleActiveStack();
+        PlayerColor c = next->owner;
+        if (c != PlayerColor(255) && gs->players[c].human)
+        {
+            switch (ba.actionType)
+            {
+            case Battle::WALK: //walk
+            case Battle::DEFEND: //defend
+            case Battle::WAIT: //wait
+            case Battle::WALK_AND_ATTACK: //walk or attack
+            case Battle::SHOOT: //shoot
+            case Battle::HERO_SPELL:
+                //case Battle::CATAPULT: //catapult
+                //case Battle::STACK_HEAL: //healing with First Aid Tent
+                //case Battle::DAEMON_SUMMONING:
+                //case Battle::MONSTER_SPELL:
+                {
+                    std::stringstream s;
+                    si32 r = bi->round + 2;
+                    s << r << "-" << bi->moveInRound << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+                    JsonNode root;
+                    //stacks
+                    root["activeStack"] = toJsonNode(next);
+                    for (CStack* stack : bi->stacks)
+                    {
+                        root["stacks"].Vector().push_back(toJsonNode(stack));
+                    }
+                    //obstacles
+//                    auto obToJson = [&](const CObstacleInstance & ob) -> JsonNode{
+//                        JsonNode node;
+//                        for(BattleHex bh : ob.getAffectedTiles()){
+//                            node["x"].Float() = bh.getX();
+//                            node["y"].Float() = bh.getY();
+//                            node["type"].Float() = ob.obstacleType;
+//                        }
+//                        return node;
+//                    };
+                    for (auto ob : bi->obstacles) {
+                        for(BattleHex bh : ob->getAffectedTiles()){
+                            JsonNode node;
+                            node["x"].Float() = bh.getX();
+                            node["y"].Float() = bh.getY();
+                            node["type"].Float() = ob->obstacleType;
+                            root["obstacles"].Vector().push_back(node);
+                        }
+                    }
+                    //action
+                    JsonNode action;
+                    action["actionType"].Float() = ba.actionType;
+                    switch (ba.actionType)
+                    {
+                        case Battle::WALK:
+                        {
+                            action["x"].Float() = ba.destinationTile.getX();
+                            action["y"].Float() = ba.destinationTile.getY();
+                            break;
+                        }
+                        case Battle::WALK_AND_ATTACK:
+                        {
+                            action["x"].Float() = ba.destinationTile.getX();
+                            action["y"].Float() = ba.destinationTile.getY();
+                            action["fightX"].Float() = BattleHex(ba.additionalInfo).getX();
+                            action["fightY"].Float() = BattleHex(ba.additionalInfo).getY();
+                            break;
+                        }
+                        case Battle::SHOOT:
+                        {
+                            action["x"].Float() = ba.destinationTile.getX();
+                            action["y"].Float() = ba.destinationTile.getY();
+                            break;
+                        }
+                        case Battle::HERO_SPELL:
+                        {
+                            const CSpell * s = SpellID(ba.additionalInfo).toSpell();
+                            action["spellID"].Float() = s->id;
+                            action["level"].Float() = h->getSpellSchoolLevel(s);
+                            BattleHex bh = ba.destinationTile;
+                            if (bh)
+                            {
+                                action["x"].Float() = bh.getX();
+                                action["y"].Float() = bh.getY();
+                            }
+                            action["usedSpellPower"].Float() = battleGetSpellCost(s, h);
+                            //parameters.selectedStack = gs->curB->battleGetStackByID(ba.selectedStack, false);
+                            break;
+                        }
+                    }
+                    root["action"] = action;
+                    //hero
+                    JsonNode hero;
+                    hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+                    hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+                    hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+                    hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+                    hero["mana"].Float() = h->mana;
+                    hero["casted"].Bool() = battleCastSpells(ba.side) > 0;
 
+                    for (auto & elem : h->secSkills){
+                        JsonNode secSkills;
+                        secSkills["id"].Float() = elem.first.num;
+                        secSkills["level"].Float() = elem.second;
+                        hero["secSkills"].Vector().push_back(secSkills);
+                    }
+                    root["hero"] = hero;
+                    std::ofstream of(s.str(), std::ofstream::trunc);
+                    of << root;
+                    std::cout << root;
+                    break;
+                }
+            }
+        }
+    }
+    catch (...)
+    {
+        logGlobal->error("something bad happened");
+        handleException();
+    }
+
+}
 bool CGameHandler::makeAutomaticAction(const CStack *stack, BattleAction &ba)
 {
 	BattleSetActiveStack bsa;
