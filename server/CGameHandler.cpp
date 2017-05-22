@@ -5624,6 +5624,20 @@ void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGH
 					secSkills["level"].Float() = elem.second;
 					hero["secSkills"].Vector().push_back(secSkills);
 				}
+				for (SpellID spell : h->spells)
+				{
+					CSpell* csp = spell.toSpell();
+					if (!csp->isCombatSpell())
+					{
+						continue;
+					}
+					JsonNode SP;
+					SP["id"].Float() = spell;
+					SP["canBeCasted"].Bool() = !csp->canBeCasted(this, h->getOwner());
+					SP["cost"].Float() = bi->battleGetSpellCost(csp, h);
+					SP["level"].Float() = h->getSpellSchoolLevel(csp);
+					hero["spells"].Vector().push_back(SP);
+				}
 				root["hero"] = hero;
 				std::ofstream of(s.str(), std::ofstream::trunc);
 				of << root;
