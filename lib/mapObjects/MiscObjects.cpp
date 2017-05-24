@@ -400,7 +400,12 @@ void CGCreature::fight( const CGHeroInstance *h ) const
 	//TODO: multiple creature types in a stack?
 	int basicType = stacks.begin()->second->type->idNumber;
 	cb->setObjProperty(id, ObjProperty::MONSTER_RESTORE_TYPE, basicType); //store info about creature stack
-
+	auto i = stacks.find(SlotID(0));
+	if (i != stacks.end()){
+		CStackInstance* ins = i->second;
+		ins->count;
+	}
+		
 	int stacksCount = getNumberOfStacks(h);
 	//source: http://heroescommunity.com/viewthread.php3?TID=27539&PID=1266335#focus
 
