@@ -40,7 +40,7 @@ namespace GameConstants
 #ifdef VCMI_NO_EXTRA_VERSION
 	const std::string VCMI_VERSION = std::string("VCMI 0.99");
 #else
-	const std::string VCMI_VERSION = std::string("VCMI 0.99 ") + GIT_SHA1;
+	const std::string VCMI_VERSION = std::string("VCMI 0.99 ");// +GIT_SHA1;
 #endif
 }
 

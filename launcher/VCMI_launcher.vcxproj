@@ -14,6 +14,7 @@
     <ProjectGuid>{5B6946C8-A24F-4223-8415-5E16A238ACED}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VCMI_launcher</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -44,16 +45,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>.\GeneratedFiles;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtANGLE;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20150110--win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20150110--win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
     <LinkIncremental>
     </LinkIncremental>
-    <IncludePath>.\GeneratedFiles;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtANGLE;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets;D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include;$(IncludePath)</IncludePath>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
-    <LibraryPath>D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
     <OutDir>..</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
