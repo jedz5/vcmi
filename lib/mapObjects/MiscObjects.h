@@ -89,8 +89,9 @@ protected:
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;
 
 private:
-	void fight(const CGHeroInstance *h) const;
+	void fight(const CGHeroInstance *h,bool quickBattle) const;
 	void flee( const CGHeroInstance * h ) const;
+	void askFight(const CGHeroInstance * h) const;
 	void fleeDecision(const CGHeroInstance *h, ui32 pursue) const;
 	void joinDecision(const CGHeroInstance *h, int cost, ui32 accept) const;
 

@@ -100,17 +100,19 @@ public:
 	bool isAllowedExchange(ObjectInstanceID id1, ObjectInstanceID id2);
 	void giveSpells(const CGTownInstance *t, const CGHeroInstance *h);
 	int moveStack(int stack, BattleHex dest); //returned value - travelled distance
+	void quickBattle(const BattleInfo *B);
 	void runBattle();
     void recordBattleField(BattleInfo* bi, BattleAction &ba, const CGHeroInstance *h);
     JsonNode toJsonNode(const CStack* stack);
+	void CGameHandler::recordBattleResult(int manaCos);
 	////used only in endBattle - don't touch elsewhere
 	bool visitObjectAfterVictory;
 	//
-	void endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2); //ends battle
+	void endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2,int manaCost); //ends battle
 	void prepareAttack(BattleAttack &bat, const CStack *att, const CStack *def, int distance, int targetHex); //distance - number of hexes travelled before attacking
 	void applyBattleEffects(BattleAttack &bat, const CStack *att, const CStack *def, int distance, bool secondary); //damage, drain life & fire shield
 	void checkBattleStateChanges();
-	void setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town);
+	void setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town);
 	void setBattleResult(BattleResult::EResult resultType, int victoriusSide);
 	void duelFinished();
 
@@ -157,9 +159,9 @@ public:
 	void showCompInfo(ShowInInfobox * comp) override;
 	void heroVisitCastle(const CGTownInstance * obj, const CGHeroInstance * hero) override;
 	void stopHeroVisitCastle(const CGTownInstance * obj, const CGHeroInstance * hero) override;
-	void startBattlePrimary(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank = false, const CGTownInstance *town = nullptr) override; //use hero=nullptr for no hero
-	void startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank = false) override; //if any of armies is hero, hero will be used
-	void startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank = false) override; //if any of armies is hero, hero will be used, visitable tile of second obj is place of battle
+	void startBattlePrimary(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank = false, bool quickBattle = false,const CGTownInstance *town = nullptr) override; //use hero=nullptr for no hero
+	void startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank = false, bool quickBattle = false) override; //if any of armies is hero, hero will be used
+	void startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank = false,bool quickBattle = false) override; //if any of armies is hero, hero will be used, visitable tile of second obj is place of battle
 	void setAmount(ObjectInstanceID objid, ui32 val) override;
 	bool moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, bool transit = false, PlayerColor asker = PlayerColor::NEUTRAL) override;
 	void giveHeroBonus(GiveBonus * bonus) override;

@@ -723,6 +723,9 @@ void CClient::stopConnection()
 
 void CClient::battleStarted(const BattleInfo * info)
 {
+	
+	//LOCPLINT->showYesNoDialog("quick or not", [this] { Settings entry = settings.write["adventure"]["quickCombat"];entry->Bool() = true;}, [this] { Settings entry = settings.write["adventure"]["quickCombat"]; entry->Bool() = false; }, false);
+	//LOCPLINT->waitWhileDialog();
 	for(auto &battleCb : battleCallbacks)
 	{
 		if(vstd::contains_if(info->sides, [&](const SideInBattle& side) {return side.color == battleCb.first; })
@@ -740,7 +743,7 @@ void CClient::battleStarted(const BattleInfo * info)
 
 
 	//If quick combat is not, do not prepare interfaces for battleint
-	if(!settings["adventure"]["quickCombat"].Bool())
+	if(!info->quickBattle)
 	{
 		if(vstd::contains(playerint, leftSide.color) && playerint[leftSide.color]->human)
 			att = std::dynamic_pointer_cast<CPlayerInterface>( playerint[leftSide.color] );

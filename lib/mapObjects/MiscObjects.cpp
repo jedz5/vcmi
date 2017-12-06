@@ -25,6 +25,8 @@
 #include "../CPlayerState.h"
 #include "../serializer/JsonSerializeFormat.h"
 
+#include "../lib/CConfigHandler.h"
+
 std::map <si32, std::vector<ObjectInstanceID> > CGMagi::eyelist;
 ui8 CGObelisk::obeliskCount = 0; //how many obelisks are on map
 std::map<TeamID, ui8> CGObelisk::visited; //map: team_id => how many obelisks has been visited
@@ -166,7 +168,7 @@ void CGCreature::onHeroVisit( const CGHeroInstance * h ) const
 	switch( action ) //decide what we do...
 	{
 	case FIGHT:
-		fight(h);
+		askFight(h);
 		break;
 	case FLEE:
 		{
@@ -353,7 +355,7 @@ void CGCreature::fleeDecision(const CGHeroInstance *h, ui32 pursue) const
 
 	if(pursue)
 	{
-		fight(h);
+		askFight(h);
 	}
 	else
 	{
@@ -373,7 +375,7 @@ void CGCreature::joinDecision(const CGHeroInstance *h, int cost, ui32 accept) co
 		else //they fight
 		{
 			showInfoDialog(h,87,0);//Insulted by your refusal of their offer, the monsters attack!
-			fight(h);
+			askFight(h);
 		}
 	}
 	else //accepted
@@ -399,7 +401,7 @@ void CGCreature::joinDecision(const CGHeroInstance *h, int cost, ui32 accept) co
 	}
 }
 
-void CGCreature::fight( const CGHeroInstance *h ) const
+void CGCreature::fight( const CGHeroInstance *h,bool quickBattle) const
 {
 	//split stacks
 	//TODO: multiple creature types in a stack?
@@ -440,10 +442,25 @@ void CGCreature::fight( const CGHeroInstance *h ) const
 		}
 	}
 
-	cb->startBattleI(h, this);
+	cb->startBattleI(h, this,false,quickBattle);
 
 }
-
+void CGCreature::askFight(const CGHeroInstance * h) const
+{
+	PlayerColor c = h->getOwner();
+	if (c != PlayerColor(255) && cb->getPlayer(c)->human)
+	{
+		BlockingDialog ynd(true, false);
+		ynd.player = h->tempOwner;
+		ynd.text << "yes for quick battle";
+		cb->showBlockingDialog(&ynd);
+	}
+	else
+	{
+		fight(h, false);
+	}
+	
+}
 void CGCreature::flee( const CGHeroInstance * h ) const
 {
 	BlockingDialog ynd(true,false);
@@ -501,7 +518,9 @@ void CGCreature::battleFinished(const CGHeroInstance *hero, const BattleResult &
 void CGCreature::blockingDialogAnswered(const CGHeroInstance *hero, ui32 answer) const
 {
 	auto action = takenAction(hero);
-	if(!refusedJoining && action >= JOIN_FOR_FREE) //higher means price
+	if (action == FIGHT) {
+		fight(hero,answer);
+	}else if(!refusedJoining && action >= JOIN_FOR_FREE) //higher means price
 		joinDecision(hero, action, answer);
 	else if(action != FIGHT)
 		fleeDecision(hero, answer);

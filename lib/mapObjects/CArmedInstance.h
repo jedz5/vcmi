@@ -20,7 +20,6 @@ class DLL_LINKAGE CArmedInstance: public CGObjectInstance, public CBonusSystemNo
 {
 public:
 	BattleInfo *battle; //set to the current battle, if engaged
-
 	void randomizeArmy(int type);
 	virtual void updateMoraleBonusFromArmy();
 

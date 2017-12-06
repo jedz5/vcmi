@@ -456,10 +456,15 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 	}
 }
 
-void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2)
+void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2,int manaCost)
 {
 	LOG_TRACE(logGlobal);
-
+	PlayerColor c = hero1->getOwner();
+	if (c != PlayerColor(255) && gs->players[c].human)
+	{
+		recordBattleResult(manaCost - hero1->mana);
+	}
+	
 	//Fill BattleResult structure with exp info
 	giveExp(*battleResult.data);
 
@@ -511,7 +516,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 
 
 	CasualtiesAfterBattle cab1(bEndArmy1, gs->curB), cab2(bEndArmy2, gs->curB); //calculate casualties before deleting battle
-
+	
 	if (finishingBattle->duel)
 	{
 		duelFinished();
@@ -1858,7 +1863,7 @@ std::list<PlayerColor> CGameHandler::generatePlayerTurnOrder() const
 	return playerTurnOrder;
 }
 
-void CGameHandler::setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, const CGTownInstance *town)
+void CGameHandler::setupBattle(int3 tile, const CArmedInstance *armies[2], const CGHeroInstance *heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town)
 {
 	battleResult.set(nullptr);
 
@@ -1873,7 +1878,7 @@ void CGameHandler::setupBattle(int3 tile, const CArmedInstance *armies[2], const
 
 	//send info about battles
 	BattleStart bs;
-	bs.info = BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, town);
+	bs.info = BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, quickBattle, town);
 	sendAndApply(&bs);
 }
 
@@ -1950,7 +1955,6 @@ void CGameHandler::setAmount(ObjectInstanceID objid, ui32 val)
 	SetObjectProperty sop(objid, ObjProperty::PRIMARY_STACK_COUNT, val);
 	sendAndApply(&sop);
 }
-
 bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, bool transit, PlayerColor asker /*= 255*/)
 {
 	const CGHeroInstance *h = getHero(hid);
@@ -1972,7 +1976,12 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, boo
 
 	const TerrainTile t = *getTile(hmpos);
 	const int3 guardPos = gs->guardingCreaturePosition(hmpos);
-
+	//move points restore
+	PlayerColor c = h->getOwner();
+	if (isInTheMap(guardPos) && c != PlayerColor(255) && getPlayer(c)->human)
+	{
+		save("Saves/001");
+	}
 	const bool embarking = !h->boat && !t.visitableObjects.empty() && t.visitableObjects.back()->ID == Obj::BOAT;
 	const bool disembarking = h->boat && t.terType != ETerrainType::WATER && !t.blocked;
 
@@ -2036,9 +2045,9 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, boo
 
 		if (leavingTile == LEAVING_TILE)
 			leaveTile();
-
 		tmh.result = result;
 		sendAndApply(&tmh);
+		
 
 		if (visitDest == VISIT_DEST && t.topVisitableObj() && t.topVisitableObj()->id == h->id)
 		{ // Hero should be always able to visit any object he staying on even if there guards around
@@ -2057,7 +2066,7 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, boo
 		{
 			visitObjectOnTile(t, h);
 		}
-
+		
 		queries.popIfTop(moveQuery);
 		logGlobal->trace("Hero %s ends movement", h->name);
 		return result != TryMoveHero::FAILED;
@@ -2112,6 +2121,7 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, boo
 
 	//still here? it is standard movement!
 	{
+		int preMP = tmh.movePoints;
 		tmh.movePoints = h->movement >= cost
 						? h->movement - cost
 						: 0;
@@ -2131,7 +2141,7 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, ui8 teleporting, boo
 		}
 		else if (blockingVisit())
 			return true;
-
+		
 		doMove(TryMoveHero::SUCCESS, lookForGuards, visitDest, LEAVING_TILE);
 		return true;
 	}
@@ -2322,7 +2332,7 @@ void CGameHandler::removeArtifact(const ArtifactLocation &al)
 	sendAndApply(&ea);
 }
 void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
-								const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank,
+								const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank, bool quickBattle,
 								const CGTownInstance *town) //use hero=nullptr for no hero
 {
 	engageIntoBattle(army1->tempOwner);
@@ -2336,7 +2346,7 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 	heroes[1] = hero2;
 
 
-	setupBattle(tile, armies, heroes, creatureBank, town); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
+	setupBattle(tile, armies, heroes, creatureBank,quickBattle, town); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
 
 	auto battleQuery = std::make_shared<CBattleQuery>(gs->curB);
 	queries.addQuery(battleQuery);
@@ -2344,17 +2354,17 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 	boost::thread(&CGameHandler::runBattle, this);
 }
 
-void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank)
+void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank, bool quickBattle)
 {
 	startBattlePrimary(army1, army2, tile,
 		army1->ID == Obj::HERO ? static_cast<const CGHeroInstance*>(army1) : nullptr,
 		army2->ID == Obj::HERO ? static_cast<const CGHeroInstance*>(army2) : nullptr,
-		creatureBank);
+		creatureBank, quickBattle);
 }
 
-void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank)
+void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank, bool quickBattle)
 {
-	startBattleI(army1, army2, army2->visitablePos(), creatureBank);
+	startBattleI(army1, army2, army2->visitablePos(), creatureBank, quickBattle);
 }
 
 void CGameHandler::changeSpells(const CGHeroInstance * hero, bool give, const std::set<SpellID> &spells)
@@ -5524,13 +5534,29 @@ bool CGameHandler::swapStacks(const StackLocation &sl1, const StackLocation &sl2
 		return true;
 	}
 }
-
+void CGameHandler::quickBattle(const BattleInfo *B) {
+	for (CStack* st : B->stacks) {
+		//left hand
+		if (st->attackerOwned) {
+			st->count--;
+			if (st->count <= 0) {
+				st->state -= EBattleStackState::ALIVE;
+			}
+		}
+		else
+		{
+			st->count = 0;
+			st->state -= EBattleStackState::ALIVE;
+		}
+	}
+	checkBattleStateChanges();
+}
 void CGameHandler::runBattle()
 {
 	setBattle(gs->curB);
 	assert(gs->curB);
 	//TODO: pre-tactic stuff, call scripts etc.
-
+	si32 manaBegin = gs->curB->battleGetFightingHero(0)->mana;
 	//tactic round
 	{
 		while (gs->curB->tacticDistance && !battleResult.get())
@@ -5568,7 +5594,9 @@ void CGameHandler::runBattle()
 			}
 		}
 	}
-
+	if (gs->curB->quickBattle) {
+		quickBattle(gs->curB);
+	}
 	//main loop
 	while (!battleResult.get()) //till the end of the battle ;]
 	{
@@ -5821,7 +5849,7 @@ void CGameHandler::runBattle()
 		}
 	}
 
-	endBattle(gs->curB->tile, gs->curB->battleGetFightingHero(0), gs->curB->battleGetFightingHero(1));
+	endBattle(gs->curB->tile, gs->curB->battleGetFightingHero(0), gs->curB->battleGetFightingHero(1), manaBegin);
 }
 JsonNode CGameHandler::toJsonNode(const CStack* next){
     JsonNode ns;
@@ -5846,6 +5874,107 @@ JsonNode CGameHandler::toJsonNode(const CStack* next){
     ns["isCanShoot"].Bool() = next->hasBonusOfType(Bonus::SHOOTER) && next->shots;
     return ns;
 }
+struct BonusInfo
+{
+	std::string name;
+	std::string description;
+	std::string imagePath;
+	int type;
+};
+static std::vector<BonusInfo> getAbility(const CStack* st) {
+	if (!st->base)
+	{
+		return std::vector<BonusInfo>();
+	}
+	BonusList output, input;
+	std::vector<BonusInfo> activeBonuses;
+	input = *(st->base->getBonuses(CSelector(Bonus::Permanent), Selector::all));
+
+	while (!input.empty())
+	{
+		auto b = input.front();
+		output.push_back(std::make_shared<Bonus>(*b));
+		output.back()->val = input.valOfBonuses(Selector::typeSubtype(b->type, b->subtype)); //merge multiple bonuses into one
+		input.remove_if(Selector::typeSubtype(b->type, b->subtype)); //remove used bonuses
+	}
+
+	for (auto b : output)
+	{
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		//if it's possible to give any description or image for this kind of bonus
+		//TODO: figure out why half of bonuses don't have proper description
+		if ((!info.name.empty() || !info.imagePath.empty()) && b->type != Bonus::MAGIC_RESISTANCE)
+			activeBonuses.push_back(info);
+	}
+
+	//handle Magic resistance separately :/
+	int magicResistance = st->base->magicResistance();
+
+	if (magicResistance)
+	{
+		auto b = std::make_shared<Bonus>();
+		b->type = Bonus::MAGIC_RESISTANCE;
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		activeBonuses.push_back(info);
+	}
+	return activeBonuses;
+}
+void CGameHandler::recordBattleResult(int manaCost) {
+	if (battleResult.get()->result == BattleResult::ESCAPE)
+	{
+		return;
+	}
+	JsonNode ret;
+	for (auto & elem : gs->curB->stacks)//setting casualties
+	{
+		const CStack * const next = elem;
+		if (!next->base)
+		{
+			continue;
+		}
+		si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
+		vstd::amax(killed, 0);
+		//record stack
+		JsonNode ns;
+		ns["baseAmount"].Float() = next->baseAmount;
+		ns["killed"].Float() = killed;
+		ns["attack"].Float() = next->Attack();
+		ns["defense"].Float() = next->Defense();
+		ns["maxDamage"].Float() = next->getMaxDamage();
+		ns["minDamage"].Float() = next->getMinDamage();
+		ns["health"].Float() = next->valOfBonuses(Bonus::STACK_HEALTH);
+		ns["name"].String() = next->getCreature()->nameSing;
+		ns["isWide"].Bool() = next->doubleWide();
+		ns["speed"].Float() = next->Speed();
+		PlayerColor c = next->owner;
+		ns["isHuman"].Bool() = (c != PlayerColor(255) && gs->players[c].human);
+
+		for (auto abs : getAbility(next)) {
+			JsonNode ab;
+			ab["type"].Float() = abs.type;
+			ab["desc"].String() = abs.description;
+			ns["ability"].Vector().push_back(ab);
+		}
+		ret["stacks"].Vector().push_back(ns);
+	}
+	ret["manaCost"].Float() = manaCost;
+	ret["quickBattle"].Bool() = gs->curB->quickBattle;
+	ret["win"].Bool() = 1 - battleResult.get()->winner;
+	std::stringstream s;
+	s <<"br"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	std::ofstream of(s.str(), std::ofstream::trunc);
+	of << ret;
+	//std::cout << ret;
+}
+
 void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGHeroInstance *h){
     try
     {
@@ -5956,10 +6085,24 @@ void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGH
                         secSkills["id"].Float() = elem.first.num;
                         secSkills["level"].Float() = elem.second;
                         hero["secSkills"].Vector().push_back(secSkills);
-                    }
-                    root["hero"] = hero;
-                    std::ofstream of(s.str(), std::ofstream::trunc);
-                    of << root;
+					}
+					for (SpellID spell : h->spells)
+					{
+						const CSpell* csp = spell.toSpell();
+						if (!csp->isCombatSpell())
+						{
+							continue;
+						}
+						JsonNode SP;
+						SP["id"].Float() = spell;
+						SP["canBeCasted"].Bool() = !csp->canBeCast(this, ECastingMode::HERO_CASTING, h);
+						SP["cost"].Float() = bi->battleGetSpellCost(csp, h);
+						SP["level"].Float() = h->getSpellSchoolLevel(csp);
+						hero["spells"].Vector().push_back(SP);
+					}
+					root["hero"] = hero;
+					std::ofstream of(s.str(), std::ofstream::trunc);
+					of << root;
                     std::cout << root;
                     break;
                 }

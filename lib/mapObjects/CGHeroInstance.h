@@ -143,7 +143,7 @@ public:
 	void getOutOffsets(std::vector<int3> &offsets) const override; //offsets to obj pos when we boat can be placed
 
 	//////////////////////////////////////////////////////////////////////////
-
+	
 	bool hasSpellbook() const;
 	EAlignment::EAlignment getAlignment() const;
 	const std::string &getBiography() const;

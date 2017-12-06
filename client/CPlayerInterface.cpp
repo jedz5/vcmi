@@ -645,7 +645,8 @@ void CPlayerInterface::battleStartBefore(const CCreatureSet *army1, const CCreat
 void CPlayerInterface::battleStart(const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool side)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
-	if (settings["adventure"]["quickCombat"].Bool())
+	//if (settings["adventure"]["quickCombat"].Bool())
+	if (hero1->battle->quickBattle)
 	{
 		autofightingAI = CDynLibHandler::getNewBattleAI(settings["server"]["neutralAI"].String());
 		autofightingAI->init(cb);

@@ -551,7 +551,7 @@ void CGTownInstance::onHeroVisit(const CGHeroInstance * h) const
 				mergeGarrisonOnSiege();
 			}
 
-			cb->startBattlePrimary(h, defendingArmy, getSightCenter(), h, defendingHero, false, (outsideTown ? nullptr : this));
+			cb->startBattlePrimary(h, defendingArmy, getSightCenter(), h, defendingHero, false,false, (outsideTown ? nullptr : this));
 		}
 		else
 		{

@@ -702,7 +702,9 @@ public:
 	CSelector operator()(const T &valueToCompareAgainst) const
 	{
 		auto ptr2 = ptr; //We need a COPY because we don't want to reference this (might be outlived by lambda)
-		return [ptr2, valueToCompareAgainst](const Bonus *bonus) {  return bonus->*ptr2 == valueToCompareAgainst; };
+		return [ptr2, valueToCompareAgainst](const Bonus *bonus) {  
+			return bonus->*ptr2 == valueToCompareAgainst; 
+		};
 	}
 };
 

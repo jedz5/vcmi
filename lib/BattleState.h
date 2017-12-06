@@ -95,13 +95,14 @@ struct DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallb
 
 	ui8 tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
-
+	bool quickBattle;
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		h & sides;
 		h & round & activeStack & selectedStack & town & tile & stacks & obstacles
 			& si & battlefieldType & terrainType;
 		h & tacticsSide & tacticDistance;
+		h & quickBattle;
 		h & static_cast<CBonusSystemNode&>(*this);
 	}
 
@@ -146,7 +147,7 @@ struct DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallb
 	void localInit();
 
 	void localInitStack(CStack * s);
-	static BattleInfo * setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, const CGTownInstance *town );
+	static BattleInfo * setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town );
 	//bool hasNativeStack(ui8 side) const;
 
 	PlayerColor theOtherPlayer(PlayerColor player) const;
