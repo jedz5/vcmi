@@ -32,7 +32,7 @@
 #include "../lib/registerTypes/RegisterTypes.h"
 #include "../lib/serializer/CTypeList.h"
 #include "../lib/serializer/Connection.h"
-
+#include "python.h"
 /*
  * CGameHandler.cpp, part of VCMI engine
  *
@@ -5534,7 +5534,186 @@ bool CGameHandler::swapStacks(const StackLocation &sl1, const StackLocation &sl2
 		return true;
 	}
 }
+
+struct BonusInfo
+{
+	std::string name;
+	std::string description;
+	std::string imagePath;
+	int type;
+};
+std::vector<BonusInfo> getAbility(const CStack* st) {
+	if (!st->base)
+	{
+		return std::vector<BonusInfo>();
+	}
+	BonusList output, input;
+	std::vector<BonusInfo> activeBonuses;
+	input = *(st->base->getBonuses(CSelector(Bonus::Permanent), Selector::all));
+
+	while (!input.empty())
+	{
+		auto b = input.front();
+		output.push_back(std::make_shared<Bonus>(*b));
+		output.back()->val = input.valOfBonuses(Selector::typeSubtype(b->type, b->subtype)); //merge multiple bonuses into one
+		input.remove_if(Selector::typeSubtype(b->type, b->subtype)); //remove used bonuses
+	}
+
+	for (auto b : output)
+	{
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		//if it's possible to give any description or image for this kind of bonus
+		//TODO: figure out why half of bonuses don't have proper description
+		if ((!info.name.empty() || !info.imagePath.empty()) && b->type != Bonus::MAGIC_RESISTANCE)
+			activeBonuses.push_back(info);
+	}
+
+	//handle Magic resistance separately :/
+	int magicResistance = st->base->magicResistance();
+
+	if (magicResistance)
+	{
+		auto b = std::make_shared<Bonus>();
+		b->type = Bonus::MAGIC_RESISTANCE;
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		activeBonuses.push_back(info);
+	}
+	return activeBonuses;
+}
+JsonNode genParam(CGameHandler* self)
+{
+	JsonNode ret;
+	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
+	{
+		const CStack * const next = elem;
+		if (!next->base)
+		{
+			continue;
+		}
+		si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
+		vstd::amax(killed, 0);
+		//record stack
+		JsonNode ns;
+		ns["baseAmount"].Float() = next->baseAmount;
+		ns["killed"].Float() = killed;
+		ns["attack"].Float() = next->Attack();
+		ns["defense"].Float() = next->Defense();
+		ns["maxDamage"].Float() = next->getMaxDamage();
+		ns["minDamage"].Float() = next->getMinDamage();
+		ns["health"].Float() = next->valOfBonuses(Bonus::STACK_HEALTH);
+		ns["name"].String() = next->getCreature()->nameSing;
+		ns["isWide"].Bool() = next->doubleWide();
+		ns["speed"].Float() = next->Speed();
+		ns["aiValue"].Float() = next->type->AIValue;
+		ns["fightValue"].Float() = next->type->fightValue;
+		PlayerColor c = next->owner;
+		ns["isHuman"].Bool() = (c != PlayerColor(255) && self->gameState()->players[c].human);
+		ns["slot"].Float() = next->slot.getNum();
+		for (auto abs : getAbility(next)) {
+			JsonNode ab;
+			ab["type"].Float() = abs.type;
+			ab["desc"].String() = abs.description;
+			ns["ability"].Vector().push_back(ab);
+		}
+		ret["stacks"].Vector().push_back(ns);
+	}
+	//hero
+	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+	JsonNode hero;
+	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	hero["mana"].Float() = h->mana;
+
+	for (auto & elem : h->secSkills) {
+		JsonNode secSkills;
+		secSkills["id"].Float() = elem.first.num;
+		secSkills["level"].Float() = elem.second;
+		hero["secSkills"].Vector().push_back(secSkills);
+	}
+	for (SpellID spell : h->spells)
+	{
+		const CSpell* csp = spell.toSpell();
+		if (!csp->isCombatSpell())
+		{
+			continue;
+		}
+		JsonNode SP;
+		SP["id"].Float() = spell;
+		//SP["canBeCasted"].Bool() = !csp->canBeCast(*self, ECastingMode::HERO_CASTING, h);
+		SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
+		SP["level"].Float() = h->getSpellSchoolLevel(csp);
+		hero["spells"].Vector().push_back(SP);
+	}
+	ret["hero"] = hero;
+	//ret["manaCost"].Float() = manaCost;
+	//ret["quickBattle"].Bool() = gs->curB->quickBattle;
+	//ret["win"].Bool() = 1 - battleResult.get()->winner;
+	return ret;
+};
+JsonNode callNN(JsonNode node)
+{
+
+	//使用python之前，要调用Py_Initialize();这个函数进行初始化
+	Py_Initialize();
+
+	int i = PyRun_SimpleString("import sys");
+	i = PyRun_SimpleString("sys.path.append('D:/project/DNN/VCNN')");
+	/*PyRun_SimpleString("sys.path.append('D:\\Python35\\python35.zip')");
+	PyRun_SimpleString("sys.path.append('D:\\Python35\\DLLs')");
+	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib')");
+	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib')");
+	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib\\site-packages')");*/
+
+	PyObject * pModule = NULL;
+	PyObject * pFunc = NULL;
+	PyObject * pClass = NULL;
+	PyObject * pInstance = NULL;
+
+	//这里是要调用的文件名
+	pModule = PyImport_ImportModule("loadJson");
+	//这里是要调用的函数名
+	//pFunc = PyObject_GetAttrString(pModule, "quick");
+	////调用函数
+	//PyEval_CallObject(pFunc, NULL);
+	//Py_DECREF(pFunc);
+
+	pFunc = PyObject_GetAttrString(pModule, "quick");
+	PyObject_CallFunction(pFunc, "s", "zhengji");
+	Py_DECREF(pFunc);
+
+	//测试调用python的类
+	/*pClass = PyObject_GetAttrString(pModule, "Student");
+	if (!pClass) {
+	printf("Can't find Student class.\n");
+	return -1;
+	}
+	pInstance = PyInstance_New(pClass, NULL, NULL);
+	if (!pInstance) {
+	printf("Can't create Student instance.\n");
+	return -1;
+	}
+	PyObject_CallMethod(pInstance, "SetName", "s", "my family");
+	PyObject_CallMethod(pInstance, "PrintName", NULL, NULL);*/
+	//调用Py_Finalize，这个根Py_Initialize相对应的。
+	Py_Finalize();
+	return node;
+}
 void CGameHandler::quickBattle(const BattleInfo *B) {
+	
+	JsonNode r = genParam(this);
+	std::stringstream s;
+	s << r;
+	std::cout << s.str();
 	for (CStack* st : B->stacks) {
 		//left hand
 		if (st->attackerOwned) {
@@ -5874,59 +6053,8 @@ JsonNode CGameHandler::toJsonNode(const CStack* next){
     ns["isCanShoot"].Bool() = next->hasBonusOfType(Bonus::SHOOTER) && next->shots;
     return ns;
 }
-struct BonusInfo
-{
-	std::string name;
-	std::string description;
-	std::string imagePath;
-	int type;
-};
-static std::vector<BonusInfo> getAbility(const CStack* st) {
-	if (!st->base)
-	{
-		return std::vector<BonusInfo>();
-	}
-	BonusList output, input;
-	std::vector<BonusInfo> activeBonuses;
-	input = *(st->base->getBonuses(CSelector(Bonus::Permanent), Selector::all));
 
-	while (!input.empty())
-	{
-		auto b = input.front();
-		output.push_back(std::make_shared<Bonus>(*b));
-		output.back()->val = input.valOfBonuses(Selector::typeSubtype(b->type, b->subtype)); //merge multiple bonuses into one
-		input.remove_if(Selector::typeSubtype(b->type, b->subtype)); //remove used bonuses
-	}
 
-	for (auto b : output)
-	{
-		BonusInfo info;
-		info.name = st->base->bonusToString(b, false);
-		info.description = st->base->bonusToString(b, true);
-		info.imagePath = st->base->bonusToGraphics(b);
-		info.type = b->type;
-		//if it's possible to give any description or image for this kind of bonus
-		//TODO: figure out why half of bonuses don't have proper description
-		if ((!info.name.empty() || !info.imagePath.empty()) && b->type != Bonus::MAGIC_RESISTANCE)
-			activeBonuses.push_back(info);
-	}
-
-	//handle Magic resistance separately :/
-	int magicResistance = st->base->magicResistance();
-
-	if (magicResistance)
-	{
-		auto b = std::make_shared<Bonus>();
-		b->type = Bonus::MAGIC_RESISTANCE;
-		BonusInfo info;
-		info.name = st->base->bonusToString(b, false);
-		info.description = st->base->bonusToString(b, true);
-		info.imagePath = st->base->bonusToGraphics(b);
-		info.type = b->type;
-		activeBonuses.push_back(info);
-	}
-	return activeBonuses;
-}
 void CGameHandler::recordBattleResult(int manaCost) {
 	if (battleResult.get()->result == BattleResult::ESCAPE)
 	{
@@ -5954,9 +6082,11 @@ void CGameHandler::recordBattleResult(int manaCost) {
 		ns["name"].String() = next->getCreature()->nameSing;
 		ns["isWide"].Bool() = next->doubleWide();
 		ns["speed"].Float() = next->Speed();
+		ns["aiValue"].Float() = next->type->AIValue;
+		ns["fightValue"].Float() = next->type->fightValue;
 		PlayerColor c = next->owner;
 		ns["isHuman"].Bool() = (c != PlayerColor(255) && gs->players[c].human);
-
+		ns["slot"].Float() = next->slot.getNum();
 		for (auto abs : getAbility(next)) {
 			JsonNode ab;
 			ab["type"].Float() = abs.type;
@@ -5965,11 +6095,41 @@ void CGameHandler::recordBattleResult(int manaCost) {
 		}
 		ret["stacks"].Vector().push_back(ns);
 	}
+	//hero
+	const CGHeroInstance *h = gs->curB->battleGetFightingHero(0);
+	JsonNode hero;
+	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	hero["mana"].Float() = h->mana;
+
+	for (auto & elem : h->secSkills) {
+		JsonNode secSkills;
+		secSkills["id"].Float() = elem.first.num;
+		secSkills["level"].Float() = elem.second;
+		hero["secSkills"].Vector().push_back(secSkills);
+	}
+	for (SpellID spell : h->spells)
+	{
+		const CSpell* csp = spell.toSpell();
+		if (!csp->isCombatSpell())
+		{
+			continue;
+		}
+		JsonNode SP;
+		SP["id"].Float() = spell;
+		SP["canBeCasted"].Bool() = !csp->canBeCast(this, ECastingMode::HERO_CASTING, h);
+		SP["cost"].Float() = gs->curB->battleGetSpellCost(csp, h);
+		SP["level"].Float() = h->getSpellSchoolLevel(csp);
+		hero["spells"].Vector().push_back(SP);
+	}
+	ret["hero"] = hero;
 	ret["manaCost"].Float() = manaCost;
 	ret["quickBattle"].Bool() = gs->curB->quickBattle;
 	ret["win"].Bool() = 1 - battleResult.get()->winner;
 	std::stringstream s;
-	s <<"br"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	s <<"br-"<< gs->curB->quickBattle <<"-"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
 	std::ofstream of(s.str(), std::ofstream::trunc);
 	of << ret;
 	//std::cout << ret;
