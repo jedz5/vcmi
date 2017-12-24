@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="RD64|Win32">
+      <Configuration>RD64</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="RD|Win32">
       <Configuration>RD</Configuration>
       <Platform>Win32</Platform>
@@ -30,6 +34,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -39,6 +50,11 @@
     <Import Project="..\VCMI_global.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\VCMI_global_release.props" />
+    <Import Project="..\VCMI_global.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\VCMI_global_release.props" />
     <Import Project="..\VCMI_global.props" />
@@ -54,6 +70,13 @@
     <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>
     </CustomBuildBeforeTargets>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>..</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">
+    <LinkIncremental />
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
+    <CustomBuildBeforeTargets />
     <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;$(LibraryPath)</LibraryPath>
     <OutDir>..</OutDir>
   </PropertyGroup>
@@ -94,6 +117,31 @@
       </Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
+      <AdditionalOptions>/Zm150 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>VCMI_lib.lib;Qt5Core.lib;Qt5Gui.lib;Qt5Widgets.lib;Qt5Network.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\libs;..</AdditionalLibraryDirectories>
+    </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>
+      </Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>
+      </Outputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GeneratedFiles\*.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -102,12 +150,18 @@
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
       </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">
+      </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\*.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RD|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\RD\*.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -116,7 +170,9 @@
     <ClCompile Include=".\StdInc.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include=".\**\*.cpp" Exclude=".\**\moc_*.cpp;.\StdInc.cpp" />
@@ -134,13 +190,21 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fStdInc.h" "-f..\..\%(RecursiveDir)%(Filename).h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DQT_SVG_LIB "-I.\GeneratedFiles" "-I." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtSvg"</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">Calling D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe for %(Filename) file...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">Calling D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe for %(Filename) file...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fStdInc.h" "-f..\..\%(RecursiveDir)%(Filename).h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DQT_SVG_LIB "-I.\GeneratedFiles" "-I." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtSvg"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fStdInc.h" "-f..\..\%(RecursiveDir)%(Filename).h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DQT_SVG_LIB "-I.\GeneratedFiles" "-I." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtSvg"</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD|x64'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='RD|x64'">Calling D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe for %(Filename) file...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">Calling D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe for %(Filename) file...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RD|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='RD|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fStdInc.h" "-f..\..\%(RecursiveDir)%(Filename).h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DQT_SVG_LIB "-I.\GeneratedFiles" "-I." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtSvg"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" "-fStdInc.h" "-f..\..\%(RecursiveDir)%(Filename).h"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DQT_SVG_LIB "-I.\GeneratedFiles" "-I." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtCore" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtGui" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtWidgets" "-ID:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\include\QtSvg"</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -154,13 +218,21 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">Uic%27ing %(Identity)...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">Uic%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RD64|Win32'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD|x64'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='RD|x64'">Uic%27ing %(Identity)...</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">Uic%27ing %(Identity)...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RD|x64'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">.\GeneratedFiles\ui_%(Filename).h;%(Outputs)</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='RD|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RD64|x64'">"D:\Programowanie\Biblioteki\QT\5.1.1\msvc2012\bin\uic.exe" -o ".\GeneratedFiles\ui_%(Filename).h" "%(FullPath)"</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

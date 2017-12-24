@@ -32,7 +32,7 @@
 #include "../lib/registerTypes/RegisterTypes.h"
 #include "../lib/serializer/CTypeList.h"
 #include "../lib/serializer/Connection.h"
-#include "python.h"
+#include <boost/asio.hpp>
 /*
  * CGameHandler.cpp, part of VCMI engine
  *
@@ -5660,60 +5660,74 @@ JsonNode genParam(CGameHandler* self)
 	//ret["win"].Bool() = 1 - battleResult.get()->winner;
 	return ret;
 };
-JsonNode callNN(JsonNode node)
+//JsonNode callNN(JsonNode node)
+//{
+//
+//	//使用python之前，要调用Py_Initialize();这个函数进行初始化
+//	Py_Initialize();
+//
+//	int i = PyRun_SimpleString("import sys");
+//	i = PyRun_SimpleString("sys.path.append('D:/project/DNN/VCNN')");
+//
+//	PyObject * pModule = NULL;
+//	PyObject * pFunc = NULL;
+//	PyObject * pClass = NULL;
+//	PyObject * pInstance = NULL;
+//
+//	//这里是要调用的文件名
+//	pModule = PyImport_ImportModule("loadJson");
+//
+//	pFunc = PyObject_GetAttrString(pModule, "quick");
+//	PyObject_CallFunction(pFunc, "s", "zhengji");
+//	Py_DECREF(pFunc);
+//	Py_Finalize();
+//	return node;
+//}
+std::string callNNR(std::string inParam)
 {
+	typedef boost::asio::io_service IoService;
+	// 该命名空间下有几个常用类: accetpt, resolver, endpoint, socket  
+	typedef boost::asio::ip::tcp TCP;
 
-	//使用python之前，要调用Py_Initialize();这个函数进行初始化
-	Py_Initialize();
+	try
+	{
+		IoService ios;
+		boost::system::error_code error;
+			// 2. 用简便的方法  
+			TCP::socket socket(ios);
+			TCP::endpoint endpoint(boost::asio::ip::address_v4::from_string("127.0.0.1"), 50007);
+			socket.connect(endpoint, error);
 
-	int i = PyRun_SimpleString("import sys");
-	i = PyRun_SimpleString("sys.path.append('D:/project/DNN/VCNN')");
-	/*PyRun_SimpleString("sys.path.append('D:\\Python35\\python35.zip')");
-	PyRun_SimpleString("sys.path.append('D:\\Python35\\DLLs')");
-	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib')");
-	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib')");
-	PyRun_SimpleString("sys.path.append('D:\\Python35\\lib\\site-packages')");*/
+			// 这里要判断一下, 否则没有连上会通过.  
+			if (error)
+				return "";
+			// boost::array<char, 128> buf; 
+			char buf[1024];			  // buf要注意控制大小。  
+			boost::erase_all(inParam,"\n");
+			boost::erase_all(inParam, "\t");
+			socket.write_some(boost::asio::buffer(inParam.c_str(), inParam.size()), error);
 
-	PyObject * pModule = NULL;
-	PyObject * pFunc = NULL;
-	PyObject * pClass = NULL;
-	PyObject * pInstance = NULL;
-
-	//这里是要调用的文件名
-	pModule = PyImport_ImportModule("loadJson");
-	//这里是要调用的函数名
-	//pFunc = PyObject_GetAttrString(pModule, "quick");
-	////调用函数
-	//PyEval_CallObject(pFunc, NULL);
-	//Py_DECREF(pFunc);
-
-	pFunc = PyObject_GetAttrString(pModule, "quick");
-	PyObject_CallFunction(pFunc, "s", "zhengji");
-	Py_DECREF(pFunc);
-
-	//测试调用python的类
-	/*pClass = PyObject_GetAttrString(pModule, "Student");
-	if (!pClass) {
-	printf("Can't find Student class.\n");
-	return -1;
+			size_t len = socket.read_some(boost::asio::buffer(buf), error);
+			// 这是也要判断一下, 否则服务端运行断开, 这里会出现死循环.  
+			if (error == boost::asio::error::eof)
+				return ""; // Connection closed cleanly by peer.  
+			else if (error)
+				return ""; // Some other error.
+			std::string s(buf);
+			return s;
 	}
-	pInstance = PyInstance_New(pClass, NULL, NULL);
-	if (!pInstance) {
-	printf("Can't create Student instance.\n");
-	return -1;
+	catch (std::exception& e)
+	{
+		std::cout << e.what();
 	}
-	PyObject_CallMethod(pInstance, "SetName", "s", "my family");
-	PyObject_CallMethod(pInstance, "PrintName", NULL, NULL);*/
-	//调用Py_Finalize，这个根Py_Initialize相对应的。
-	Py_Finalize();
-	return node;
 }
 void CGameHandler::quickBattle(const BattleInfo *B) {
 	
-	JsonNode r = genParam(this);
+	JsonNode p = genParam(this);
 	std::stringstream s;
-	s << r;
-	std::cout << s.str();
+	s << p;
+	std::string r = callNNR(s.str());
+	std::cout << r;
 	for (CStack* st : B->stacks) {
 		//left hand
 		if (st->attackerOwned) {
