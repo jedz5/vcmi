@@ -44,7 +44,7 @@ public:
 	enum Character {
 		COMPLIANT = 0, FRIENDLY = 1, AGRESSIVE = 2, HOSTILE = 3, SAVAGE = 4
 	};
-
+	int lastAction = 1;
 	ui32 identifier; //unique code for this monster (used in missions)
 	si8 character; //character of this set of creatures (0 - the most friendly, 4 - the most hostile) => on init changed to -4 (compliant) ... 10 value (savage)
 	std::string message; //message printed for attacking hero
@@ -63,7 +63,6 @@ public:
 	void newTurn(CRandomGenerator & rand) const override;
 	void battleFinished(const CGHeroInstance *hero, const BattleResult &result) const override;
 	void blockingDialogAnswered(const CGHeroInstance *hero, ui32 answer) const override;
-
 	//stack formation depends on position,
 	bool containsUpgradedStack() const;
 	int getNumberOfStacks(const CGHeroInstance *hero) const;
@@ -95,7 +94,7 @@ private:
 	void fleeDecision(const CGHeroInstance *h, ui32 pursue) const;
 	void joinDecision(const CGHeroInstance *h, int cost, ui32 accept) const;
 
-	int takenAction(const CGHeroInstance *h, bool allowJoin=true) const; //action on confrontation: -2 - fight, -1 - flee, >=0 - will join for given value of gold (may be 0)
+	int takenAction(const CGHeroInstance *h, bool allowJoin=true)const; //action on confrontation: -2 - fight, -1 - flee, >=0 - will join for given value of gold (may be 0)
 	void giveReward(const CGHeroInstance * h) const;
 
 };

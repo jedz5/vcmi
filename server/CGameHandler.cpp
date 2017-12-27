@@ -6046,6 +6046,7 @@ void CGameHandler::runBattle()
 }
 JsonNode CGameHandler::toJsonNode(const CStack* next){
     JsonNode ns;
+	ns["amountBase"].Float() = next->baseAmount;
     ns["amount"].Float() = next->count;
     ns["attack"].Float() = next->Attack();
     ns["defense"].Float() = next->Defense();

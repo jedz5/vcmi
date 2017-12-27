@@ -281,6 +281,7 @@ void CGCreature::setPropertyDer(ui8 what, ui32 val)
 
 int CGCreature::takenAction(const CGHeroInstance *h, bool allowJoin) const
 {
+	return FIGHT;
 	//calculate relative strength of hero and creatures armies
 	double relStrength = double(h->getTotalStrength()) / getArmyStrength();
 
@@ -328,24 +329,36 @@ int CGCreature::takenAction(const CGHeroInstance *h, bool allowJoin) const
 
 	int charisma = powerFactor + h->getSecSkillLevel(SecondarySkill::DIPLOMACY) + sympathy;
 
-	if(charisma < character)
+	if (charisma < character) {
+		//lastAction = FIGHT;
 		return FIGHT;
+	}
+		
 
 	if (allowJoin)
 	{
-		if(h->getSecSkillLevel(SecondarySkill::DIPLOMACY) + sympathy + 1 >= character)
+		if (h->getSecSkillLevel(SecondarySkill::DIPLOMACY) + sympathy + 1 >= character) {
+			//lastAction = JOIN_FOR_FREE;
 			return JOIN_FOR_FREE;
+		}
 
-		else if(h->getSecSkillLevel(SecondarySkill::DIPLOMACY) * 2  +  sympathy  +  1 >= character)
-			return VLC->creh->creatures[subID]->cost[6] * getStackCount(SlotID(0)); //join for gold
+		else if (h->getSecSkillLevel(SecondarySkill::DIPLOMACY) * 2 + sympathy + 1 >= character) {
+			//lastAction =
+			return  VLC->creh->creatures[subID]->cost[6] * getStackCount(SlotID(0));
+		}
+			  //join for gold
 	}
 
 	//we are still here - creatures have not joined hero, flee or fight
 
-	if (charisma > character && !neverFlees)
+	if (charisma > character && !neverFlees) {
+		//lastAction = FLEE;
 		return FLEE;
-	else
+	}
+	else {
+		//lastAction = FLEE;
 		return FIGHT;
+	}
 }
 
 void CGCreature::fleeDecision(const CGHeroInstance *h, ui32 pursue) const
@@ -514,7 +527,6 @@ void CGCreature::battleFinished(const CGHeroInstance *hero, const BattleResult &
 		cb->setObjProperty(id, ObjProperty::MONSTER_POWER, stacks.begin()->second->count * 1000); //remember casualties
 	}
 }
-
 void CGCreature::blockingDialogAnswered(const CGHeroInstance *hero, ui32 answer) const
 {
 	auto action = takenAction(hero);
