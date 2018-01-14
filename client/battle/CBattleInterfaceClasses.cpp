@@ -747,7 +747,25 @@ void CStackQueue::blitBg( SDL_Surface * to )
 		SDL_SetClipRect(to, nullptr);
 	}
 }
+template<typename IntType>
+std::string makeNumberWaitMoveShort(IntType number,bool waited, bool moved,IntType maxLength = 3) //the output is a string containing at most 5 characters [4 if positive] (eg. intead 10000 it gives 10k)
+{
+	IntType max = pow(10, maxLength);
+	auto w = waited ? "w" : "";
+	auto m = moved ? "m" : "";
+	if (std::abs(number) < max)
+		return boost::lexical_cast<std::string>(number)+w+m;
 
+	std::string symbols = " kMGTPE";
+	auto iter = symbols.begin();
+	while (number >= max)
+	{
+		number /= 1000;
+		iter++;
+		assert(iter != symbols.end());//should be enough even for int64
+	}
+	return boost::lexical_cast<std::string>(number) + *iter + w + m;
+}
 void CStackQueue::StackBox::showAll(SDL_Surface * to)
 {
 	assert(stack);
@@ -755,9 +773,9 @@ void CStackQueue::StackBox::showAll(SDL_Surface * to)
 	CIntObject::showAll(to);
 
 	if(small)
-		printAtMiddleLoc(makeNumberShort(stack->count), pos.w/2, pos.h - 7, FONT_SMALL, Colors::WHITE, to);
+		printAtMiddleLoc(makeNumberWaitMoveShort(stack->count,stack->waited(), !stack->willMove()), pos.w/2, pos.h - 7, FONT_SMALL, Colors::WHITE, to);
 	else
-		printAtMiddleLoc(makeNumberShort(stack->count), pos.w/2, pos.h - 8, FONT_MEDIUM, Colors::WHITE, to);
+		printAtMiddleLoc(makeNumberWaitMoveShort(stack->count, stack->waited(), !stack->willMove()), pos.w/2, pos.h - 8, FONT_MEDIUM, Colors::WHITE, to);
 }
 
 void CStackQueue::StackBox::setStack( const CStack *stack )
