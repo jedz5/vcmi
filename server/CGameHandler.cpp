@@ -33,6 +33,7 @@
 #include "../lib/serializer/CTypeList.h"
 #include "../lib/serializer/Connection.h"
 #include <boost/asio.hpp>
+#include<iomanip>
 /*
  * CGameHandler.cpp, part of VCMI engine
  *
@@ -2335,6 +2336,40 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank, bool quickBattle,
 								const CGTownInstance *town) //use hero=nullptr for no hero
 {
+	std::stringstream s;
+	double ratio = (army2->getArmyStrength() / hero1->getTotalStrength());
+	std::cout << ratio<<"-" << std::setprecision(2) << ratio;
+	s << hero1->name << "," << hero1->level<<"-"<< std::setprecision(2)<< ratio <<"-";
+	for (auto i = army1->stacks.begin(); i != army1->stacks.end(); i++)
+	{
+		i++;
+		if (i != army1->stacks.end()) {
+			i--;
+			s << i->second->count << ",";
+		}
+		else {
+			i--;
+			s << i->second->count << "-";
+		}
+
+		
+	}
+	for (auto i = army2->stacks.begin(); i != army2->stacks.end(); i++)
+	{
+		i++;
+		if (i != army2->stacks.end()) {
+			i--;
+			s << i->second->type->idNumber << "#" << i->second->count << ",";
+		}
+		else {
+			i--;
+			s << i->second->type->idNumber << "#" << i->second->count ;
+		}
+
+	}
+	//s << r << "-" << bi->moveInRound << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+
+	save("Saves/"+s.str());
 	engageIntoBattle(army1->tempOwner);
 	engageIntoBattle(army2->tempOwner);
 
