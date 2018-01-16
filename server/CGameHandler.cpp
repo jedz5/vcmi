@@ -2336,10 +2336,12 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank, bool quickBattle,
 								const CGTownInstance *town) //use hero=nullptr for no hero
 {
+	//saveGame
 	std::stringstream s;
-	double ratio = (army2->getArmyStrength() / hero1->getTotalStrength());
-	std::cout << ratio<<"-" << std::setprecision(2) << ratio;
-	s << hero1->name << "," << hero1->level<<"-"<< std::setprecision(2)<< ratio <<"-";
+	ui64 s2 = army2->getArmyStrength();
+	ui64 s1 = hero1->getTotalStrength();
+	double ratio = (double)s2 / s1;
+	s << hero1->name << "," << hero1->level<<"-"<< std::setprecision(3)<< ratio <<"-";
 	for (auto i = army1->stacks.begin(); i != army1->stacks.end(); i++)
 	{
 		i++;
@@ -2359,17 +2361,20 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 		i++;
 		if (i != army2->stacks.end()) {
 			i--;
-			s << i->second->type->idNumber << "#" << i->second->count << ",";
+			s << i->second->count << ",";
 		}
 		else {
 			i--;
-			s << i->second->type->idNumber << "#" << i->second->count ;
+			s << i->second->count ;
 		}
 
 	}
 	//s << r << "-" << bi->moveInRound << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	std::string sa = s.str();
+	boost::replace_all(sa, ".", "^");
+	save("Saves/"+sa);
+	//saveGame end
 
-	save("Saves/"+s.str());
 	engageIntoBattle(army1->tempOwner);
 	engageIntoBattle(army2->tempOwner);
 
