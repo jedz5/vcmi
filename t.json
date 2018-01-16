@@ -1,0 +1,27 @@
+{
+    "terType": 1,
+    "bfieldType": 0,
+    "sides": [
+        {
+            "side": 0,
+			"heroid": 99,
+			"heroPrimSkills":[5,5,3,3],
+            "army": [
+                [
+                    10,
+                    40
+                ]
+            ]
+        },
+        {
+            "side": 1,
+            "army": [
+                [
+                    11,
+                    41
+                ]
+            ]
+        }
+    ]，
+	
+}
