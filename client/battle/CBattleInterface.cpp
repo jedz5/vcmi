@@ -109,6 +109,10 @@ CBattleInterface::CBattleInterface(const CCreatureSet *army1, const CCreatureSet
 	{
 		//May happen when we are defending during network MP game -> attacker interface is just not present
 		curInt = defenderInt;
+		//duel
+		//if (!curInt) {
+		//	curInt = std::dynamic_pointer_cast<CPlayerInterface>(GH.curInt);
+		//}
 	}
 
 	animsAreDisplayed.setn(false);

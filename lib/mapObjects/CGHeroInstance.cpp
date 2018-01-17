@@ -500,7 +500,8 @@ void CGHeroInstance::initObj(CRandomGenerator & rand)
 
 	if (ID != Obj::PRISON)
 	{
-		auto customApp = VLC->objtypeh->getHandlerFor(ID, type->heroClass->id)->getOverride(cb->gameState()->getTile(visitablePos())->terType, this);
+		//auto customApp = VLC->objtypeh->getHandlerFor(ID, type->heroClass->id)->getOverride(cb->gameState()->getTile(visitablePos())->terType, this);
+		auto customApp = VLC->objtypeh->getHandlerFor(ID, type->heroClass->id)->getOverride(1, this);
 		if (customApp)
 			appearance = customApp.get();
 	}

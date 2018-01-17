@@ -754,6 +754,9 @@ void CClient::battleStarted(const BattleInfo * info)
 
 	if(!gNoGUI && (!!att || !!def || gs->scenarioOps->mode == StartInfo::DUEL))
 	{
+		if (gs->scenarioOps->mode == StartInfo::DUEL) {
+			att = std::shared_ptr<CPlayerInterface>(LOCPLINT);
+		}
 		boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
 		auto bi = new CBattleInterface(leftSide.armyObject, rightSide.armyObject, leftSide.hero, rightSide.hero,
 			Rect((screen->w - 800)/2,

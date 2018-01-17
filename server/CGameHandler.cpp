@@ -3817,7 +3817,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba)
 	}
 
     BattleInfo* bi = gs->curB;
-    recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
+    //recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
 	switch(ba.actionType)
 	{
 	case Battle::END_TACTIC_PHASE: //wait
