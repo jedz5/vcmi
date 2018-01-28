@@ -497,6 +497,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
+		inGuiThread.reset(new bool(true)); //wait for dialog
 		auto  si = new StartInfo();
 		si->mode = StartInfo::DUEL;
 		si->mapname = vm["battle"].as<std::string>();

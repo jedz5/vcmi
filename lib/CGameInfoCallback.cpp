@@ -49,6 +49,10 @@ const PlayerSettings * CGameInfoCallback::getPlayerSettings(PlayerColor color) c
 
 bool CGameInfoCallback::isAllowed( int type, int id )
 {
+	if (gs->scenarioOps->mode == StartInfo::EMode::DUEL)
+	{
+		return true;
+	}
 	switch(type)
 	{
 	case 0:

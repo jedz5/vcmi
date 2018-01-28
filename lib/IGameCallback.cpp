@@ -28,7 +28,7 @@
 #include "CGameState.h"
 #include "mapping/CMap.h"
 #include "CPlayerState.h"
-
+#include "BattleState.h"
 void CPrivilagedInfoCallback::getFreeTiles (std::vector<int3> &tiles) const
 {
 	std::vector<int> floors;
@@ -196,6 +196,12 @@ template DLL_LINKAGE void CPrivilagedInfoCallback::saveCommonState<CSaveFile>(CS
 
 TerrainTile * CNonConstInfoCallback::getTile( int3 pos )
 {
+	if (gs->scenarioOps->mode == StartInfo::DUEL) {
+		auto p = new TerrainTile();
+		p->terType = ETerrainType::GRASS;
+		return p;
+		
+	}
 	if(!gs->map->isInTheMap(pos))
 		return nullptr;
 	return &gs->map->getTile(pos);

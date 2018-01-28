@@ -213,7 +213,7 @@ void SpellCastContext::afterCast()
 		//spend mana
 		SetMana sm;
 		sm.absolute = false;
-
+		sm.side = parameters.casterHero->tempOwner.getNum();
 		sm.hid = parameters.casterHero->id;
 		sm.val = -spellCost;
 

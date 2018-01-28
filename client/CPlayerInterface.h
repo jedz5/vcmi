@@ -84,10 +84,10 @@ class CPlayerInterface : public CGameInterface, public IUpdateable
 {
 	const CArmedInstance * currentSelection;
 public:
-	bool observerInDuelMode;
+	
 	ObjectInstanceID destinationTeleport; //contain -1 or object id if teleportation
 	int3 destinationTeleportPos;
-
+	bool observerInDuelMode;
 	//minor interfaces
 	CondSh<bool> *showingDialog; //indicates if dialog box is displayed
 

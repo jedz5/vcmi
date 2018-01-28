@@ -166,7 +166,6 @@ public:
 	{
 		ONLY_MINE, ONLY_ENEMY, MINE_AND_ENEMY
 	};
-
 	BattlePerspective::BattlePerspective battleGetMySide() const;
 
 	ETerrainType battleTerrainType() const;

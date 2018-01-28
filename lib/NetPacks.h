@@ -283,12 +283,13 @@ struct SetMana : public CPackForClient //110
 
 
 	ObjectInstanceID hid;
+	si32 side;
 	si32 val;
 	bool absolute;
 
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
-		h & val & hid & absolute;
+		h & val & hid & absolute & side;
 	}
 };
 
