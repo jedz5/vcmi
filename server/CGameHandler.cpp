@@ -464,6 +464,11 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	if (c != PlayerColor(255) && gs->players[c].human)
 	{
 		recordBattleResult(manaCost - hero1->mana);
+		JsonNode node;
+		node["train"].Bool() = true;
+		std::stringstream buff;
+		buff << node;
+		callNNR(buff.str());
 	}
 	
 	//Fill BattleResult structure with exp info
@@ -5642,6 +5647,7 @@ JsonNode genParam(CGameHandler* self)
 		vstd::amax(killed, 0);
 		//record stack
 		JsonNode ns;
+		ns["id"].Float() = next->base->getCreatureID();
 		ns["baseAmount"].Float() = next->baseAmount;
 		ns["killed"].Float() = killed;
 		ns["attack"].Float() = next->Attack();
@@ -5700,29 +5706,6 @@ JsonNode genParam(CGameHandler* self)
 	//ret["win"].Bool() = 1 - battleResult.get()->winner;
 	return ret;
 };
-//JsonNode callNN(JsonNode node)
-//{
-//
-//	//使用python之前，要调用Py_Initialize();这个函数进行初始化
-//	Py_Initialize();
-//
-//	int i = PyRun_SimpleString("import sys");
-//	i = PyRun_SimpleString("sys.path.append('D:/project/DNN/VCNN')");
-//
-//	PyObject * pModule = NULL;
-//	PyObject * pFunc = NULL;
-//	PyObject * pClass = NULL;
-//	PyObject * pInstance = NULL;
-//
-//	//这里是要调用的文件名
-//	pModule = PyImport_ImportModule("loadJson");
-//
-//	pFunc = PyObject_GetAttrString(pModule, "quick");
-//	PyObject_CallFunction(pFunc, "s", "zhengji");
-//	Py_DECREF(pFunc);
-//	Py_Finalize();
-//	return node;
-//}
 std::string callNNR(std::string inParam)
 {
 	typedef boost::asio::io_service IoService;
@@ -5764,6 +5747,7 @@ std::string callNNR(std::string inParam)
 void CGameHandler::quickBattle(const BattleInfo *B) {
 	
 	JsonNode p = genParam(this);
+	p["train"].Bool() = false;
 	std::stringstream s;
 	s << p;
 	std::string r = callNNR(s.str());
