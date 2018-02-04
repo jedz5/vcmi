@@ -6112,6 +6112,7 @@ void CGameHandler::recordBattleResult(int manaCost) {
 		//record stack
 		JsonNode ns;
 		ns["baseAmount"].Float() = next->baseAmount;
+		ns["id"].Float() = next->base->getCreatureID();
 		ns["killed"].Float() = killed;
 		ns["attack"].Float() = next->Attack();
 		ns["defense"].Float() = next->Defense();
@@ -6168,7 +6169,7 @@ void CGameHandler::recordBattleResult(int manaCost) {
 	ret["quickBattle"].Bool() = gs->curB->quickBattle;
 	ret["win"].Bool() = 1 - battleResult.get()->winner;
 	std::stringstream s;
-	s <<"br-"<< gs->curB->quickBattle <<"-"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	s <<"d:/project/vcnn/train/br-"<< gs->curB->quickBattle <<"-"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
 	std::ofstream of(s.str(), std::ofstream::trunc);
 	of << ret;
 	//std::cout << ret;
