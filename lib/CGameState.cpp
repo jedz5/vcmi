@@ -884,7 +884,8 @@ void CGameState::initDuel()
 	const CArmedInstance *armies[2] = {nullptr};
 	const CGHeroInstance *heroes[2] = {nullptr};
 	CGTownInstance *town = nullptr;
-
+	players[PlayerColor(0)].human = true;
+	players[PlayerColor(1)].human = false;
 	for(int i = 0; i < 2; i++)
 	{
 		CArmedInstance *obj = nullptr;

@@ -188,7 +188,172 @@ void callWith(std::vector<T> args, std::function<void(T)> fun, ui32 which)
 {
 	fun(args[which]);
 }
+struct BonusInfo
+{
+	std::string name;
+	std::string description;
+	std::string imagePath;
+	int type;
+};
+std::vector<BonusInfo> getAbility(const CStack* st) {
+	if (!st->base)
+	{
+		return std::vector<BonusInfo>();
+	}
+	BonusList output, input;
+	std::vector<BonusInfo> activeBonuses;
+	input = *(st->base->getBonuses(CSelector(Bonus::Permanent), Selector::all));
 
+	while (!input.empty())
+	{
+		auto b = input.front();
+		output.push_back(std::make_shared<Bonus>(*b));
+		output.back()->val = input.valOfBonuses(Selector::typeSubtype(b->type, b->subtype)); //merge multiple bonuses into one
+		input.remove_if(Selector::typeSubtype(b->type, b->subtype)); //remove used bonuses
+	}
+
+	for (auto b : output)
+	{
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		//if it's possible to give any description or image for this kind of bonus
+		//TODO: figure out why half of bonuses don't have proper description
+		if ((!info.name.empty() || !info.imagePath.empty()) && b->type != Bonus::MAGIC_RESISTANCE)
+			activeBonuses.push_back(info);
+	}
+
+	//handle Magic resistance separately :/
+	int magicResistance = st->base->magicResistance();
+
+	if (magicResistance)
+	{
+		auto b = std::make_shared<Bonus>();
+		b->type = Bonus::MAGIC_RESISTANCE;
+		BonusInfo info;
+		info.name = st->base->bonusToString(b, false);
+		info.description = st->base->bonusToString(b, true);
+		info.imagePath = st->base->bonusToGraphics(b);
+		info.type = b->type;
+		activeBonuses.push_back(info);
+	}
+	return activeBonuses;
+}
+JsonNode genParam(CGameHandler* self)
+{
+	JsonNode ret;
+	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
+	{
+		const CStack * const next = elem;
+		if (!next->base)
+		{
+			continue;
+		}
+		si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
+		vstd::amax(killed, 0);
+		//record stack
+		JsonNode ns;
+		ns["id"].Float() = next->base->getCreatureID();
+		ns["baseAmount"].Float() = next->baseAmount;
+		ns["killed"].Float() = killed;
+		ns["attack"].Float() = next->Attack();
+		ns["defense"].Float() = next->Defense();
+		ns["maxDamage"].Float() = next->getMaxDamage();
+		ns["minDamage"].Float() = next->getMinDamage();
+		ns["health"].Float() = next->valOfBonuses(Bonus::STACK_HEALTH);
+		ns["name"].String() = next->getCreature()->nameSing;
+		ns["isWide"].Bool() = next->doubleWide();
+		ns["speed"].Float() = next->Speed();
+		ns["aiValue"].Float() = next->type->AIValue;
+		ns["fightValue"].Float() = next->type->fightValue;
+		PlayerColor c = next->owner;
+		ns["isHuman"].Bool() = (c != PlayerColor(255) && self->gameState()->players[c].human);
+		ns["slot"].Float() = next->slot.getNum();
+		for (auto abs : getAbility(next)) {
+			JsonNode ab;
+			ab["type"].Float() = abs.type;
+			ab["desc"].String() = abs.description;
+			ns["ability"].Vector().push_back(ab);
+		}
+		ret["stacks"].Vector().push_back(ns);
+	}
+	//hero
+	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+	JsonNode hero;
+	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	hero["mana"].Float() = h->mana;
+
+	for (auto & elem : h->secSkills) {
+		JsonNode secSkills;
+		secSkills["id"].Float() = elem.first.num;
+		secSkills["level"].Float() = elem.second;
+		hero["secSkills"].Vector().push_back(secSkills);
+	}
+	for (SpellID spell : h->spells)
+	{
+		const CSpell* csp = spell.toSpell();
+		if (!csp->isCombatSpell())
+		{
+			continue;
+		}
+		JsonNode SP;
+		SP["id"].Float() = spell;
+		//SP["canBeCasted"].Bool() = !csp->canBeCast(*self, ECastingMode::HERO_CASTING, h);
+		SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
+		SP["level"].Float() = h->getSpellSchoolLevel(csp);
+		hero["spells"].Vector().push_back(SP);
+	}
+	ret["hero"] = hero;
+	//ret["manaCost"].Float() = manaCost;
+	//ret["quickBattle"].Bool() = gs->curB->quickBattle;
+	//ret["win"].Bool() = 1 - battleResult.get()->winner;
+	return ret;
+};
+std::string callNNR(std::string inParam)
+{
+	typedef boost::asio::io_service IoService;
+	// 该命名空间下有几个常用类: accetpt, resolver, endpoint, socket  
+	typedef boost::asio::ip::tcp TCP;
+
+	try
+	{
+		IoService ios;
+		boost::system::error_code error;
+		// 2. 用简便的方法  
+		TCP::socket socket(ios);
+		TCP::endpoint endpoint(boost::asio::ip::address_v4::from_string("127.0.0.1"), 50007);
+		socket.connect(endpoint, error);
+
+		// 这里要判断一下, 否则没有连上会通过.  
+		if (error)
+			logGlobal->error("connect NN server fail, param: %s", inParam);
+			return "";
+		// boost::array<char, 128> buf; 
+		char buf[1024];			  // buf要注意控制大小。  
+		boost::erase_all(inParam, "\n");
+		boost::erase_all(inParam, "\t");
+		socket.write_some(boost::asio::buffer(inParam.c_str(), inParam.size()), error);
+
+		size_t len = socket.read_some(boost::asio::buffer(buf), error);
+		// 这是也要判断一下, 否则服务端运行断开, 这里会出现死循环.  
+		if (error == boost::asio::error::eof)
+			return ""; // Connection closed cleanly by peer.  
+		else if (error)
+			return ""; // Some other error.
+		std::string s(buf);
+		return s;
+	}
+	catch (std::exception& e)
+	{
+		std::cout << e.what();
+		return "";
+	}
+}
 void CGameHandler::levelUpHero(const CGHeroInstance * hero, SecondarySkill skill)
 {
 	changeSecSkill(hero, skill, 1, 0);
@@ -5580,170 +5745,7 @@ bool CGameHandler::swapStacks(const StackLocation &sl1, const StackLocation &sl2
 	}
 }
 
-struct BonusInfo
-{
-	std::string name;
-	std::string description;
-	std::string imagePath;
-	int type;
-};
-std::vector<BonusInfo> getAbility(const CStack* st) {
-	if (!st->base)
-	{
-		return std::vector<BonusInfo>();
-	}
-	BonusList output, input;
-	std::vector<BonusInfo> activeBonuses;
-	input = *(st->base->getBonuses(CSelector(Bonus::Permanent), Selector::all));
 
-	while (!input.empty())
-	{
-		auto b = input.front();
-		output.push_back(std::make_shared<Bonus>(*b));
-		output.back()->val = input.valOfBonuses(Selector::typeSubtype(b->type, b->subtype)); //merge multiple bonuses into one
-		input.remove_if(Selector::typeSubtype(b->type, b->subtype)); //remove used bonuses
-	}
-
-	for (auto b : output)
-	{
-		BonusInfo info;
-		info.name = st->base->bonusToString(b, false);
-		info.description = st->base->bonusToString(b, true);
-		info.imagePath = st->base->bonusToGraphics(b);
-		info.type = b->type;
-		//if it's possible to give any description or image for this kind of bonus
-		//TODO: figure out why half of bonuses don't have proper description
-		if ((!info.name.empty() || !info.imagePath.empty()) && b->type != Bonus::MAGIC_RESISTANCE)
-			activeBonuses.push_back(info);
-	}
-
-	//handle Magic resistance separately :/
-	int magicResistance = st->base->magicResistance();
-
-	if (magicResistance)
-	{
-		auto b = std::make_shared<Bonus>();
-		b->type = Bonus::MAGIC_RESISTANCE;
-		BonusInfo info;
-		info.name = st->base->bonusToString(b, false);
-		info.description = st->base->bonusToString(b, true);
-		info.imagePath = st->base->bonusToGraphics(b);
-		info.type = b->type;
-		activeBonuses.push_back(info);
-	}
-	return activeBonuses;
-}
-JsonNode genParam(CGameHandler* self)
-{
-	JsonNode ret;
-	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
-	{
-		const CStack * const next = elem;
-		if (!next->base)
-		{
-			continue;
-		}
-		si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
-		vstd::amax(killed, 0);
-		//record stack
-		JsonNode ns;
-		ns["id"].Float() = next->base->getCreatureID();
-		ns["baseAmount"].Float() = next->baseAmount;
-		ns["killed"].Float() = killed;
-		ns["attack"].Float() = next->Attack();
-		ns["defense"].Float() = next->Defense();
-		ns["maxDamage"].Float() = next->getMaxDamage();
-		ns["minDamage"].Float() = next->getMinDamage();
-		ns["health"].Float() = next->valOfBonuses(Bonus::STACK_HEALTH);
-		ns["name"].String() = next->getCreature()->nameSing;
-		ns["isWide"].Bool() = next->doubleWide();
-		ns["speed"].Float() = next->Speed();
-		ns["aiValue"].Float() = next->type->AIValue;
-		ns["fightValue"].Float() = next->type->fightValue;
-		PlayerColor c = next->owner;
-		ns["isHuman"].Bool() = (c != PlayerColor(255) && self->gameState()->players[c].human);
-		ns["slot"].Float() = next->slot.getNum();
-		for (auto abs : getAbility(next)) {
-			JsonNode ab;
-			ab["type"].Float() = abs.type;
-			ab["desc"].String() = abs.description;
-			ns["ability"].Vector().push_back(ab);
-		}
-		ret["stacks"].Vector().push_back(ns);
-	}
-	//hero
-	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
-	JsonNode hero;
-	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
-	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
-	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
-	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
-	hero["mana"].Float() = h->mana;
-
-	for (auto & elem : h->secSkills) {
-		JsonNode secSkills;
-		secSkills["id"].Float() = elem.first.num;
-		secSkills["level"].Float() = elem.second;
-		hero["secSkills"].Vector().push_back(secSkills);
-	}
-	for (SpellID spell : h->spells)
-	{
-		const CSpell* csp = spell.toSpell();
-		if (!csp->isCombatSpell())
-		{
-			continue;
-		}
-		JsonNode SP;
-		SP["id"].Float() = spell;
-		//SP["canBeCasted"].Bool() = !csp->canBeCast(*self, ECastingMode::HERO_CASTING, h);
-		SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
-		SP["level"].Float() = h->getSpellSchoolLevel(csp);
-		hero["spells"].Vector().push_back(SP);
-	}
-	ret["hero"] = hero;
-	//ret["manaCost"].Float() = manaCost;
-	//ret["quickBattle"].Bool() = gs->curB->quickBattle;
-	//ret["win"].Bool() = 1 - battleResult.get()->winner;
-	return ret;
-};
-std::string callNNR(std::string inParam)
-{
-	typedef boost::asio::io_service IoService;
-	// 该命名空间下有几个常用类: accetpt, resolver, endpoint, socket  
-	typedef boost::asio::ip::tcp TCP;
-
-	try
-	{
-		IoService ios;
-		boost::system::error_code error;
-			// 2. 用简便的方法  
-			TCP::socket socket(ios);
-			TCP::endpoint endpoint(boost::asio::ip::address_v4::from_string("127.0.0.1"), 50007);
-			socket.connect(endpoint, error);
-
-			// 这里要判断一下, 否则没有连上会通过.  
-			if (error)
-				return "";
-			// boost::array<char, 128> buf; 
-			char buf[1024];			  // buf要注意控制大小。  
-			boost::erase_all(inParam,"\n");
-			boost::erase_all(inParam, "\t");
-			socket.write_some(boost::asio::buffer(inParam.c_str(), inParam.size()), error);
-
-			size_t len = socket.read_some(boost::asio::buffer(buf), error);
-			// 这是也要判断一下, 否则服务端运行断开, 这里会出现死循环.  
-			if (error == boost::asio::error::eof)
-				return ""; // Connection closed cleanly by peer.  
-			else if (error)
-				return ""; // Some other error.
-			std::string s(buf);
-			return s;
-	}
-	catch (std::exception& e)
-	{
-		std::cout << e.what();
-	}
-}
 void CGameHandler::quickBattle(const BattleInfo *B) {
 	
 	JsonNode p = genParam(this);
@@ -6135,9 +6137,13 @@ void CGameHandler::recordBattleResult(int manaCost) {
 		}
 		ret["stacks"].Vector().push_back(ns);
 	}
+	//terType
+	ret["terType"].Float() = gs->curB->terrainType;
+	ret["bfieldType"].Float() = gs->curB->battleTerrainType();
 	//hero
 	const CGHeroInstance *h = gs->curB->battleGetFightingHero(0);
 	JsonNode hero;
+	hero["heroid"].Float() = h->id.getNum();
 	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
 	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
 	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
