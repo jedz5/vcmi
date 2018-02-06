@@ -330,9 +330,10 @@ std::string callNNR(std::string inParam)
 		socket.connect(endpoint, error);
 
 		// 这里要判断一下, 否则没有连上会通过.  
-		if (error)
+		if (error) {
 			logGlobal->error("connect NN server fail, param: %s", inParam);
 			return "";
+		}
 		// boost::array<char, 128> buf; 
 		char buf[1024];			  // buf要注意控制大小。  
 		boost::erase_all(inParam, "\n");
@@ -6143,7 +6144,7 @@ void CGameHandler::recordBattleResult(int manaCost) {
 	//hero
 	const CGHeroInstance *h = gs->curB->battleGetFightingHero(0);
 	JsonNode hero;
-	hero["heroid"].Float() = h->id.getNum();
+	hero["heroid"].Float() = h->subID;
 	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
 	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
 	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
