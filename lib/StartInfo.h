@@ -75,7 +75,7 @@ struct StartInfo
 
 	typedef std::map<PlayerColor, PlayerSettings> TPlayerInfos;
 	TPlayerInfos playerInfos; //color indexed
-
+	bool duelQuick; //NN quick battle
 	ui32 seedToBeUsed; //0 if not sure (client requests server to decide, will be send in reply pack)
 	ui32 seedPostInit; //so we know that game is correctly synced at the start; 0 if not known yet
 	ui32 mapfileChecksum; //0 if not relevant
@@ -119,6 +119,7 @@ struct StartInfo
 		h & mapname;
 		h & mapGenOptions;
 		h & campState;
+		h & duelQuick;
 	}
 
 	StartInfo() : mode(INVALID), difficulty(0), seedToBeUsed(0), seedPostInit(0),

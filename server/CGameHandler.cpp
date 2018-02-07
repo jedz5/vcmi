@@ -5755,6 +5755,7 @@ void CGameHandler::quickBattle(const BattleInfo *B) {
 	s << p;
 	std::string r = callNNR(s.str());
 	std::cout << r;
+	JsonNode ret(r.c_str(), r.size());
 	for (CStack* st : B->stacks) {
 		//left hand
 		if (st->attackerOwned) {

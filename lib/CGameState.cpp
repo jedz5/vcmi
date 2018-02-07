@@ -957,6 +957,7 @@ void CGameState::initDuel()
 
 	curB = BattleInfo::setupBattle(int3(-1,-1,-1), dp.terType, dp.bfieldType, armies, heroes, false,false, town);
 	curB->obstacles = dp.obstacles;
+	curB->quickBattle = scenarioOps.get()->duelQuick;
 	curB->localInit();
 }
 

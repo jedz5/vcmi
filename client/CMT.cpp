@@ -236,6 +236,7 @@ int main(int argc, char** argv)
 		("start", po::value<bfs::path>(), "starts game from saved StartInfo file")
 		("onlyAI", "runs without human player, all players will be default AI")
 		("noGUI", "runs without GUI, implies --onlyAI")
+		("duelQuick", "quick duel using NN")
 		("ai", po::value<std::vector<std::string>>(), "AI to be used for the player, can be specified several times for the consecutive players")
 		("oneGoodAI", "puts one default AI and the rest will be EmptyAI")
 		("autoSkip", "automatically skip turns in GUI")
@@ -1262,7 +1263,9 @@ void startGame(StartInfo * options, CConnection *serv/* = nullptr*/)
 				elem.second.name = ais[i++];
 		}
 	}
-
+	if (vm.count("duelQuick")) {
+		options->duelQuick = true;
+	}
     client = new CClient;
 	CPlayerInterface::howManyPeople = 0;
 	switch(options->mode) //new game
