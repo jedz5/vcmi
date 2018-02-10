@@ -335,7 +335,7 @@ std::string callNNR(std::string inParam)
 			return "";
 		}
 		// boost::array<char, 128> buf; 
-		char buf[1024];			  // buf要注意控制大小。  
+		char buf[4096];			  // buf要注意控制大小。  
 		boost::erase_all(inParam, "\n");
 		boost::erase_all(inParam, "\t");
 		socket.write_some(boost::asio::buffer(inParam.c_str(), inParam.size()), error);
@@ -347,6 +347,8 @@ std::string callNNR(std::string inParam)
 		else if (error)
 			return ""; // Some other error.
 		std::string s(buf);
+		boost::erase_all(s, "\n");
+		boost::erase_all(s, "\t");
 		return s;
 	}
 	catch (std::exception& e)
@@ -630,11 +632,16 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	if (c != PlayerColor(255) && gs->players[c].human)
 	{
 		recordBattleResult(manaCost - hero1->mana);
-		JsonNode node;
-		node["train"].Bool() = true;
-		std::stringstream buff;
-		buff << node;
-		callNNR(buff.str());
+		if (gs->curB->quickBattle) {
+			return;
+		}
+		else {
+			JsonNode node;
+			node["train"].Bool() = true;
+			std::stringstream buff;
+			buff << node;
+			callNNR(buff.str());
+		}
 	}
 	
 	//Fill BattleResult structure with exp info
@@ -5755,11 +5762,21 @@ void CGameHandler::quickBattle(const BattleInfo *B) {
 	s << p;
 	std::string r = callNNR(s.str());
 	std::cout << r;
+	if (r.empty())
+	{
+		logGlobal->error("NN server is wrong");
+		return;
+	}
 	JsonNode ret(r.c_str(), r.size());
+	float manaCost = ret["mc"].Float();
+	CGHeroInstance* hero = B->battleGetFightingHero(0);
+	setManaPoints(hero->id, hero->mana - manaCost);
+	const JsonVector& vc = ret["cas"].Vector();
+	
 	for (CStack* st : B->stacks) {
 		//left hand
 		if (st->attackerOwned) {
-			st->count--;
+			st->count -= si32(vc[st->slot.getNum()].Float());
 			if (st->count <= 0) {
 				st->state -= EBattleStackState::ALIVE;
 			}

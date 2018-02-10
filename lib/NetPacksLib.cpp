@@ -193,7 +193,7 @@ DLL_LINKAGE void SetMana::applyGs(CGameState *gs)
 	CGHeroInstance * hero = gs->getHero(hid);
 	//duel
 	if (gs->scenarioOps->mode == StartInfo::EMode::DUEL) {
-		hero = const_cast<CGHeroInstance *>(gs->curB->sides[side].hero);
+		hero = const_cast<CGHeroInstance *>(gs->curB->sides[0].hero);
 	}
 	assert(hero);
 
