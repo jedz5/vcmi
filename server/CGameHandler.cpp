@@ -632,10 +632,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	if (c != PlayerColor(255) && gs->players[c].human)
 	{
 		recordBattleResult(manaCost - hero1->mana);
-		if (gs->curB->quickBattle) {
-			return;
-		}
-		else {
+		if (!gs->curB->quickBattle) {
 			JsonNode node;
 			node["train"].Bool() = true;
 			std::stringstream buff;
@@ -5839,9 +5836,7 @@ void CGameHandler::runBattle()
 			}
 		}
 	}
-	if (gs->curB->quickBattle) {
-		quickBattle(gs->curB);
-	}
+	
 	//main loop
 	while (!battleResult.get()) //till the end of the battle ;]
 	{
@@ -5862,8 +5857,12 @@ void CGameHandler::runBattle()
 		//stack loop
         gs->curB->moveInRound = 0;
 		const CStack *next;
+		if (gs->curB->quickBattle) {
+			quickBattle(gs->curB);
+		}
 		while (!battleResult.get() && (next = curB.getNextStack()) && next->willMove())
 		{
+			
 			std::set <const CStack *> stacksToRemove;
 			for (auto stack : curB.stacks)
 			{
