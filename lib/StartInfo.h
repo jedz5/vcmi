@@ -123,7 +123,7 @@ struct StartInfo
 	}
 
 	StartInfo() : mode(INVALID), difficulty(0), seedToBeUsed(0), seedPostInit(0),
-		mapfileChecksum(0), turnTime(0)
+		mapfileChecksum(0), turnTime(0),duelQuick(0)
 	{
 
 	}

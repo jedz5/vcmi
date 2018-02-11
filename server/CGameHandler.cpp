@@ -5755,37 +5755,44 @@ bool CGameHandler::swapStacks(const StackLocation &sl1, const StackLocation &sl2
 
 
 void CGameHandler::quickBattle(const BattleInfo *B) {
-	
-	JsonNode p = genParam(this);
-	p["train"].Bool() = false;
-	std::stringstream s;
-	s << p;
-	std::string r = callNNR(s.str());
-	std::cout << r;
-	if (r.empty())
-	{
-		logGlobal->error("NN server is wrong");
-		return;
-	}
-	JsonNode ret(r.c_str(), r.size());
-	float manaCost = ret["mc"].Float();
-	CGHeroInstance* hero = B->battleGetFightingHero(0);
-	setManaPoints(hero->id, hero->mana - manaCost);
-	const JsonVector& vc = ret["cas"].Vector();
-	
-	for (CStack* st : B->stacks) {
-		//left hand
-		if (st->attackerOwned) {
-			st->count -= si32(vc[st->slot.getNum()].Float());
-			if (st->count <= 0) {
+
+	try {
+		JsonNode p = genParam(this);
+		p["train"].Bool() = false;
+		std::stringstream s;
+		s << p;
+		std::string r = callNNR(s.str());
+		std::cout << r;
+		if (r.empty())
+		{
+			logGlobal->error("NN server is wrong");
+			return;
+		}
+		JsonNode ret(r.c_str(), r.size());
+		float manaCost = ret["mc"].Float();
+		CGHeroInstance* hero = B->battleGetFightingHero(0);
+		setManaPoints(hero->id, hero->mana - manaCost);
+		const JsonVector& vc = ret["cas"].Vector();
+
+		for (CStack* st : B->stacks) {
+			//left hand
+			if (st->attackerOwned) {
+				st->count -= si32(vc[st->slot.getNum()].Float());
+				if (st->count <= 0) {
+					st->state -= EBattleStackState::ALIVE;
+				}
+			}
+			else
+			{
+				st->count = 0;
 				st->state -= EBattleStackState::ALIVE;
 			}
 		}
-		else
-		{
-			st->count = 0;
-			st->state -= EBattleStackState::ALIVE;
-		}
+	}
+	catch (...)
+	{
+		logGlobal->error("something bad happened");
+		handleException();
 	}
 	checkBattleStateChanges();
 }
