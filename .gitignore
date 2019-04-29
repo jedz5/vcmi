@@ -36,3 +36,17 @@ doc/*
 VCMI_VS11.sdf
 *.ipch
 VCMI_VS11.opensdf
+*.tlog
+*.user
+*.log
+*.obj
+*.pch
+*.idb
+*.pdb
+
+RD
+DEBUG
+jichu
+jsonTest
+vcmi_vs*
+record.zip
