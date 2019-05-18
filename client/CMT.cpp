@@ -43,7 +43,11 @@
 #include "../lib/CondSh.h"
 #include "../lib/StringConstants.h"
 #include "../lib/CPlayerState.h"
-
+#include "widgets/Images.h"
+#include "battle/CCreatureAnimation.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #ifdef VCMI_WINDOWS
 #include "SDL_syswm.h"
 #endif
@@ -169,6 +173,55 @@ static void prog_version(void)
 	printf("%s\n", GameConstants::VCMI_VERSION.c_str());
 	std::cout << VCMIDirs::get().genHelpString();
 }
+void parseDEF(std::string type) {
+	int w = 450;
+	int h = 400;
+	int x = 0;
+	if (type == "crjson")
+	{
+		JsonNode crts;
+		for (int x = 0; x < VLC->creh->creatures.size(); x++)
+		{
+			JsonNode cr;
+			cr["name"].String() = VLC->creh->creatures[x]->nameSing;
+			cr["id"].Float() = VLC->creh->creatures[x]->idNumber;
+			cr["hp"].Float() = VLC->creh->creatures[x]->MaxHealth();
+			crts["creatures"].Vector().push_back(cr);
+		}
+		std::stringstream s;
+		s << "d:/project/vcnn/train/creatureData.json";
+		std::ofstream of(s.str(), std::ofstream::trunc);
+		of << crts;
+	}
+	if (type == "crs")
+	{
+		for (int x = 0; x < VLC->creh->creatures.size(); x++)
+		{
+			SDL_Surface * hlp = CSDL_Ext::newSurface(w, h, screen);
+			SDL_FillRect(hlp, NULL, SDL_MapRGB(hlp->format, 16, 16, 16));
+			CCreature* cr = VLC->creh->creatures[x];
+			CCreatureAnimation* ca = AnimationControls::getAnimation(cr);
+			ca->pos.w = w;
+			ca->pos.h = h;
+			ca->nextFrame(hlp, true);
+			std::string picname = cr->nameSing;
+			std::string path = "D:/project/VCNN/imgs/creatures/" + picname + ".bmp";
+			SDL_SaveBMP(hlp, path.c_str());
+		}
+	}
+	if (type == "obs")
+	{
+		for (int x = 0; x < VLC->heroh->obstacles.size(); x++)
+		{
+			CObstacleInfo ob = VLC->heroh->obstacles[x];
+			CDefHandler* hand = CDefHandler::giveDef(ob.defName);
+			SDL_Surface * hlp = hand->ourImages[0].bitmap;
+			std::string picname = ob.defName.substr(0, ob.defName.find_last_of('.'));
+			std::string path = "D:/project/VCNN/imgs/obstacles/" + picname + ".bmp";
+			SDL_SaveBMP(hlp, path.c_str());
+		}
+	}
+}
 
 static void prog_help(const po::options_description &opts)
 {
@@ -232,6 +285,7 @@ int main(int argc, char** argv)
 	opts.add_options()
 		("help,h", "display help and exit")
 		("version,v", "display version information and exit")
+		("def", po::value<std::string>(), "parse def")
 		("battle,b", po::value<std::string>(), "runs game in duel mode (battle-only")
 		("start", po::value<bfs::path>(), "starts game from saved StartInfo file")
 		("onlyAI", "runs without human player, all players will be default AI")
@@ -242,17 +296,16 @@ int main(int argc, char** argv)
 		("autoSkip", "automatically skip turns in GUI")
 		("disable-video", "disable video player")
 		("nointro,i", "skips intro movies")
-		("donotstartserver,d","do not attempt to start server and just connect to it instead server")
-        ("loadserver","specifies we are the multiplayer server for loaded games")
-        ("loadnumplayers",po::value<int>(),"specifies the number of players connecting to a multiplayer game")
-        ("loadhumanplayerindices",po::value<std::vector<int>>(),"Indexes of human players (0=Red, etc.)")
-        ("loadplayer", po::value<int>(),"specifies which player we are in multiplayer loaded games (0=Red, etc.)")
-        ("loadserverip",po::value<std::string>(),"IP for loaded game server")
-		("loadserverport",po::value<std::string>(),"port for loaded game server")
-		("testingport",po::value<std::string>(),"port for testing, override specified in config file")
-		("testingfileprefix",po::value<std::string>(),"prefix for auto save files")
-		("testingsavefrequency",po::value<int>(),"how often auto save should be created");
-
+		("donotstartserver,d", "do not attempt to start server and just connect to it instead server")
+		("loadserver", "specifies we are the multiplayer server for loaded games")
+		("loadnumplayers", po::value<int>(), "specifies the number of players connecting to a multiplayer game")
+		("loadhumanplayerindices", po::value<std::vector<int>>(), "Indexes of human players (0=Red, etc.)")
+		("loadplayer", po::value<int>(), "specifies which player we are in multiplayer loaded games (0=Red, etc.)")
+		("loadserverip", po::value<std::string>(), "IP for loaded game server")
+		("loadserverport", po::value<std::string>(), "port for loaded game server")
+		("testingport", po::value<std::string>(), "port for testing, override specified in config file")
+		("testingfileprefix", po::value<std::string>(), "prefix for auto save files")
+		("testingsavefrequency", po::value<int>(), "how often auto save should be created");
 	if(argc > 1)
 	{
 		try
@@ -298,8 +351,9 @@ int main(int argc, char** argv)
 	console = new CConsoleHandler;
 	*console->cb = processCommand;
 	console->start();
-
-	const bfs::path logPath = VCMIDirs::get().userCachePath() / "VCMI_Client_log.txt";
+	//boost::uuids::uuid a_uuid = boost::uuids::random_generator()();
+	std::string file= "/logs/VCMI_Client_log.txt"; //" + boost::uuids::to_string(a_uuid) + "
+	const bfs::path logPath = VCMIDirs::get().userCachePath() / file;
 	CBasicLogConfigurator logConfig(logPath, console);
 	logConfig.configureDefault();
 	logGlobal->infoStream() << NAME;
@@ -340,8 +394,8 @@ int main(int argc, char** argv)
 	}
 
 	// these two are optional + some installs have them on CD and not in data directory
-	testFile("VIDEO/GOOD1A.SMK", "campaign movies");
-	testFile("SOUNDS/G1A.WAV", "campaign music"); //technically not a music but voiced intro sounds
+	//testFile("VIDEO/GOOD1A.SMK", "campaign movies");
+	//testFile("SOUNDS/G1A.WAV", "campaign music"); //technically not a music but voiced intro sounds
 
 	conf.init();
 	logGlobal->infoStream() << "Loading settings: " << pomtime.getDiff();
@@ -363,6 +417,7 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	
 	if(!gNoGUI)
 	{
 		if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_AUDIO|SDL_INIT_NOPARACHUTE))
@@ -459,7 +514,7 @@ int main(int argc, char** argv)
 #else
 	init();
 #endif
-
+	
 	if(!gNoGUI )
 	{
 		if(!vm.count("battle") && !vm.count("nointro") && settings["video"]["showIntro"].Bool())
@@ -472,7 +527,11 @@ int main(int argc, char** argv)
 	loading.join();
 #endif
 	logGlobal->infoStream()<<"Initialization of VCMI (together): "<<total.getDiff();
-
+	if (vm.count("def"))
+	{
+		parseDEF(vm["def"].as<std::string>());
+		return 0;
+	}
 	if(!vm.count("battle"))
 	{
 		Settings session = settings.write["session"];

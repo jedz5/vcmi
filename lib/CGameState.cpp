@@ -863,7 +863,72 @@ void CGameState::initDuel()
 	DuelParameters dp;
 	try //CLoadFile likes throwing
 	{
-		if(boost::algorithm::ends_with(scenarioOps->mapname, ".json"))
+		if (boost::algorithm::starts_with(scenarioOps->mapname, "random-"))
+		{
+			std::string cn2 = scenarioOps->mapname.substr(scenarioOps->mapname.find_last_of('-') + 1, scenarioOps->mapname.size());
+			int cr1 = 3;
+			int cr2 = std::stoi(cn2);
+			int hp = getRandomGenerator().nextInt(200, 3000);
+			int slot1 = getRandomGenerator().nextInt(6);
+			int slot2 = getRandomGenerator().nextInt(6);
+			/*if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
+			{
+				cr1 -= 1;
+			}*/
+			if (cr2 == 122 || cr2 == 124 || cr2 == 126 || cr2 == 128)
+			{
+				cr2 += 1;
+			}
+
+			auto crt1 = VLC->creh->creatures[cr1];
+			auto crt2 = VLC->creh->creatures[cr2];
+			int num1 = std::max(1, int(hp / crt1->MaxHealth()));
+			int num2 = std::max(1, int(hp / crt2->MaxHealth()));
+			dp.bfieldType = BFieldType(6);
+			dp.terType = ETerrainType(2);
+			for (int i = 0; i < 7; i++)
+			{
+				dp.sides[0].stacks[i].count = 0;
+				dp.sides[0].stacks[i].type = crt1->idNumber;
+				dp.sides[1].stacks[i].count = 0;
+				dp.sides[1].stacks[i].type = crt2->idNumber;
+			}
+			dp.sides[0].stacks[slot1].count = num1;
+			dp.sides[1].stacks[slot2].count = num2;
+		}
+		else if (scenarioOps->mapname == "random")
+		{
+			int cr1 = getRandomGenerator().nextInt(144);
+			int cr2 = getRandomGenerator().nextInt(144);
+			int hp = getRandomGenerator().nextInt(200, 3000);
+			int slot1 = getRandomGenerator().nextInt(6);
+			int slot2 = getRandomGenerator().nextInt(6);
+			if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
+			{
+				cr1 -= 1;
+			}
+			if (cr2 == 122 || cr2 == 124 || cr2 == 126 || cr2 == 128)
+			{
+				cr2 += 1;
+			}
+
+			auto crt1 = VLC->creh->creatures[cr1];
+			auto crt2 = VLC->creh->creatures[cr2];
+			int num1 = std::max(1, int(hp / crt1->MaxHealth()));
+			int num2 = std::max(1, int(hp / crt2->MaxHealth()));
+			dp.bfieldType = BFieldType(6);
+			dp.terType = ETerrainType(2);
+			for (int i = 0;i<7;i++)
+			{
+				dp.sides[0].stacks[i].count = 0;
+				dp.sides[0].stacks[i].type = crt1->idNumber;
+				dp.sides[1].stacks[i].count = 0;
+				dp.sides[1].stacks[i].type = crt2->idNumber;
+			}
+			dp.sides[0].stacks[slot1].count = num1;
+			dp.sides[1].stacks[slot2].count = num2;
+		}
+		else if(boost::algorithm::ends_with(scenarioOps->mapname, ".json"))
 		{
 			logGlobal->infoStream() << "Loading duel settings from JSON file: " << scenarioOps->mapname;
 			dp = DuelParameters::fromJSON(scenarioOps->mapname);
@@ -956,7 +1021,7 @@ void CGameState::initDuel()
 	}
 
 	curB = BattleInfo::setupBattle(int3(-1,-1,-1), dp.terType, dp.bfieldType, armies, heroes, false,false, town);
-	curB->obstacles = dp.obstacles;
+	//curB->obstacles = dp.obstacles;
 	curB->quickBattle = scenarioOps.get()->duelQuick;
 	curB->localInit();
 }

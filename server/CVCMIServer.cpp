@@ -32,6 +32,9 @@
 #include "../lib/ScopeGuard.h"
 
 #include "../lib/UnlockGuard.h"
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 
 #if defined(__GNUC__) && !defined (__MINGW32__) && !defined(VCMI_ANDROID)
 #include <execinfo.h>
@@ -576,7 +579,9 @@ int main(int argc, char** argv)
 	#endif
 
 	console = new CConsoleHandler;
-	CBasicLogConfigurator logConfig(VCMIDirs::get().userCachePath() / "VCMI_Server_log.txt", console);
+	//boost::uuids::uuid a_uuid = boost::uuids::random_generator()();
+	std::string file = "/logs/VCMI_Server_log.txt"; //" + boost::uuids::to_string(a_uuid) + "
+	CBasicLogConfigurator logConfig(VCMIDirs::get().userCachePath() / file, console);
 	logConfig.configureDefault();
 	logGlobal->info(NAME);
 

@@ -1,0 +1,14 @@
+{
+	"activeMods" : {
+		"vcmi" : {
+			"active" : true,
+			"checksum" : "d275088f",
+			"validated" : true
+		}
+	},
+	"core" : {
+		"active" : true,
+		"checksum" : "8dad97e4",
+		"validated" : true
+	}
+}

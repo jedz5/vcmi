@@ -77,7 +77,7 @@ CLogger * CLogger::getLogger(const CLoggerDomain & domain)
 		logger = new CLogger(domain);
 		if(domain.isGlobalDomain())
 		{
-			logger->setLevel(ELogLevel::TRACE);
+			logger->setLevel(ELogLevel::ERROR);
 		}
 		CLogManager::get().addLogger(logger);
 		if (logGlobal != nullptr)

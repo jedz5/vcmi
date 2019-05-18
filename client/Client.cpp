@@ -484,7 +484,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
 			auto p = std::make_shared<CPlayerInterface>(PlayerColor::PlayerColor(1));
 			p->observerInDuelMode = true;
-			installNewPlayerInterface(p, PlayerColor::PlayerColor(1));
+			installNewPlayerInterface(p, PlayerColor::PlayerColor(0));
 			GH.curInt = p.get();
 		}
 		battleStarted(gs->curB);
@@ -1030,8 +1030,8 @@ CServerHandler::~CServerHandler()
 void CServerHandler::callServer()
 {
 	setThreadName("CServerHandler::callServer");
-	const std::string logName = (VCMIDirs::get().userCachePath() / "server_log.txt").string();
-	const std::string comm = VCMIDirs::get().serverPath().string() + " --port=" + port + " > \"" + logName + '\"';
+	//const std::string logName = (VCMIDirs::get().userCachePath() / "server_log.txt").string();
+	const std::string comm = VCMIDirs::get().serverPath().string() + " --port=" + port;
 	int result = std::system(comm.c_str());
 	if (result == 0)
 		logNetwork->infoStream() << "Server closed correctly";
@@ -1056,10 +1056,12 @@ CConnection * CServerHandler::justConnectToServer(const std::string &host, const
 		realPort = boost::lexical_cast<std::string>(settings["server"]["port"].Float());
 
 	CConnection *ret = nullptr;
+	int count = 0;
 	while(!ret)
 	{
 		try
 		{
+			count++;
 			logNetwork->infoStream() << "Establishing connection...";
 			ret = new CConnection(	host.size() ? host : settings["server"]["server"].String(),
 									realPort,
@@ -1067,6 +1069,11 @@ CConnection * CServerHandler::justConnectToServer(const std::string &host, const
 		}
 		catch(...)
 		{
+			if (count > 2)
+			{
+				logNetwork->errorStream() << "\nCannot establish connection in 10 times! I QUIT";
+				exit(-1);
+			}
 			logNetwork->errorStream() << "\nCannot establish connection! Retrying within 2 seconds";
 			SDL_Delay(2000);
 		}

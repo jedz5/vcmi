@@ -33,6 +33,9 @@
 #include "../lib/serializer/CTypeList.h"
 #include "../lib/serializer/Connection.h"
 #include <boost/asio.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include<iomanip>
 /*
  * CGameHandler.cpp, part of VCMI engine
@@ -400,40 +403,40 @@ void recordBattleStart(CGameHandler* self) {
 	ret["bfieldType"].Float() = self->gameState()->curB->battleTerrainType();
 
 	//hero
-	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
-	JsonNode hero;
-	hero["heroid"].Float() = h->subID;
-	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
-	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
-	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
-	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
-	hero["mana"].Float() = h->mana;
+	//const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+	//JsonNode hero;
+	//hero["heroid"].Float() = h->subID;
+	//hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+	//hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	//hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+	//hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	//hero["mana"].Float() = h->mana;
 
-	for (auto & elem : h->secSkills) {
-		if (elem.first.num < 0)
-		{
-			continue;
-		}
-		JsonNode secSkills;
-		secSkills["id"].Float() = elem.first.num;
-		secSkills["level"].Float() = elem.second;
-		hero["secSkills"].Vector().push_back(secSkills);
-	}
-	for (SpellID spell : h->spells)
-	{
-		const CSpell* csp = spell.toSpell();
-		if (!csp->isCombatSpell())
-		{
-			continue;
-		}
-		JsonNode SP;
-		SP["id"].Float() = spell;
-		//SP["canBeCasted"].Bool() = !csp->canBeCast(self, ECastingMode::HERO_CASTING, h);
-		SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
-		SP["level"].Float() = h->getSpellSchoolLevel(csp);
-		hero["spells"].Vector().push_back(SP);
-	}
-	ret["hero"] = hero;
+	//for (auto & elem : h->secSkills) {
+	//	if (elem.first.num < 0)
+	//	{
+	//		continue;
+	//	}
+	//	JsonNode secSkills;
+	//	secSkills["id"].Float() = elem.first.num;
+	//	secSkills["level"].Float() = elem.second;
+	//	hero["secSkills"].Vector().push_back(secSkills);
+	//}
+	//for (SpellID spell : h->spells)
+	//{
+	//	const CSpell* csp = spell.toSpell();
+	//	if (!csp->isCombatSpell())
+	//	{
+	//		continue;
+	//	}
+	//	JsonNode SP;
+	//	SP["id"].Float() = spell;
+	//	//SP["canBeCasted"].Bool() = !csp->canBeCast(self, ECastingMode::HERO_CASTING, h);
+	//	SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
+	//	SP["level"].Float() = h->getSpellSchoolLevel(csp);
+	//	hero["spells"].Vector().push_back(SP);
+	//}
+	//ret["hero"] = hero;
 }
 void recordBattleEnd(CGameHandler* self,int manaCost) {
 	if (battleResult.get()->result == BattleResult::ESCAPE)
@@ -441,6 +444,7 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 		br.clear();
 		return;
 	}
+	int j = 0;
 	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
 	{
 		const CStack * const next = elem;
@@ -451,9 +455,9 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 
 		//record stack
 		PlayerColor c = next->owner;
-		for (auto & startStacks : br["stacks"].Vector())
+		auto & startStacks = br["stacks"].Vector()[j];
 		{
-			if (startStacks["slot"].Float() == next->slot.getNum() && (c != PlayerColor(255) && self->gameState()->players[c].human))
+			if (startStacks["slot"].Float() == next->slot.getNum() && (c != PlayerColor(255)))
 			{
 				JsonNode & ns = startStacks;
 				si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
@@ -461,7 +465,7 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 				ns["killed"].Float() = killed;
 
 				//spell
-				const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+				/*const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
 				JsonNode & hero = br["hero"];
 				int i = 0;
 				for (SpellID spell : h->spells)
@@ -482,16 +486,17 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 						logGlobal->error("sp id %d != csp->id %d", SP["id"].Float(), csp->id.num);
 					}
 					i++;
-				}
+				}*/
 			}
 		}
-		
+		j++;
 	}
 	br["manaCost"].Float() = manaCost;
 	br["quickBattle"].Bool() = self->gameState()->curB->quickBattle;
 	br["win"].Bool() = 1 - battleResult.get()->winner;
 	std::stringstream s;
-	s << "d:/project/vcnn/train/br-" << self->gameState()->curB->quickBattle << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	int port = self->connections[PlayerColor(0)]->socket->local_endpoint().port();
+	s << "d:/project/vcnn/train/br-" << self->gameState()->curB->quickBattle << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) <<  "-" << port << ".json";
 	std::ofstream of(s.str(), std::ofstream::trunc);
 	of << br;
 }
@@ -766,17 +771,17 @@ void CGameHandler::changeSecSkill(const CGHeroInstance * hero, SecondarySkill wh
 void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2,int manaCost)
 {
 	LOG_TRACE(logGlobal);
-	PlayerColor c = hero1->getOwner();
-	if (c != PlayerColor(255) && gs->players[c].human)
+	//PlayerColor c = hero1->getOwner();
+	//if (c != PlayerColor(255) && gs->players[c].human)
 	{
-		recordBattleEnd(this,manaCost - hero1->mana);
-		if (!gs->curB->quickBattle) {
+		recordBattleEnd(this,0); //manaCost - hero1->mana
+		/*if (!gs->curB->quickBattle) {
 			JsonNode node;
 			node["train"].Bool() = true;
 			std::stringstream buff;
 			buff << node;
 			callNNR(buff.str());
-		}
+		}*/
 	}
 	
 	//Fill BattleResult structure with exp info
@@ -2085,6 +2090,8 @@ void CGameHandler::run(bool resume)
 	if (gs->scenarioOps->mode == StartInfo::DUEL)
 	{
 		recordBattleStart(this);
+		auto battleQuery = std::make_shared<CBattleQuery>(gs->curB);
+		queries.addQuery(battleQuery);
 		runBattle();
 		end2 = true;
 
@@ -5949,7 +5956,7 @@ void CGameHandler::runBattle()
 	setBattle(gs->curB);
 	assert(gs->curB);
 	//TODO: pre-tactic stuff, call scripts etc.
-	si32 manaBegin = gs->curB->battleGetFightingHero(0)->mana;
+	si32 manaBegin = 0; //gs->curB->battleGetFightingHero(0)->mana;
 	//tactic round
 	{
 		while (gs->curB->tacticDistance && !battleResult.get())
@@ -6268,7 +6275,7 @@ JsonNode CGameHandler::toJsonNode(const CStack* next){
     ns["isWaited"].Bool() = next->waited();
     ns["isMoved"].Bool() = next->moved();
     ns["isCanMove"].Bool() = next->canMove();
-    ns["isCanShoot"].Bool() = next->hasBonusOfType(Bonus::SHOOTER) && next->shots;
+    ns["isCanShoot"].Bool() = next->hasBonusOfType(Bonus::SHOOTER);
     return ns;
 }
 
@@ -6413,6 +6420,14 @@ void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGH
 //                        return node;
 //                    };
                     for (auto ob : bi->obstacles) {
+						CObstacleInfo oi = ob->getInfo();
+						JsonNode node;
+						node["pos"].Float() = ob->pos;
+						node["isabs"].Bool() = oi.isAbsoluteObstacle;
+						node["width"].Float() = oi.width;
+						node["height"].Float() = oi.height;
+						node["imname"].String() = oi.defName.substr(0, oi.defName.find_last_of('.'));
+						root["obs"].Vector().push_back(node);
                         for(BattleHex bh : ob->getAffectedTiles()){
                             JsonNode node;
                             node["x"].Float() = bh.getX();
@@ -6464,7 +6479,7 @@ void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGH
                     }
                     root["action"] = action;
                     //hero
-                    JsonNode hero;
+                    /*JsonNode hero;
                     hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
                     hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
                     hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
@@ -6492,7 +6507,7 @@ void CGameHandler::recordBattleField(BattleInfo* bi, BattleAction &ba, const CGH
 						SP["level"].Float() = h->getSpellSchoolLevel(csp);
 						hero["spells"].Vector().push_back(SP);
 					}
-					root["hero"] = hero;
+					root["hero"] = hero;*/
 					std::ofstream of(s.str(), std::ofstream::trunc);
 					of << root;
                     std::cout << root;
@@ -6863,7 +6878,7 @@ void CGameHandler::duelFinished()
 	time_t timeNow;
 	time(&timeNow);
 
-	std::ofstream out(cmdLineOptions["resultsFile"].as<std::string>(), std::ios::app);
+	/*std::ofstream out(cmdLineOptions["resultsFile"].as<std::string>(), std::ios::app);
 	if (out)
 	{
 		out << boost::format("%s\t%s\t%s\t%d\t%d\t%d\t%s\n") % si->mapname % getName(0) % getName(1)
@@ -6873,10 +6888,10 @@ void CGameHandler::duelFinished()
 	else
 	{
 		logGlobal->error("Cannot open to write %s", cmdLineOptions["resultsFile"].as<std::string>());
-	}
+	}*/
 
-	CSaveFile resultFile("result.vdrst");
-	resultFile << *battleResult.data;
+	//CSaveFile resultFile("result.vdrst");
+	//resultFile << *battleResult.data;
 
 	BattleResultsApplied resultsApplied;
 	resultsApplied.player1 = finishingBattle->victor;
