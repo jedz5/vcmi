@@ -860,6 +860,42 @@ void CGameState::initCampaign()
 
 void CGameState::initDuel()
 {
+	
+	auto computNUMstacks = [this](CCreature* cr1, int num1, CCreature* cr2, int num2) -> int
+	{
+		//source http://heroescommunity.com/viewthread.php3?TID=27539&PID=1266094#focus
+		auto getStackstrength = [=]() ->double
+		{
+			ui64 ret = (cr2->AIValue * num2) / (cr1->AIValue * num1);
+			return ret;
+		};
+		double strengthRatio = getStackstrength();
+		int split = 1;
+
+		if (strengthRatio < 0.5f)
+			split = 7;
+		else if (strengthRatio < 0.67f)
+			split = 6;
+		else if (strengthRatio < 1)
+			split = 5;
+		else if (strengthRatio < 1.5f)
+			split = 4;
+		else if (strengthRatio < 2)
+			split = 3;
+		else
+			split = 2;
+		int R4 = this->getRandomGenerator().nextInt(100);
+
+		if (R4 <= 20)
+			split -= 1;
+		else if (R4 >= 80)
+			split += 1;
+
+		vstd::amin(split, num2); //can't divide into more stacks than creatures total
+		vstd::amin(split, 7); //can't have more than 7 stacks
+
+		return split;
+	};
 	DuelParameters dp;
 	try //CLoadFile likes throwing
 	{
@@ -903,6 +939,7 @@ void CGameState::initDuel()
 			int hp = getRandomGenerator().nextInt(200, 3000);
 			int slot1 = getRandomGenerator().nextInt(6);
 			int slot2 = getRandomGenerator().nextInt(6);
+			int looseFormat[7][7] = { {3, 8, 8, 8, 8, 8, 8},{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
 			if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
 			{
 				cr1 -= 1;
@@ -916,8 +953,8 @@ void CGameState::initDuel()
 			auto crt2 = VLC->creh->creatures[cr2];
 			int num1 = std::max(1, int(hp / crt1->MaxHealth()));
 			int num2 = std::max(1, int(hp / crt2->MaxHealth()));
-			dp.bfieldType = BFieldType(6);
-			dp.terType = ETerrainType(2);
+			dp.bfieldType = BFieldType(getRandomGenerator().nextInt(1,23));
+			dp.terType = ETerrainType(getRandomGenerator().nextInt(9));
 			for (int i = 0;i<7;i++)
 			{
 				dp.sides[0].stacks[i].count = 0;
@@ -925,8 +962,40 @@ void CGameState::initDuel()
 				dp.sides[1].stacks[i].count = 0;
 				dp.sides[1].stacks[i].type = crt2->idNumber;
 			}
-			dp.sides[0].stacks[slot1].count = num1;
-			dp.sides[1].stacks[slot2].count = num2;
+			int stacksCount1 = getRandomGenerator().nextInt(1,std::min(num1,7));
+			int m = num1 / stacksCount1;
+			int b = stacksCount1 * (m + 1) - num1;
+			int a = stacksCount1 - b;
+			for (int i = 0; i < a; i++)
+			{
+				dp.sides[0].stacks[looseFormat[stacksCount1 - 1][i]].count = m + 1;
+			}
+			for (int i = a; i < stacksCount1; i++)
+			{
+				dp.sides[0].stacks[looseFormat[stacksCount1 - 1][i]].count = m;
+			}
+
+			int stacksCount2 = computNUMstacks(crt1, num1, crt2, num2);
+			m = num2 / stacksCount2;
+			b = stacksCount2 * (m + 1) - num2;
+			a = stacksCount2 - b;
+			for (int i = 0;i< a ;i++)
+			{
+				dp.sides[1].stacks[looseFormat[stacksCount2 - 1][i]].count = m + 1;
+			}
+			for (int i = a; i < stacksCount2; i++)
+			{
+				dp.sides[1].stacks[looseFormat[stacksCount2 - 1][i]].count = m ;
+			}
+			if (stacksCount2 > 1 && getRandomGenerator().nextInt(1) == 1)
+			{
+				const auto & upgrades = crt2->upgrades;
+				if (!upgrades.empty())
+				{
+					auto it = RandomGeneratorUtil::nextItem(upgrades, CRandomGenerator::getDefault());
+					dp.sides[1].stacks[looseFormat[stacksCount2 - 1][stacksCount2 / 2]].type = *it;
+				}
+			}
 		}
 		else if(boost::algorithm::ends_with(scenarioOps->mapname, ".json"))
 		{

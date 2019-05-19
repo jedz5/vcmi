@@ -362,6 +362,10 @@ std::string callNNR(std::string inParam)
 }
 JsonNode br;
 void recordBattleStart(CGameHandler* self) {
+	if (self->gameState()->curB->sides[0].color != PlayerColor(0))
+	{
+		return;
+	}
 	br.clear();
 	JsonNode & ret = br;
 	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
@@ -400,7 +404,7 @@ void recordBattleStart(CGameHandler* self) {
 	}
 	//terType
 	ret["terType"].Float() = self->gameState()->curB->terrainType;
-	ret["bfieldType"].Float() = self->gameState()->curB->battleTerrainType();
+	ret["bfieldType"].Float() = self->gameState()->curB->battlefieldType;
 
 	//hero
 	//const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
@@ -439,6 +443,10 @@ void recordBattleStart(CGameHandler* self) {
 	//ret["hero"] = hero;
 }
 void recordBattleEnd(CGameHandler* self,int manaCost) {
+	if (self->gameState()->curB->sides[0].color != PlayerColor(0))
+	{
+		return;
+	}
 	if (battleResult.get()->result == BattleResult::ESCAPE)
 	{
 		br.clear();
@@ -6281,6 +6289,10 @@ JsonNode CGameHandler::toJsonNode(const CStack* next){
 
 
 void CGameHandler::recordBattleResult(int manaCost) {
+	if (this->gameState()->curB->sides[0].color != PlayerColor(0))
+	{
+		return;
+	}
 	if (battleResult.get()->result == BattleResult::ESCAPE)
 	{
 		br.clear();

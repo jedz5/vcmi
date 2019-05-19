@@ -336,7 +336,16 @@ BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldTyp
 
 		RandGen r;
 		auto ourRand = [&]{ return r.rand(); };
-		r.srand(tile);
+		if (tile.x + tile.y + tile.z == -3)
+		{
+			boost::hash<std::string> stringHash;
+			auto threadIdHash = stringHash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+			r.srand(threadIdHash * std::time(nullptr));
+		}
+		else
+		{
+			r.srand(tile);
+		}
 		r.rand(1,8); //battle sound ID to play... can't do anything with it here
 		int tilesToBlock = r.rand(5,12);
 		const int specialBattlefield = battlefieldTypeToBI(battlefieldType);
