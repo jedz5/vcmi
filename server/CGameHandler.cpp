@@ -504,7 +504,7 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 	br["win"].Bool() = 1 - battleResult.get()->winner;
 	std::stringstream s;
 	int port = self->connections[PlayerColor(0)]->socket->local_endpoint().port();
-	s << "d:/project/vcnn/train/br-" << self->gameState()->curB->quickBattle << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) <<  "-" << port << ".json";
+	s << "./train/br-" << self->gameState()->curB->quickBattle << "-" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) <<  "-" << port << ".json";
 	std::ofstream of(s.str(), std::ofstream::trunc);
 	of << br;
 }
@@ -6380,7 +6380,7 @@ void CGameHandler::recordBattleResult(int manaCost) {
 	ret["quickBattle"].Bool() = gs->curB->quickBattle;
 	ret["win"].Bool() = 1 - battleResult.get()->winner;
 	std::stringstream s;
-	s <<"d:/project/vcnn/train/br-"<< gs->curB->quickBattle <<"-"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
+	s <<"./train/br-"<< gs->curB->quickBattle <<"-"<< boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time()) << ".json";
 	std::ofstream of(s.str(), std::ofstream::trunc);
 	of << ret;
 	//std::cout << ret;

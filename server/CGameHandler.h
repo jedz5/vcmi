@@ -104,7 +104,7 @@ public:
 	void runBattle();
     void recordBattleField(BattleInfo* bi, BattleAction &ba, const CGHeroInstance *h);
     JsonNode toJsonNode(const CStack* stack);
-	void CGameHandler::recordBattleResult(int manaCos);
+	void recordBattleResult(int manaCos);
 	////used only in endBattle - don't touch elsewhere
 	bool visitObjectAfterVictory;
 	//

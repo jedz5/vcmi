@@ -336,11 +336,9 @@ BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldTyp
 
 		RandGen r;
 		auto ourRand = [&]{ return r.rand(); };
-		if (tile.x + tile.y + tile.z == -3)
+		if (tile.x + tile.y  == -2)
 		{
-			boost::hash<std::string> stringHash;
-			auto threadIdHash = stringHash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-			r.srand(threadIdHash * std::time(nullptr));
+			r.srand(tile.z + 2);
 		}
 		else
 		{

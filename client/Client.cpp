@@ -482,9 +482,9 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 		if(!gNoGUI)
 		{
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
-			auto p = std::make_shared<CPlayerInterface>(PlayerColor::PlayerColor(1));
+			auto p = std::make_shared<CPlayerInterface>(PlayerColor(1));
 			p->observerInDuelMode = true;
-			installNewPlayerInterface(p, PlayerColor::PlayerColor(0));
+			installNewPlayerInterface(p, PlayerColor(0));
 			GH.curInt = p.get();
 		}
 		battleStarted(gs->curB);

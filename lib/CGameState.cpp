@@ -934,6 +934,7 @@ void CGameState::initDuel()
 		}
 		else if (scenarioOps->mapname == "random")
 		{
+			getRandomGenerator().setSeed(this->scenarioOps->seedToBeUsed + 1);
 			int cr1 = getRandomGenerator().nextInt(144);
 			int cr2 = getRandomGenerator().nextInt(144);
 			int hp = getRandomGenerator().nextInt(200, 3000);
@@ -1089,7 +1090,7 @@ void CGameState::initDuel()
 		}
 	}
 
-	curB = BattleInfo::setupBattle(int3(-1,-1,-1), dp.terType, dp.bfieldType, armies, heroes, false,false, town);
+	curB = BattleInfo::setupBattle(int3(-1,-1,scenarioOps->seedToBeUsed), dp.terType, dp.bfieldType, armies, heroes, false,false, town);
 	//curB->obstacles = dp.obstacles;
 	curB->quickBattle = scenarioOps.get()->duelQuick;
 	curB->localInit();
