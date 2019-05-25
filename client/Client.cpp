@@ -979,7 +979,6 @@ void CServerHandler::waitForServer()
 CConnection * CServerHandler::connectToServer()
 {
 #ifndef VCMI_ANDROID
-    //shared->sr->ready = true;
 	if(!shared->sr->ready)
 		waitForServer();
 #else
@@ -1037,11 +1036,9 @@ void CServerHandler::callServer()
 		logNetwork->infoStream() << "Server closed correctly";
 	else
 	{
-        shared->sr->ready = true;
-        shared->sr->cond.notify_all();
-        //logNetwork->errorStream() << "Error: server failed to close correctly or crashed!";
+        logNetwork->errorStream() << "Error: server failed to close correctly or crashed!";
         //logNetwork->errorStream() << "Check " << logName << " for more info";
-        //exit(1);// exit in case of error. Othervice without working server VCMI will hang
+        exit(1);// exit in case of error. Othervice without working server VCMI will hang
 	}
 }
 
@@ -1069,13 +1066,13 @@ CConnection * CServerHandler::justConnectToServer(const std::string &host, const
 		}
 		catch(...)
 		{
-			if (count > 2)
+			if (count > 4)
 			{
-				logNetwork->errorStream() << "\nCannot establish connection in 10 times! I QUIT";
+				logNetwork->errorStream() << "\nCannot establish connection with "<< realPort<<"in 4 times! I QUIT";
 				exit(-1);
 			}
-			logNetwork->errorStream() << "\nCannot establish connection! Retrying within 2 seconds";
-			SDL_Delay(2000);
+			logNetwork->errorStream() << "\nCannot establish connection with "<< realPort<<"! Retrying within 0.2 seconds";
+			SDL_Delay(200);
 		}
 	}
 	return ret;
