@@ -1353,7 +1353,7 @@ int CGameHandler::moveStack(int stack, BattleHex dest)
 		return 0;
 
 	//initing necessary tables
-	auto accessibility = getAccesibility(curStack);
+	auto accessibility = getAccesibility(curStack);  
 
 	//shifting destination (if we have double wide stack and we can occupy dest but not be exactly there)
 	if (!stackAtEnd && curStack->doubleWide() && !accessibility.accessible(dest, curStack))

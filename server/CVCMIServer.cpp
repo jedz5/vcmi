@@ -47,7 +47,7 @@ namespace intpr = boost::interprocess;
 #endif
 bool end2 = false;
 int port = 3030;
-
+bool DO_NOT_START_SERVER = false;
 boost::program_options::variables_map cmdLineOptions;
 
 /*
@@ -397,20 +397,25 @@ void CVCMIServer::start()
 #ifndef VCMI_ANDROID
 	ServerReady *sr = nullptr;
 	intpr::mapped_region *mr;
-	try
-	{
+    if (!DO_NOT_START_SERVER) 
+    {
+        try
+        {
 		intpr::shared_memory_object smo(intpr::open_only,"vcmi_memory",intpr::read_write);
 		smo.truncate(sizeof(ServerReady));
 		mr = new intpr::mapped_region(smo,intpr::read_write);
 		sr = reinterpret_cast<ServerReady*>(mr->get_address());
-	}
-	catch(...)
-	{
-		intpr::shared_memory_object smo(intpr::create_only,"vcmi_memory",intpr::read_write);
-		smo.truncate(sizeof(ServerReady));
-		mr = new intpr::mapped_region(smo,intpr::read_write);
-		sr = new(mr->get_address())ServerReady();
-	}
+        }
+    	catch(...)
+    	{
+            logNetwork->error("catch exception and reopen %d", acceptor->local_endpoint().port());
+    		intpr::shared_memory_object smo(intpr::create_only,"vcmi_memory",intpr::read_write);
+    		smo.truncate(sizeof(ServerReady));
+    		mr = new intpr::mapped_region(smo,intpr::read_write);
+    		sr = new(mr->get_address())ServerReady();
+    	}
+    }
+    
 #endif
 
 	boost::system::error_code error;
@@ -418,8 +423,11 @@ void CVCMIServer::start()
 	auto s = new boost::asio::ip::tcp::socket(acceptor->get_io_service());
 	boost::thread acc(std::bind(vaccept,acceptor,s,&error));
 #ifndef VCMI_ANDROID
-	sr->setToTrueAndNotify();
-	delete mr;
+    if (!DO_NOT_START_SERVER) 
+    {
+    	sr->setToTrueAndNotify();
+        delete mr;
+    }
 #endif
 
 	acc.join();
@@ -428,7 +436,7 @@ void CVCMIServer::start()
 		logNetwork->warnStream()<<"Got connection but there is an error " << error;
 		return;
 	}
-	logNetwork->info("We've accepted someone... ");
+	logNetwork->info("We've accepted %d... ",acceptor->local_endpoint().port());
 	firstConnection = new CConnection(s,NAME);
 	logNetwork->info("Got connection!");
 	while(!end2)
@@ -507,6 +515,7 @@ static void handleCommandOptions(int argc, char *argv[])
 		("help,h", "display help and exit")
 		("version,v", "display version information and exit")
 		("port", po::value<int>()->default_value(3030), "port at which server will listen to connections from client")
+        ("manual,d", "donot start server, server start by manual")
 		("resultsFile", po::value<std::string>()->default_value("./results.txt"), "file to which the battle result will be appended. Used only in the DUEL mode.");
 
 	if(argc > 1)
@@ -589,7 +598,8 @@ int main(int argc, char** argv)
 	if(cmdLineOptions.count("port"))
 		port = cmdLineOptions["port"].as<int>();
 	logNetwork->info("Port %d will be used.", port);
-
+    if(cmdLineOptions.count("manual"))
+        DO_NOT_START_SERVER = true;
 	preinitDLL(console);
 	settings.init();
 	logConfig.configure();
