@@ -935,20 +935,20 @@ void CGameState::initDuel()
 		else if (scenarioOps->mapname == "random")
 		{
 			getRandomGenerator().setSeed(this->scenarioOps->seedToBeUsed + 1);
-			int cr1 = getRandomGenerator().nextInt(144);
-			int cr2 = getRandomGenerator().nextInt(144);
+			int cr1 = getRandomGenerator().nextInt(56);
+			int cr2 = getRandomGenerator().nextInt(56);
 			int hp = getRandomGenerator().nextInt(200, 3000);
-			int slot1 = getRandomGenerator().nextInt(6);
-			int slot2 = getRandomGenerator().nextInt(6);
+//  		int slot1 = getRandomGenerator().nextInt(6);
+//  		int slot2 = getRandomGenerator().nextInt(6);
 			int looseFormat[7][7] = { {3, 8, 8, 8, 8, 8, 8},{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
-			if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
-			{
-				cr1 -= 1;
-			}
-			if (cr2 == 122 || cr2 == 124 || cr2 == 126 || cr2 == 128)
-			{
-				cr2 += 1;
-			}
+//  		if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
+//  		{
+//  			cr1 -= 1;
+//  		}
+//  		if (cr2 == 122 || cr2 == 124 || cr2 == 126 || cr2 == 128)
+//  		{
+//  			cr2 += 1;
+//  		}
 
 			auto crt1 = VLC->creh->creatures[cr1];
 			auto crt2 = VLC->creh->creatures[cr2];
