@@ -835,7 +835,7 @@ BattleAction CPlayerInterface::activeStack(const CStack * stack) //called when i
 void CPlayerInterface::battleEnd(const BattleResult *br)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
-	if (isAutoFightOn)
+	if (isAutoFightOn && cb->getStartInfo()->mapname != "random")
 	{
 		isAutoFightOn = false;
 		cb->unregisterBattleInterface(autofightingAI);

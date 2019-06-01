@@ -934,28 +934,59 @@ void CGameState::initDuel()
 		}
 		else if (scenarioOps->mapname == "random")
 		{
+			const int NumUpdateCreatures = 63;
+			int creIDs[NumUpdateCreatures];
+			for (int i = 0;i < NumUpdateCreatures;i++)
+			{
+				creIDs[i] = i * 2 + 1;
+			}
+			creIDs[56] = 119; creIDs[57] = 127; creIDs[58] = 123; creIDs[59] = 129; creIDs[60] = 125; creIDs[61] = 121; creIDs[62] = 131;
 			getRandomGenerator().setSeed(this->scenarioOps->seedToBeUsed + 1);
-			int cr1 = getRandomGenerator().nextInt(56);
-			int cr2 = getRandomGenerator().nextInt(56);
+			int cr1 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
+			int cr2 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
 			int hp = getRandomGenerator().nextInt(200, 3000);
-//  		int slot1 = getRandomGenerator().nextInt(6);
-//  		int slot2 = getRandomGenerator().nextInt(6);
 			int looseFormat[7][7] = { {3, 8, 8, 8, 8, 8, 8},{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
-//  		if (cr1 == 122 || cr1 == 124 || cr1 == 126 || cr1 == 128)
-//  		{
-//  			cr1 -= 1;
-//  		}
-//  		if (cr2 == 122 || cr2 == 124 || cr2 == 126 || cr2 == 128)
-//  		{
-//  			cr2 += 1;
-//  		}
-
-			auto crt1 = VLC->creh->creatures[cr1];
-			auto crt2 = VLC->creh->creatures[cr2];
+			auto crt1 = VLC->creh->creatures[creIDs[cr1]];
+			auto crt2 = VLC->creh->creatures[creIDs[cr2]];
 			int num1 = std::max(1, int(hp / crt1->MaxHealth()));
 			int num2 = std::max(1, int(hp / crt2->MaxHealth()));
-			dp.bfieldType = BFieldType(getRandomGenerator().nextInt(1,23));
 			dp.terType = ETerrainType(getRandomGenerator().nextInt(9));
+			switch (dp.terType)
+			{
+				case ETerrainType::DIRT:
+					dp.bfieldType = BFieldType(rand.nextInt(3, 5));
+					break;
+				case ETerrainType::SAND:
+					dp.bfieldType = BFieldType::SAND_MESAS; //TODO: coast support
+					break;
+				case ETerrainType::GRASS:
+					dp.bfieldType = BFieldType(rand.nextInt(6, 7));
+					break;
+				case ETerrainType::SNOW:
+					dp.bfieldType = BFieldType(rand.nextInt(10, 11));
+					break;
+				case ETerrainType::SWAMP:
+					dp.bfieldType = BFieldType::SWAMP_TREES;
+					break;
+				case ETerrainType::ROUGH:
+					dp.bfieldType = BFieldType::ROUGH;
+					break;
+				case ETerrainType::SUBTERRANEAN:
+					dp.bfieldType = BFieldType::SUBTERRANEAN;
+					break;
+				case ETerrainType::LAVA:
+					dp.bfieldType = BFieldType::LAVA;
+					break;
+				case ETerrainType::WATER:
+					dp.bfieldType = BFieldType::SHIP;
+					break;
+				case ETerrainType::ROCK:
+					dp.bfieldType = BFieldType::ROCKLANDS;
+					break;
+				default:
+					dp.bfieldType = BFieldType::GRASS_PINES;
+					break;
+			}
 			for (int i = 0;i<7;i++)
 			{
 				dp.sides[0].stacks[i].count = 0;
@@ -988,7 +1019,7 @@ void CGameState::initDuel()
 			{
 				dp.sides[1].stacks[looseFormat[stacksCount2 - 1][i]].count = m ;
 			}
-			if (stacksCount2 > 1 && getRandomGenerator().nextInt(1) == 1)
+			/*if (stacksCount2 > 1 && getRandomGenerator().nextInt(1) == 1)
 			{
 				const auto & upgrades = crt2->upgrades;
 				if (!upgrades.empty())
@@ -996,7 +1027,7 @@ void CGameState::initDuel()
 					auto it = RandomGeneratorUtil::nextItem(upgrades, CRandomGenerator::getDefault());
 					dp.sides[1].stacks[looseFormat[stacksCount2 - 1][stacksCount2 / 2]].type = *it;
 				}
-			}
+			}*/
 		}
 		else if(boost::algorithm::ends_with(scenarioOps->mapname, ".json"))
 		{
