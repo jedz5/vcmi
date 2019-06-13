@@ -944,12 +944,13 @@ void CGameState::initDuel()
 			getRandomGenerator().setSeed(this->scenarioOps->seedToBeUsed + 1);
 			int cr1 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
 			int cr2 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
-			int hp = getRandomGenerator().nextInt(200, 3000);
+			int hp1 = getRandomGenerator().nextInt(200, 3000);
+			int hp2 = getRandomGenerator().nextInt(200, 3000);
 			int looseFormat[7][7] = { {3, 8, 8, 8, 8, 8, 8},{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
 			auto crt1 = VLC->creh->creatures[creIDs[cr1]];
 			auto crt2 = VLC->creh->creatures[creIDs[cr2]];
-			int num1 = std::max(1, int(hp / crt1->MaxHealth()));
-			int num2 = std::max(1, int(hp / crt2->MaxHealth()));
+			int num1 = std::max(1, int(hp1 / crt1->MaxHealth()));
+			int num2 = std::max(1, int(hp2 / crt2->MaxHealth()));
 			dp.terType = ETerrainType(getRandomGenerator().nextInt(9));
 			switch (dp.terType)
 			{
