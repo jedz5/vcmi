@@ -1663,7 +1663,9 @@ void CGameHandler::init(StartInfo *si)
 {
 	if (si->seedToBeUsed == 0)
 	{
-		si->seedToBeUsed = std::time(nullptr);
+		boost::hash<std::string> stringHash;
+		auto threadIdHash = stringHash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+		si->seedToBeUsed = threadIdHash * std::time(nullptr);
 	}
 
 	gs = new CGameState();
