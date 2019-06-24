@@ -368,6 +368,11 @@ void recordBattleStart(CGameHandler* self) {
 	}
 	br.clear();
 	JsonNode & ret = br;
+	int meformatID = self->gameState()->curB->sides[0].armyObject->stacksCount() - 1;
+	int enemyformatID = self->gameState()->curB->sides[1].armyObject->stacksCount() - 1;
+	int looseFormat[7][7] = { { 3, 8, 8, 8, 8, 8, 8 },{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
+	int k1 = 0;
+	int k2 = 0;
 	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
 	{
 		const CStack * const next = elem;
@@ -392,8 +397,10 @@ void recordBattleStart(CGameHandler* self) {
 		ns["aiValue"].Float() = next->type->AIValue;
 		ns["fightValue"].Float() = next->type->fightValue;
 		PlayerColor c = next->owner;
-		ns["isHuman"].Bool() = (c != PlayerColor(255) && self->gameState()->players[c].human);
-		ns["slot"].Float() = next->slot.getNum();
+		bool isHuman = (c != PlayerColor(255) && self->gameState()->players[c].human);
+		ns["isHuman"].Bool() = isHuman;
+		int slot = next->slot.getNum();
+		ns["slot"].Float() = isHuman ? looseFormat[meformatID][k1++]: looseFormat[enemyformatID][k2++];
 		for (auto abs : getAbility(next)) {
 			JsonNode ab;
 			ab["type"].Float() = abs.type;
@@ -407,40 +414,40 @@ void recordBattleStart(CGameHandler* self) {
 	ret["bfieldType"].Float() = self->gameState()->curB->battlefieldType;
 
 	//hero
-	//const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
-	//JsonNode hero;
-	//hero["heroid"].Float() = h->subID;
-	//hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
-	//hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
-	//hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
-	//hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
-	//hero["mana"].Float() = h->mana;
+	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+	JsonNode hero;
+	hero["heroid"].Float() = h->subID;
+	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
+	hero["defense"].Float() = h->getPrimSkillLevel(PrimarySkill::DEFENSE);
+	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
+	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
+	hero["mana"].Float() = h->mana;
 
-	//for (auto & elem : h->secSkills) {
-	//	if (elem.first.num < 0)
-	//	{
-	//		continue;
-	//	}
-	//	JsonNode secSkills;
-	//	secSkills["id"].Float() = elem.first.num;
-	//	secSkills["level"].Float() = elem.second;
-	//	hero["secSkills"].Vector().push_back(secSkills);
-	//}
-	//for (SpellID spell : h->spells)
-	//{
-	//	const CSpell* csp = spell.toSpell();
-	//	if (!csp->isCombatSpell())
-	//	{
-	//		continue;
-	//	}
-	//	JsonNode SP;
-	//	SP["id"].Float() = spell;
-	//	//SP["canBeCasted"].Bool() = !csp->canBeCast(self, ECastingMode::HERO_CASTING, h);
-	//	SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
-	//	SP["level"].Float() = h->getSpellSchoolLevel(csp);
-	//	hero["spells"].Vector().push_back(SP);
-	//}
-	//ret["hero"] = hero;
+	for (auto & elem : h->secSkills) {
+		if (elem.first.num < 0)
+		{
+			continue;
+		}
+		JsonNode secSkills;
+		secSkills["id"].Float() = elem.first.num;
+		secSkills["level"].Float() = elem.second;
+		hero["secSkills"].Vector().push_back(secSkills);
+	}
+	for (SpellID spell : h->spells)
+	{
+		const CSpell* csp = spell.toSpell();
+		if (!csp->isCombatSpell())
+		{
+			continue;
+		}
+		JsonNode SP;
+		SP["id"].Float() = spell;
+		//SP["canBeCasted"].Bool() = !csp->canBeCast(self, ECastingMode::HERO_CASTING, h);
+		SP["cost"].Float() = self->gameState()->curB->battleGetSpellCost(csp, h);
+		SP["level"].Float() = h->getSpellSchoolLevel(csp);
+		hero["spells"].Vector().push_back(SP);
+	}
+	ret["hero"] = hero;
 }
 void recordBattleEnd(CGameHandler* self,int manaCost) {
 	if (self->gameState()->curB->sides[0].color != PlayerColor(0))
@@ -465,13 +472,12 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 		PlayerColor c = next->owner;
 		auto & startStacks = br["stacks"].Vector()[j];
 		{
-			if (startStacks["slot"].Float() == next->slot.getNum() && (c != PlayerColor(255)))
+			if (startStacks["slot"].Float() == next->slot.getNum())
 			{
 				JsonNode & ns = startStacks;
 				si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
 				vstd::amax(killed, 0);
 				ns["killed"].Float() = killed;
-
 				//spell
 				/*const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
 				JsonNode & hero = br["hero"];

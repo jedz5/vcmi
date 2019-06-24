@@ -418,6 +418,13 @@ void CGCreature::fight( const CGHeroInstance *h,bool quickBattle) const
 {
 	//split stacks
 	//TODO: multiple creature types in a stack?
+	SlotID slotID = stacks.begin()->first; //SlotID(std::floor((float)stacks.size() / 2));
+	const auto & upgrades = getStack(slotID).type->upgrades;
+	if (!upgrades.empty())
+	{
+		auto it = RandomGeneratorUtil::nextItem(upgrades, CRandomGenerator::getDefault());
+		cb->changeStackType(StackLocation(this, slotID), VLC->creh->creatures[*it]);
+	}
 	int basicType = stacks.begin()->second->type->idNumber;
 	cb->setObjProperty(id, ObjProperty::MONSTER_RESTORE_TYPE, basicType); //store info about creature stack
 

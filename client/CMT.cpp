@@ -186,10 +186,21 @@ void parseDEF(std::string type) {
 			cr["name"].String() = VLC->creh->creatures[x]->nameSing;
 			cr["id"].Float() = VLC->creh->creatures[x]->idNumber;
 			cr["hp"].Float() = VLC->creh->creatures[x]->MaxHealth();
+			cr["attack"].Float() = VLC->creh->creatures[x]->Attack();
+			cr["defense"].Float() = VLC->creh->creatures[x]->Defense();
+			cr["maxDamage"].Float() = VLC->creh->creatures[x]->getMaxDamage();
+			cr["minDamage"].Float() = VLC->creh->creatures[x]->getMinDamage();
+			cr["health"].Float() = VLC->creh->creatures[x]->valOfBonuses(Bonus::STACK_HEALTH);
+			cr["morale"].Float() = VLC->creh->creatures[x]->valOfBonuses(Bonus::MORALE);
+			cr["luck"].Float() = VLC->creh->creatures[x]->valOfBonuses(Bonus::LUCK);
+			cr["speed"].Float() = VLC->creh->creatures[x]->Speed();
+			cr["aiValue"].Float() = VLC->creh->creatures[x]->AIValue;
+			cr["fightValue"].Float() = VLC->creh->creatures[x]->fightValue;
+			cr["shoot"].Bool() = VLC->creh->creatures[x]->hasBonusOfType(Bonus::SHOOTER);
 			crts["creatures"].Vector().push_back(cr);
 		}
 		std::stringstream s;
-		s << "d:/project/vcnn/train/creatureData.json";
+		s << "d:/project/vcnn/ENV/creatureData.json";
 		std::ofstream of(s.str(), std::ofstream::trunc);
 		of << crts;
 	}
@@ -304,6 +315,7 @@ int main(int argc, char** argv)
 		("loadserverip", po::value<std::string>(), "IP for loaded game server")
 		("loadserverport", po::value<std::string>(), "port for loaded game server")
 		("testingport", po::value<std::string>(), "port for testing, override specified in config file")
+		("serverip", po::value<std::string>(), "ip for server")
 		("testingfileprefix", po::value<std::string>(), "prefix for auto save files")
 		("testingsavefrequency", po::value<int>(), "how often auto save should be created");
 	if(argc > 1)
@@ -364,6 +376,11 @@ int main(int argc, char** argv)
 	preinitDLL(::console);
 	settings.init();
 
+	if (vm.count("serverip"))
+	{
+		Settings serverSettings = settings.write["server"];
+		serverSettings["server"].String() = vm["serverip"].as<std::string>();
+	}
 	// Init special testing settings
 	Settings testingSettings = settings.write["testing"];
 	if(vm.count("testingport") && vm.count("testingfileprefix"))

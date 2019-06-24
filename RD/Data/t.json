@@ -1,10 +1,18 @@
 {
-	"bfieldType": 11,
+	"bfieldType": 19,
 	"terType": 3,
 	"sides": [{
 		"army": [
-			[15, 1]
+			[15, 22],
+			[17, 34],
+			[19, 11],
+			[21, 1],
+			[23, 2],
+			[25, 1],
+			[27, 1]
 		],
+		"heroid" : 24,
+		"heroPrimSkills": [1,1,1,1],
 		"side": 0
 	}, {
 		"army": [

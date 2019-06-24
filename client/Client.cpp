@@ -183,6 +183,11 @@ void CClient::run()
 	//catch only asio exceptions
 	catch (const boost::system::system_error& e)
 	{
+		if (gs->scenarioOps->mode == StartInfo::DUEL)
+		{
+			terminate = true;
+			exit(0);
+		}
 		logNetwork->errorStream() << "Lost connection to server, ending listening thread!";
 		logNetwork->errorStream() << e.what();
 		if(!terminate) //rethrow (-> boom!) only if closing connection was unexpected
@@ -482,7 +487,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 		if(!gNoGUI)
 		{
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
-			auto p = std::make_shared<CPlayerInterface>(PlayerColor(1));
+			auto p = std::make_shared<CPlayerInterface>(PlayerColor(0));
 			p->observerInDuelMode = true;
 			installNewPlayerInterface(p, PlayerColor(0));
 			GH.curInt = p.get();
@@ -1071,7 +1076,7 @@ CConnection * CServerHandler::justConnectToServer(const std::string &host, const
 				logNetwork->errorStream() << "\nCannot establish connection with "<< realPort<<"in 4 times! I QUIT";
 				exit(-1);
 			}
-			logNetwork->errorStream() << "\nCannot establish connection with "<< realPort<<"! Retrying within 0.2 seconds";
+			logNetwork->errorStream() << "\nCannot establish connection with "<< host <<":"<< realPort<<"! Retrying within 0.2 seconds";
 			SDL_Delay(200);
 		}
 	}
