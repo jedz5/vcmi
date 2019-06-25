@@ -5973,6 +5973,11 @@ void CGameHandler::runBattle()
 	assert(gs->curB);
 	//TODO: pre-tactic stuff, call scripts etc.
 	si32 manaBegin = 0; //gs->curB->battleGetFightingHero(0)->mana;
+	if (gs->scenarioOps->mode == StartInfo::DUEL)
+	{
+		CGHeroInstance* hero = gs->curB->battleGetFightingHero(0);
+		setManaPoints(hero->id, 0);
+	}
 	//tactic round
 	{
 		while (gs->curB->tacticDistance && !battleResult.get())
