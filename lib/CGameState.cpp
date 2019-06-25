@@ -988,6 +988,8 @@ void CGameState::initDuel()
 					dp.bfieldType = BFieldType::GRASS_PINES;
 					break;
 			}
+			dp.sides[0].heroId = 24;
+			dp.sides[0].heroPrimSkills = { getRandomGenerator().nextInt(0, 3), getRandomGenerator().nextInt(0, 3), 1, 1 };
 			for (int i = 0;i<7;i++)
 			{
 				dp.sides[0].stacks[i].count = 0;
