@@ -5,7 +5,10 @@ cmake_minimum_required(VERSION 2.8.12)
 
 # where to look for cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_HOME_DIRECTORY}/cmake_modules)
-
+set(CMAKE_INSTALL_PREFIX "/home/enigma/work/enigma/project/vcmi/RD/builds")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG")
+	set(CMAKE_INSTALL_PREFIX "/home/enigma/work/enigma/project/vcmi/Debug/builds")
+endif()
 # enable Release mode but only if it was not set
 if (NOT CMAKE_BUILD_TYPE)
 		set(CMAKE_BUILD_TYPE RelWithDebInfo)
