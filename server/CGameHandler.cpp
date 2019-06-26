@@ -1337,6 +1337,7 @@ void CGameHandler::handleConnection(std::set<PlayerColor> players, CConnection &
 	}
 
 	logGlobal->error("Ended handling connection");
+	exit(-1);
 }
 
 int CGameHandler::moveStack(int stack, BattleHex dest)

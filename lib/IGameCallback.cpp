@@ -209,6 +209,11 @@ TerrainTile * CNonConstInfoCallback::getTile( int3 pos )
 
 CGHeroInstance *CNonConstInfoCallback::getHero(ObjectInstanceID objid)
 {
+	//duel
+	if (gs->scenarioOps->mode == StartInfo::EMode::DUEL) {
+		auto hero = const_cast<CGHeroInstance *>(gs->curB->sides[0].hero);
+		return hero;
+	}
 	return const_cast<CGHeroInstance*>(CGameInfoCallback::getHero(objid));
 }
 

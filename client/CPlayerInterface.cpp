@@ -485,6 +485,10 @@ void CPlayerInterface::heroSecondarySkillChanged(const CGHeroInstance * hero, in
 void CPlayerInterface::heroManaPointsChanged(const CGHeroInstance * hero)
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
+	if (this->cb->getStartInfo()->mode == StartInfo::EMode::DUEL)
+	{
+		return;
+	}
 	updateInfo(hero);
 	if (makingTurn && hero->tempOwner == playerID)
 		adventureInt->heroList.update(hero);

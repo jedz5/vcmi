@@ -141,6 +141,9 @@ const CGObjectInstance* CGameInfoCallback::getObj(ObjectInstanceID objid, bool v
 
 const CGHeroInstance* CGameInfoCallback::getHero(ObjectInstanceID objid) const
 {
+	if (this->gs->scenarioOps->mode == StartInfo::EMode::DUEL) {
+		return  this->gs->getHero(objid);
+	}
 	const CGObjectInstance *obj = getObj(objid, false);
 	if(obj)
 		return dynamic_cast<const CGHeroInstance*>(obj);
