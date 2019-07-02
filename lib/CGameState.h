@@ -12,7 +12,6 @@
 #include "CRandomGenerator.h"
 #include "CGameStateFwd.h"
 #include "CPathfinder.h"
-
 /*
  * CGameState.h, part of VCMI engine
  *
@@ -56,7 +55,7 @@ class CQuest;
 class CCampaignScenario;
 struct EventCondition;
 class CScenarioTravel;
-
+class CConnection;
 namespace boost
 {
 	class shared_mutex;
@@ -145,7 +144,7 @@ struct DLL_EXPORT DuelParameters
 		SideSettings();
 		template <typename Handler> void serialize(Handler &h, const int version)
 		{
-			h & stacks & heroId & heroPrimSkills & artifacts & heroSecSkills & spells;
+			h & stacks & heroId & heroPrimSkills; //& artifacts & heroSecSkills & spells;
 		}
 	} sides[2];
 
@@ -201,7 +200,7 @@ public:
 	CGameState();
 	virtual ~CGameState();
 
-	void init(StartInfo * si);
+	void init(StartInfo * si, CConnection* c,bool serverSide); //CConnection* c, bool serverSide
 
 	ConstTransitivePtr<StartInfo> scenarioOps, initialOpts; //second one is a copy of settings received from pregame (not randomized)
 	PlayerColor currentPlayer; //ID of player currently having turn
@@ -285,7 +284,7 @@ private:
 
 	void initNewGame();
 	void initCampaign();
-	void initDuel();
+	void initDuel(CConnection* c, bool serverSide);
 	void checkMapChecksum();
 	void initGrailPosition();
 	void initRandomFactionsForPlayers();

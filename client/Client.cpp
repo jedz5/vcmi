@@ -186,6 +186,8 @@ void CClient::run()
 		if (gs->scenarioOps->mode == StartInfo::DUEL)
 		{
 			terminate = true;
+			logNetwork->errorStream() << "sth bad: ";
+			logNetwork->errorStream() << e.what();
 			exit(0);
 		}
 		logNetwork->errorStream() << "Lost connection to server, ending listening thread!";
@@ -422,7 +424,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	logNetwork->infoStream() <<"\tCreating gamestate: "<<tmh.getDiff();
 
 	gs->scenarioOps = si;
-	gs->init(si);
+	gs->init(si,&c,false);
 	logNetwork->infoStream() <<"Initializing GameState (together): "<<tmh.getDiff();
 
 	// Now after possible random map gen, we know exact player count.
@@ -440,6 +442,7 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	if(networkMode != GUEST)
 		myPlayers.insert(PlayerColor::NEUTRAL);
 	c << myPlayers;
+
 
 	// Init map handler
 	if(gs->map)
@@ -481,9 +484,12 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 			installNewBattleInterface(CDynLibHandler::getNewBattleAI(AItoGive), color);
 		}
 	}
-
 	if(si->mode == StartInfo::DUEL)
 	{
+		//boost::unique_lock<boost::mutex> lock(c.rmx);
+		logNetwork->errorStream() << "waiting from server curB->obstacles ";
+		c >> gs->curB->obstacles; //packs has to be sent as polymorphic pointers!
+		logNetwork->errorStream() << "curB->obstacles got~";
 		if(!gNoGUI)
 		{
 			boost::unique_lock<boost::recursive_mutex> un(*LOCPLINT->pim);
@@ -498,9 +504,8 @@ void CClient::newGame( CConnection *con, StartInfo *si )
 	{
 		loadNeutralBattleAI();
 	}
-
-	serv->addStdVecItems(gs);
 	hotSeat = (humanPlayers > 1);
+	serv->addStdVecItems(gs);
 
 // 	std::vector<FileInfo> scriptModules;
 // 	CFileUtility::getFilesWithExt(scriptModules, LIB_DIR "/scripting", "." LIB_EXT);

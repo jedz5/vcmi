@@ -280,7 +280,7 @@ struct RangeGenerator
 	std::function<int()> myRand;
 };
 
-BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town )
+BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town, bool serverSide)
 {
 	CMP_stack cmpst;
 	auto curB = new BattleInfo();
@@ -330,7 +330,7 @@ BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldTyp
 	}
 
 	//randomize obstacles
- 	if (town == nullptr && !creatureBank) //do it only when it's not siege and not creature bank
+ 	if (serverSide && town == nullptr && !creatureBank) //do it only when it's not siege and not creature bank
  	{
 		const int ABSOLUTE_OBSTACLES_COUNT = 34, USUAL_OBSTACLES_COUNT = 91; //shouldn't be changes if we want H3-like obstacle placement
 

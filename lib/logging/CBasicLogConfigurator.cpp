@@ -9,7 +9,7 @@ CBasicLogConfigurator::CBasicLogConfigurator(boost::filesystem::path filePath, C
 void CBasicLogConfigurator::configureDefault()
 {
 	CLogger::getGlobalLogger()->addTarget(make_unique<CLogConsoleTarget>(console));
-	//CLogger::getGlobalLogger()->addTarget(make_unique<CLogFileTarget>(filePath, appendToLogFile));
+	CLogger::getGlobalLogger()->addTarget(make_unique<CLogFileTarget>(filePath, appendToLogFile));
 	appendToLogFile = true;
 }
 
@@ -33,8 +33,8 @@ void CBasicLogConfigurator::configure()
 
 				// Set log level
 				std::string level = loggerNode["level"].String();
-				//logger->setLevel(getLogLevel(level));
-				logger->setLevel(getLogLevel("error"));
+				logger->setLevel(getLogLevel(level));
+				//logger->setLevel(getLogLevel("error"));
 				logGlobal->debug("Set log level %s => %d", name, level);
 			}
 		}
@@ -69,7 +69,7 @@ void CBasicLogConfigurator::configure()
 		CLogger::getGlobalLogger()->addTarget(std::move(consoleTarget));
 
 		// Add file target
-		/*auto fileTarget = make_unique<CLogFileTarget>(filePath, appendToLogFile);
+		auto fileTarget = make_unique<CLogFileTarget>(filePath, appendToLogFile);
 		const JsonNode & fileNode = loggingNode["file"];
 		if(!fileNode.isNull())
 		{
@@ -77,7 +77,7 @@ void CBasicLogConfigurator::configure()
 			if(!fileFormatNode.isNull()) fileTarget->setFormatter(CLogFormatter(fileFormatNode.String()));
 		}
 		CLogger::getGlobalLogger()->addTarget(std::move(fileTarget));
-		appendToLogFile = true;*/
+		appendToLogFile = true;
 	}
 	catch(const std::exception & e)
 	{

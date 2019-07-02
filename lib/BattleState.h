@@ -147,7 +147,7 @@ struct DLL_LINKAGE BattleInfo : public CBonusSystemNode, public CBattleInfoCallb
 	void localInit();
 
 	void localInitStack(CStack * s);
-	static BattleInfo * setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town );
+	static BattleInfo * setupBattle( int3 tile, ETerrainType terrain, BFieldType battlefieldType, const CArmedInstance *armies[2], const CGHeroInstance * heroes[2], bool creatureBank, bool quickBattle, const CGTownInstance *town ,bool serverSide);
 	//bool hasNativeStack(ui8 side) const;
 
 	PlayerColor theOtherPlayer(PlayerColor player) const;

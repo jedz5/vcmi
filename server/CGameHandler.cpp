@@ -1677,7 +1677,7 @@ void CGameHandler::init(StartInfo *si)
 
 	gs = new CGameState();
 	logGlobal->info("Gamestate created!");
-	gs->init(si);
+	gs->init(si,nullptr,true);
 	logGlobal->info("Gamestate initialized!");
 
 	// reset seed, so that clients can't predict any following random values
@@ -2107,6 +2107,11 @@ void CGameHandler::run(bool resume)
 	if (gs->scenarioOps->mode == StartInfo::DUEL)
 	{
 		recordBattleStart(this);
+		CConnection* c = *conns.begin();
+		//boost::unique_lock<boost::mutex> lock(*c->wmx);
+		logNetwork->errorStream() << "Sending to client curB->obstacles ";
+		*c << gs->curB->obstacles; //packs has to be sent as polymorphic pointers!
+		logNetwork->errorStream() << "Sending to client curB->obstacles end~";
 		auto battleQuery = std::make_shared<CBattleQuery>(gs->curB);
 		queries.addQuery(battleQuery);
 		runBattle();
@@ -2217,7 +2222,7 @@ void CGameHandler::setupBattle(int3 tile, const CArmedInstance *armies[2], const
 
 	//send info about battles
 	BattleStart bs;
-	bs.info = BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, quickBattle, town);
+	bs.info = BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, quickBattle, town, true);
 	sendAndApply(&bs);
 }
 
@@ -5974,10 +5979,10 @@ void CGameHandler::runBattle()
 	assert(gs->curB);
 	//TODO: pre-tactic stuff, call scripts etc.
 	si32 manaBegin = 0; //gs->curB->battleGetFightingHero(0)->mana;
-	if (gs->scenarioOps->mode == StartInfo::DUEL)
+	CGHeroInstance* duleHero = gs->curB->battleGetFightingHero(0);
+	if (gs->scenarioOps->mode == StartInfo::DUEL && duleHero)
 	{
-		CGHeroInstance* hero = gs->curB->battleGetFightingHero(0);
-		setManaPoints(hero->id, 0);
+		setManaPoints(duleHero->id, 0);
 	}
 	//tactic round
 	{

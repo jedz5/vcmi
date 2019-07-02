@@ -26,7 +26,7 @@
 #include "mapping/CMapEditManager.h"
 #include "serializer/CTypeList.h"
 #include "serializer/CMemorySerializer.h"
-
+#include "serializer/Connection.h"
 #ifdef min
 #undef min
 #endif
@@ -728,7 +728,7 @@ CGameState::~CGameState()
 		ptr.second.dellNull();
 }
 
-void CGameState::init(StartInfo * si)
+void CGameState::init(StartInfo * si, CConnection* c,bool serverSide)  // CConnection* c,
 {
 	logGlobal->infoStream() << "\tUsing random seed: "<< si->seedToBeUsed;
 	getRandomGenerator().setSeed(si->seedToBeUsed);
@@ -745,7 +745,7 @@ void CGameState::init(StartInfo * si)
 		initCampaign();
 		break;
 	case StartInfo::DUEL:
-		initDuel();
+		initDuel(c,serverSide);
 		return;
 	default:
 		logGlobal->errorStream() << "Wrong mode: " << (int)scenarioOps->mode;
@@ -858,7 +858,7 @@ void CGameState::initCampaign()
 	map = CMapService::loadMap(buffer, mapContent.size(), scenarioName).release();
 }
 
-void CGameState::initDuel()
+void CGameState::initDuel(CConnection* c, bool serverSide)
 {
 	
 	auto computNUMstacks = [this](CCreature* cr1, int num1, CCreature* cr2, int num2) -> int
@@ -1103,7 +1103,8 @@ void CGameState::initDuel()
 			armies[i] = heroes[i] = h;
 			obj = h;
 			h->subID = ss.heroId;
-			h->setOwner(PlayerColor(0));
+			h->id = ObjectInstanceID(ss.heroId);
+			h->setOwner(PlayerColor(i));
 			for(int i = 0; i < ss.heroPrimSkills.size(); i++)
 				h->pushPrimSkill(static_cast<PrimarySkill::PrimarySkill>(i), ss.heroPrimSkills[i]);
 
@@ -1162,8 +1163,7 @@ void CGameState::initDuel()
 				c->getBonusLocalFirst(Selector::type(Bonus::SHOTS))->val = cc.shoots;
 		}
 	}
-
-	curB = BattleInfo::setupBattle(int3(-1,-1,scenarioOps->seedToBeUsed), dp.terType, dp.bfieldType, armies, heroes, false,false, town);
+	curB = BattleInfo::setupBattle(int3(-1,-1,scenarioOps->seedToBeUsed), dp.terType, dp.bfieldType, armies, heroes, false,false, town,serverSide);
 	//curB->obstacles = dp.obstacles;
 	curB->quickBattle = scenarioOps.get()->duelQuick;
 	curB->localInit();
