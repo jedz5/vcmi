@@ -459,6 +459,11 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 		br.clear();
 		return;
 	}
+	if (self->gameState()->curB->stacks.size() != br["stacks"].Vector().size())
+	{
+		logGlobal->errorStream()<< "battle_start != battle_end!!";
+		return;
+	}
 	int j = 0;
 	for (auto & elem : self->gameState()->curB->stacks)//setting casualties
 	{
@@ -470,40 +475,36 @@ void recordBattleEnd(CGameHandler* self,int manaCost) {
 
 		//record stack
 		PlayerColor c = next->owner;
-		auto & startStacks = br["stacks"].Vector()[j];
+		auto & startStacks = br["stacks"].Vector()[j++];
 		{
-			if (startStacks["slot"].Float() == next->slot.getNum())
+			JsonNode & ns = startStacks;
+			si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
+			vstd::amax(killed, 0);
+			ns["killed"].Float() = killed;
+			//spell
+			/*const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+			JsonNode & hero = br["hero"];
+			int i = 0;
+			for (SpellID spell : h->spells)
 			{
-				JsonNode & ns = startStacks;
-				si32 killed = (next->alive() ? (next->baseAmount - next->count + next->resurrected) : next->baseAmount);
-				vstd::amax(killed, 0);
-				ns["killed"].Float() = killed;
-				//spell
-				/*const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
-				JsonNode & hero = br["hero"];
-				int i = 0;
-				for (SpellID spell : h->spells)
-				{
-					const CSpell* csp = spell.toSpell();
-					if (!csp->isCombatSpell())
-					{
-						continue;
-					}
-					JsonNode & SP = hero["spells"].Vector()[i];
-					auto L = self->gameState()->curB->sides[0].usedSpellsHistory;
-					std::vector<const CSpell*>::iterator res = find(L.begin(), L.end(), csp);
-					if (SP["id"].Float() == csp->id.num)
-					{
-						SP["casted"].Bool() = (res != L.end());
-					}
-					else {
-						logGlobal->error("sp id %d != csp->id %d", SP["id"].Float(), csp->id.num);
-					}
-					i++;
-				}*/
+			const CSpell* csp = spell.toSpell();
+			if (!csp->isCombatSpell())
+			{
+			continue;
 			}
+			JsonNode & SP = hero["spells"].Vector()[i];
+			auto L = self->gameState()->curB->sides[0].usedSpellsHistory;
+			std::vector<const CSpell*>::iterator res = find(L.begin(), L.end(), csp);
+			if (SP["id"].Float() == csp->id.num)
+			{
+			SP["casted"].Bool() = (res != L.end());
+			}
+			else {
+			logGlobal->error("sp id %d != csp->id %d", SP["id"].Float(), csp->id.num);
+			}
+			i++;
+			}*/
 		}
-		j++;
 	}
 	br["manaCost"].Float() = manaCost;
 	br["quickBattle"].Bool() = self->gameState()->curB->quickBattle;

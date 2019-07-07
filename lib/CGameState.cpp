@@ -1037,43 +1037,6 @@ void CGameState::initDuel(CConnection* c, bool serverSide)
 		{
 			logGlobal->infoStream() << "Loading duel settings from JSON file: " << scenarioOps->mapname;
 			dp = DuelParameters::fromJSON(scenarioOps->mapname);
-			//dp.terType = ETerrainType(getRandomGenerator().nextInt(9));
-			//switch (dp.terType)
-			//{
-			//case ETerrainType::DIRT:
-			//	dp.bfieldType = BFieldType(rand.nextInt(3, 5));
-			//	break;
-			//case ETerrainType::SAND:
-			//	dp.bfieldType = BFieldType::SAND_MESAS; //TODO: coast support
-			//	break;
-			//case ETerrainType::GRASS:
-			//	dp.bfieldType = BFieldType(rand.nextInt(6, 7));
-			//	break;
-			//case ETerrainType::SNOW:
-			//	dp.bfieldType = BFieldType(rand.nextInt(10, 11));
-			//	break;
-			//case ETerrainType::SWAMP:
-			//	dp.bfieldType = BFieldType::SWAMP_TREES;
-			//	break;
-			//case ETerrainType::ROUGH:
-			//	dp.bfieldType = BFieldType::ROUGH;
-			//	break;
-			//case ETerrainType::SUBTERRANEAN:
-			//	dp.bfieldType = BFieldType::SUBTERRANEAN;
-			//	break;
-			//case ETerrainType::LAVA:
-			//	dp.bfieldType = BFieldType::LAVA;
-			//	break;
-			//case ETerrainType::WATER:
-			//	dp.bfieldType = BFieldType::SHIP;
-			//	break;
-			//case ETerrainType::ROCK:
-			//	dp.bfieldType = BFieldType::ROCKLANDS;
-			//	break;
-			//default:
-			//	dp.bfieldType = BFieldType::GRASS_PINES;
-			//	break;
-			//}
 			logGlobal->info("JSON file has been successfully read!");
 		}
 		else

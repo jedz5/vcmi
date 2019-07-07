@@ -419,6 +419,7 @@ void CGCreature::fight( const CGHeroInstance *h,bool quickBattle) const
 	//split stacks
 	//TODO: multiple creature types in a stack?
 	SlotID slotID = stacks.begin()->first; //SlotID(std::floor((float)stacks.size() / 2));
+	//getStack(slotID).count;
 	const auto & upgrades = getStack(slotID).type->upgrades;
 	if (!upgrades.empty())
 	{
