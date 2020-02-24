@@ -282,6 +282,9 @@ JsonNode genParam(CGameHandler* self)
 		}
 		ret["stacks"].Vector().push_back(ns);
 	}
+	//terType
+	ret["terType"].Float() = self->gameState()->curB->terrainType;
+	ret["bfieldType"].Float() = self->gameState()->curB->battlefieldType;
 	//hero
 	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
 	JsonNode hero;
@@ -290,7 +293,7 @@ JsonNode genParam(CGameHandler* self)
 	hero["knowledge"].Float() = h->getPrimSkillLevel(PrimarySkill::KNOWLEDGE);
 	hero["power"].Float() = h->getPrimSkillLevel(PrimarySkill::SPELL_POWER);
 	hero["mana"].Float() = h->mana;
-
+	hero["id"].Float() = h->subID;
 	for (auto & elem : h->secSkills) {
 		JsonNode secSkills;
 		secSkills["id"].Float() = elem.first.num;
@@ -414,7 +417,7 @@ void recordBattleStart(CGameHandler* self) {
 	ret["bfieldType"].Float() = self->gameState()->curB->battlefieldType;
 
 	//hero
-	const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
+	/*const CGHeroInstance *h = self->gameState()->curB->battleGetFightingHero(0);
 	JsonNode hero;
 	hero["heroid"].Float() = h->subID;
 	hero["attack"].Float() = h->getPrimSkillLevel(PrimarySkill::ATTACK);
@@ -447,7 +450,7 @@ void recordBattleStart(CGameHandler* self) {
 		SP["level"].Float() = h->getSpellSchoolLevel(csp);
 		hero["spells"].Vector().push_back(SP);
 	}
-	ret["hero"] = hero;
+	ret["hero"] = hero;*/
 }
 void recordBattleEnd(CGameHandler* self,int manaCost) {
 	if (self->gameState()->curB->sides[0].color != PlayerColor(0))
@@ -2743,10 +2746,10 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 
 
 	setupBattle(tile, armies, heroes, creatureBank,quickBattle, town); //initializes stacks, places creatures on battlefield, blocks and informs player interfaces
-
+	
 	auto battleQuery = std::make_shared<CBattleQuery>(gs->curB);
 	queries.addQuery(battleQuery);
-	saveAndRec();
+	save("Saves/002");
 	boost::thread(&CGameHandler::runBattle, this);
 }
 
@@ -4754,8 +4757,8 @@ bool CGameHandler::makeCustomAction(BattleAction &ba)
 				logGlobal->warn("Spell cannot be cast! Problem: %d", escp);
 				return false;
 			}
-            BattleInfo* bi = gs->curB;
-            recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
+            //BattleInfo* bi = gs->curB;
+            //recordBattleField(bi, ba,bi->battleGetFightingHero(ba.side));
 			StartAction start_action(ba);
 			sendAndApply(&start_action); //start spell casting
 
@@ -5947,23 +5950,26 @@ void CGameHandler::quickBattle(const BattleInfo *B) {
 			return;
 		}
 		JsonNode ret(r.c_str(), r.size());
-		float manaCost = ret["mc"].Float();
-		CGHeroInstance* hero = B->battleGetFightingHero(0);
-		setManaPoints(hero->id, hero->mana - manaCost);
+		//float manaCost = ret["mc"].Float();
+		//CGHeroInstance* hero = B->battleGetFightingHero(0);
+		//setManaPoints(hero->id, hero->mana - manaCost);
 		const JsonVector& vc = ret["cas"].Vector();
-
+		const float win_rate = ret["win_rate"].Float();
+		const int win = ret["win"].Float();
 		for (CStack* st : B->stacks) {
 			//left hand
 			if (st->attackerOwned) {
-				st->count -= si32(vc[st->slot.getNum()].Float());
+				st->count = si32(vc[st->slot.getNum()].Float());
 				if (st->count <= 0) {
 					st->state -= EBattleStackState::ALIVE;
 				}
 			}
 			else
 			{
-				st->count = 0;
-				st->state -= EBattleStackState::ALIVE;
+				if (win > 0) {
+					st->count = 0;
+					st->state -= EBattleStackState::ALIVE;
+				}
 			}
 		}
 	}

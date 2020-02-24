@@ -230,9 +230,13 @@
 					"type" : "string",
 					"default" : "VCAI"
 				},
+				"playerBattleAI" : {
+					"type" : "string",
+					"default" : "GeniusAI"
+				},
 				"neutralAI" : {
 					"type" : "string",
-					"default" : "StupidAI"
+					"default" : "BattleAI"
 				}
 			}
 		},

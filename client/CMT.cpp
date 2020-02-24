@@ -364,7 +364,7 @@ int main(int argc, char** argv)
 	*console->cb = processCommand;
 	console->start();
 	//boost::uuids::uuid a_uuid = boost::uuids::random_generator()();
-	std::string file= "/logs/VCMI_Client_log.txt"; //" + boost::uuids::to_string(a_uuid) + "
+	boost::filesystem::path file = (boost::filesystem::path)"logs" / "VCMI_Client_log.txt"; //" + boost::uuids::to_string(a_uuid) + "
 	const bfs::path logPath = VCMIDirs::get().userCachePath() / file;
 	CBasicLogConfigurator logConfig(logPath, console);
 	logConfig.configureDefault();

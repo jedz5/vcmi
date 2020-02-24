@@ -293,9 +293,9 @@ BattleInfo * BattleInfo::setupBattle( int3 tile, ETerrainType terrain, BFieldTyp
 
 	curB->tile = tile;
 	curB->battlefieldType = battlefieldType;
-	curB->round = -2;
+	//curB->round = -2;
 	curB->activeStack = -1;
-	curB->quickBattle = quickBattle;
+	curB->quickBattle = quickBattle ; //| creatureBank
 	if(town)
 	{
 		curB->town = town;

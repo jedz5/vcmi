@@ -694,8 +694,10 @@ void CBattleInfoCallback::battleGetStackQueue(std::vector<const CStack *> &out, 
 		int p = -1; //in which phase this tack will move?
 		if(turn <= 0 && s->waited()) //consider waiting state only for ongoing round
 		{
-			if(vstd::contains(s->state, EBattleStackState::HAD_MORALE))
+			if (vstd::contains(s->state, EBattleStackState::HAD_MORALE)) {
 				p = 2;
+				logGlobal->errorStream() << "one was waited morale";
+			}
 			else
 				p = 3;
 		}

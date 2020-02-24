@@ -177,6 +177,7 @@ BattleAction CBattleAI::activeStack( const CStack * stack )
 	}
 
 	return BattleAction::makeDefend(stack);
+	
 }
 
 void CBattleAI::actionFinished(const BattleAction &action)

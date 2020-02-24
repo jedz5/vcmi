@@ -934,19 +934,18 @@ void CGameState::initDuel(CConnection* c, bool serverSide)
 		}
 		else if (scenarioOps->mapname == "random")
 		{
-			const int NumUpdateCreatures = 63;
+			const int NumUpdateCreatures = 36;
 			int creIDs[NumUpdateCreatures];
 			for (int i = 0;i < NumUpdateCreatures;i++)
 			{
 				creIDs[i] = i * 2 + 1;
 			}
-			creIDs[56] = 119; creIDs[57] = 127; creIDs[58] = 123; creIDs[59] = 129; creIDs[60] = 125; creIDs[61] = 121; creIDs[62] = 131;
+			creIDs[32] = 119; creIDs[33] = 127; creIDs[34] = 123; creIDs[35] = 129; //creIDs[60] = 125; creIDs[61] = 121; creIDs[62] = 131;
 			getRandomGenerator().setSeed(this->scenarioOps->seedToBeUsed + 1);
 			int cr1 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
 			int cr2 = getRandomGenerator().nextInt(NumUpdateCreatures -1);
 			int hp1 = getRandomGenerator().nextInt(200, 3000);
 			int hp2 = getRandomGenerator().nextInt(200, 3000);
-			logGlobal->errorStream() << "cr1 =" << cr1 <<" cr2 = "<<cr2;
 			int looseFormat[7][7] = { {3, 8, 8, 8, 8, 8, 8},{ 1, 5, 8, 8, 8, 8, 8 } ,{ 1, 3, 5, 8, 8, 8, 8 } ,{ 0, 2, 4, 6, 8, 8, 8 } ,{ 0, 1, 3, 5, 6, 8, 8 },{ 0, 1, 2, 4, 5, 6, 8 },{ 0, 1, 2, 3, 4, 5, 6 } };
 			auto crt1 = VLC->creh->creatures[creIDs[cr1]];
 			auto crt2 = VLC->creh->creatures[creIDs[cr2]];
@@ -990,7 +989,7 @@ void CGameState::initDuel(CConnection* c, bool serverSide)
 					break;
 			}
 			dp.sides[0].heroId = 24;
-			dp.sides[0].heroPrimSkills = { getRandomGenerator().nextInt(0, 3), getRandomGenerator().nextInt(0, 3), 1, 1 };
+			dp.sides[0].heroPrimSkills = { getRandomGenerator().nextInt(0, 20), getRandomGenerator().nextInt(0, 20), 1, 1 };
 			for (int i = 0;i<7;i++)
 			{
 				dp.sides[0].stacks[i].count = 0;
