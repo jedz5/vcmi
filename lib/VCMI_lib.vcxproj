@@ -21,14 +21,14 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B952FFC5-3039-4DE1-9F08-90ACDA483D8F}</ProjectGuid>
     <RootNamespace>VCMI_lib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -77,7 +77,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(VCMI_Out)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(VCMI_Out)$(Configuration)\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(Configuration)\</IntDir>
@@ -93,6 +93,10 @@
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='RD|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='RD|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='RD|x64'" />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;D:\python35\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -149,7 +153,7 @@
       </Version>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
-      <AdditionalLibraryDirectories>..\..\libs</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCMI_Out)$(Configuration)\</AdditionalLibraryDirectories>
       <AdditionalOptions>/LTCG %(AdditionalOptions)</AdditionalOptions>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
