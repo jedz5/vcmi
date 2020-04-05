@@ -247,7 +247,7 @@ bool CGameInfoCallback::getTownInfo(const CGObjectInstance * town, InfoAboutTown
 
 		dest.initFromTown(static_cast<const CGTownInstance *>(town), detailed);
 	}
-	else if(town->ID == Obj::GARRISON || town->ID == Obj::GARRISON2)
+	else if(town->ID == Obj::GARRISON || town->ID == Obj::GARRISON2|| town->ID == Obj::OUTPOST)
 		dest.initFromArmy(static_cast<const CArmedInstance *>(town), detailed);
 	else
 		return false;

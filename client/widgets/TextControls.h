@@ -80,7 +80,7 @@ class CMultiLineLabel : public CLabel
 	// area of text that actually will be printed, default is widget size
 	Rect visibleSize;
 
-	void splitText(const std::string &Txt);
+	void splitText(const std::string &Txt, bool redrawAfter);
 	Rect getTextLocation();
 public:
 	// total size of text, x = longest line of text, y = total height of lines
@@ -91,9 +91,9 @@ public:
 	void setText(const std::string &Txt) override;
 	void showAll(SDL_Surface * to) override;
 
-	void setVisibleSize(Rect visibleSize);
+	void setVisibleSize(Rect visibleSize, bool redrawElement = true);
 	// scrolls text visible in widget. Positive value will move text up
-	void scrollTextTo(int distance);
+	void scrollTextTo(int distance, bool redrawAfterScroll = true);
 	void scrollTextBy(int distance);
 };
 
@@ -119,8 +119,6 @@ class CGStatusBar : public CLabel, public std::enable_shared_from_this<CGStatusB
 	bool textLock; //Used for blocking changes to the text
 	void init();
 
-	std::shared_ptr<CGStatusBar> oldStatusBar;
-
 	CGStatusBar(std::shared_ptr<CPicture> background_, EFonts Font = FONT_SMALL, EAlignment Align = CENTER, const SDL_Color & Color = Colors::WHITE);
 	CGStatusBar(int x, int y, std::string name, int maxw = -1);
 protected:
@@ -138,8 +136,6 @@ public:
 	void setText(const std::string & Text) override; //prints text and refreshes statusbar
 
 	void show(SDL_Surface * to) override; //shows statusbar (with current text)
-
-	~CGStatusBar();
 
 	void lock(bool shouldLock); //If true, current text cannot be changed until lock(false) is called
 };

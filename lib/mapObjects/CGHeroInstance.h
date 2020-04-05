@@ -212,7 +212,7 @@ public:
 	CStackBasicDescriptor calculateNecromancy (const BattleResult &battleResult) const;
 	void showNecromancyDialog(const CStackBasicDescriptor &raisedStack, CRandomGenerator & rand) const;
 	EDiggingStatus diggingStatus() const;
-
+	EDiggingStatus doOutpostStatus() const;
 	//////////////////////////////////////////////////////////////////////////
 
 	void setType(si32 ID, si32 subID) override;

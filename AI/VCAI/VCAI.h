@@ -112,6 +112,9 @@ public:
 	std::shared_ptr<CCallback> myCb;
 
 	std::unique_ptr<boost::thread> makingTurn;
+private:
+	boost::mutex turnInterruptionMutex;
+public:
 	ObjectInstanceID selectedObject;
 
 	AIhelper * ah;
@@ -214,7 +217,6 @@ public:
 	bool isGoodForVisit(const CGObjectInstance * obj, HeroPtr h, const AIPath & path) const;
 	//void recruitCreatures(const CGTownInstance * t);
 	void recruitCreatures(const CGDwelling * d, const CArmedInstance * recruiter);
-	bool canGetArmy(const CGHeroInstance * h, const CGHeroInstance * source); //can we get any better stacks from other hero?
 	void pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source); //called when we can't find a slot for new stack
 	void pickBestArtifacts(const CGHeroInstance * h, const CGHeroInstance * other = nullptr);
 	void moveCreaturesToHero(const CGTownInstance * t);
@@ -257,6 +259,7 @@ public:
 	Goals::TSubgoal getGoal(HeroPtr h) const;
 	bool canAct(HeroPtr h) const;
 	std::vector<HeroPtr> getUnblockedHeroes() const;
+	std::vector<HeroPtr> getMyHeroes() const;
 	HeroPtr primaryHero() const;
 	void checkHeroArmy(HeroPtr h);
 

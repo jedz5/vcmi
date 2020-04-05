@@ -25,10 +25,10 @@ class DLL_LINKAGE CStackBasicDescriptor
 public:
 	const CCreature *type;
 	TQuantity count;
-
+	int daysCost;
 	CStackBasicDescriptor();
-	CStackBasicDescriptor(CreatureID id, TQuantity Count);
-	CStackBasicDescriptor(const CCreature *c, TQuantity Count);
+	CStackBasicDescriptor(CreatureID id, TQuantity Count,int daysCost = 0);
+	CStackBasicDescriptor(const CCreature *c, TQuantity Count, int daysCost = 0);
 	virtual ~CStackBasicDescriptor() = default;
 
 	virtual void setType(const CCreature * c);
@@ -37,6 +37,7 @@ public:
 	{
 		h & type;
 		h & count;
+		h & daysCost;
 	}
 
 	void serializeJson(JsonSerializeFormat & handler);
@@ -82,8 +83,8 @@ public:
 	std::string getName() const; //plural or singular
 	virtual void init();
 	CStackInstance();
-	CStackInstance(CreatureID id, TQuantity count);
-	CStackInstance(const CCreature *cre, TQuantity count);
+	CStackInstance(CreatureID id, TQuantity count,int daysCost = 0);
+	CStackInstance(const CCreature *cre, TQuantity count,int daysCost = 0);
 	virtual ~CStackInstance();
 
 	void setType(CreatureID creID);
@@ -141,7 +142,7 @@ class IArmyDescriptor
 {
 public:
 	virtual void clear() = 0;
-	virtual bool setCreature(SlotID slot, CreatureID cre, TQuantity count) = 0;
+	virtual bool setCreature(SlotID slot, CreatureID cre, TQuantity count, int daysCost = 0) = 0;
 };
 
 //simplified version of CCreatureSet
@@ -150,7 +151,7 @@ class DLL_LINKAGE CSimpleArmy : public IArmyDescriptor
 public:
 	TSimpleSlots army;
 	void clear() override;
-	bool setCreature(SlotID slot, CreatureID cre, TQuantity count) override;
+	bool setCreature(SlotID slot, CreatureID cre, TQuantity count, int daysCost = 0) override;
 	operator bool() const;
 
 	template <typename Handler> void serialize(Handler &h, const int version)
@@ -175,7 +176,7 @@ public:
 
 	const TSlots &Slots() const {return stacks;}
 
-	void addToSlot(SlotID slot, CreatureID cre, TQuantity count, bool allowMerging = true); //Adds stack to slot. Slot must be empty or with same type creature
+	void addToSlot(SlotID slot, CreatureID cre, TQuantity count, bool allowMerging = true,int daysCost = 0); //Adds stack to slot. Slot must be empty or with same type creature
 	void addToSlot(SlotID slot, CStackInstance *stack, bool allowMerging = true); //Adds stack to slot. Slot must be empty or with same type creature
 	void clear() override;
 	void setFormation(bool tight);
@@ -193,7 +194,7 @@ public:
 	void eraseStack(SlotID slot); //slot must be occupied
 	void joinStack(SlotID slot, CStackInstance * stack); //adds new stack to the existing stack of the same type
 	void changeStackCount(SlotID slot, TQuantity toAdd); //stack must exist!
-	bool setCreature (SlotID slot, CreatureID type, TQuantity quantity) override; //replaces creature in stack; slots 0 to 6, if quantity=0 erases stack
+	bool setCreature (SlotID slot, CreatureID type, TQuantity quantity, int daysCost = 0) override; //replaces creature in stack; slots 0 to 6, if quantity=0 erases stack
 	void setToArmy(CSimpleArmy &src); //erases all our army and moves stacks from src to us; src MUST NOT be an armed object! WARNING: use it wisely. Or better do not use at all.
 
 	const CStackInstance& getStack(SlotID slot) const; //stack must exist
@@ -202,8 +203,8 @@ public:
 	int getStackCount (SlotID slot) const;
 	TExpType getStackExperience(SlotID slot) const;
 	SlotID findStack(const CStackInstance *stack) const; //-1 if none
-	SlotID getSlotFor(CreatureID creature, ui32 slotsAmount = GameConstants::ARMY_SIZE) const; //returns -1 if no slot available
-	SlotID getSlotFor(const CCreature *c, ui32 slotsAmount = GameConstants::ARMY_SIZE) const; //returns -1 if no slot available
+	SlotID getSlotFor(CreatureID creature, ui32 slotsAmount = GameConstants::ARMY_SIZE,int daysCost = 0) const; //returns -1 if no slot available
+	SlotID getSlotFor(const CCreature *c, ui32 slotsAmount = GameConstants::ARMY_SIZE, int daysCost = 0) const; //returns -1 if no slot available
 	SlotID getFreeSlot(ui32 slotsAmount = GameConstants::ARMY_SIZE) const;
 	bool mergableStacks(std::pair<SlotID, SlotID> &out, SlotID preferable = SlotID()) const; //looks for two same stacks, returns slot positions;
 	bool validTypes(bool allowUnrandomized = false) const; //checks if all types of creatures are set properly

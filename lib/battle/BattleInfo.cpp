@@ -239,7 +239,10 @@ BattleInfo * BattleInfo::setupBattle(int3 tile, ETerrainType terrain, BFieldType
 
 		RandGen r;
 		auto ourRand = [&](){ return r.rand(); };
-		r.srand(tile);
+		if(tile.x + tile.y == -2)
+			r.srand(tile.z + 2);
+		else
+			r.srand(tile);
 		r.rand(1,8); //battle sound ID to play... can't do anything with it here
 		int tilesToBlock = r.rand(5,12);
 		const int specialBattlefield = battlefieldTypeToBI(battlefieldType);
@@ -804,22 +807,10 @@ void BattleInfo::addUnit(uint32_t id, const JsonNode & data)
 void BattleInfo::moveUnit(uint32_t id, BattleHex destination)
 {
 	auto sta = getStack(id);
-
 	if(!sta)
 	{
 		logGlobal->error("Cannot find stack %d", id);
 		return;
-	}
-
-	for(auto & oi : obstacles)
-	{
-		if((oi->obstacleType == CObstacleInstance::SPELL_CREATED) && vstd::contains(oi->getAffectedTiles(), destination))
-		{
-			SpellCreatedObstacle * obstacle = dynamic_cast<SpellCreatedObstacle*>(oi.get());
-			assert(obstacle);
-			if(obstacle->casterSide != sta->unitSide() && obstacle->hidden)
-				obstacle->revealed = true;
-		}
 	}
 	sta->position = destination;
 }
@@ -876,10 +867,7 @@ void BattleInfo::setUnitState(uint32_t id, const JsonNode & data, int64_t health
 		auto selector = [](const Bonus * b)
 		{
 			//Special case: DISRUPTING_RAY is absolutely permanent
-			if(b->source == Bonus::SPELL_EFFECT)
-				return b->sid != SpellID::DISRUPTING_RAY;
-			else
-				return false;
+			return b->source == Bonus::SPELL_EFFECT && b->sid != SpellID::DISRUPTING_RAY;
 		};
 		changedStack->removeBonusesRecursive(selector);
 	}
@@ -1033,6 +1021,26 @@ void BattleInfo::addObstacle(const ObstacleChanges & changes)
 	obstacles.push_back(obstacle);
 }
 
+void BattleInfo::updateObstacle(const ObstacleChanges& changes)
+{
+	std::shared_ptr<SpellCreatedObstacle> changedObstacle = std::make_shared<SpellCreatedObstacle>();
+	changedObstacle->fromInfo(changes);
+
+	for(int i = 0; i < obstacles.size(); ++i)
+	{
+		if(obstacles[i]->uniqueID == changes.id) // update this obstacle
+		{
+			SpellCreatedObstacle * spellObstacle = dynamic_cast<SpellCreatedObstacle *>(obstacles[i].get());
+			assert(spellObstacle);
+
+			// Currently we only support to update the "revealed" property
+			spellObstacle->revealed = changedObstacle->revealed;
+			
+			break;
+		}
+	}
+}
+
 void BattleInfo::removeObstacle(uint32_t id)
 {
 	for(int i=0; i < obstacles.size(); ++i)
@@ -1067,27 +1075,37 @@ bool CMP_stack::operator()(const battle::Unit * a, const battle::Unit * b)
 			if(as != bs)
 				return as > bs;
 			else
-				return a->unitSlot() < b->unitSlot(); //FIXME: what about summoned stacks?
-		}
+			{
+				if(a->unitSide() == b->unitSide())
+					return a->unitSlot() < b->unitSlot();
+				else
+					return a->unitSide() == side ? false : true;
+			}
+			//FIXME: what about summoned stacks
+		}	
 	case 2: //fastest last, upper slot first
-		//TODO: should be replaced with order of receiving morale!
 	case 3: //fastest last, upper slot first
 		{
 			int as = a->getInitiative(turn), bs = b->getInitiative(turn);
 			if(as != bs)
-				return as < bs;
+				return as > bs;
 			else
-				return a->unitSlot() < b->unitSlot();
+			{
+				if(a->unitSide() == b->unitSide())
+					return a->unitSlot() < b->unitSlot();
+				else
+					return a->unitSide() == side ? false : true;
+			}
 		}
 	default:
 		assert(0);
 		return false;
 	}
-
 }
 
-CMP_stack::CMP_stack(int Phase, int Turn)
+CMP_stack::CMP_stack(int Phase, int Turn, uint8_t Side)
 {
 	phase = Phase;
 	turn = Turn;
+	side = Side;
 }

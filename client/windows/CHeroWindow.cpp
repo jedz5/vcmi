@@ -52,10 +52,11 @@ const TBonusListPtr CHeroWithMaybePickedArtifact::getAllBonuses(const CSelector 
 	else
 		bonusesFromPickedUpArtifact = TBonusListPtr(new BonusList());
 
-	for(auto b : *bonusesFromPickedUpArtifact)
-		*heroBonuses -= b;
 	for(auto b : *heroBonuses)
 		out->push_back(b);
+
+	for(auto b : *bonusesFromPickedUpArtifact)
+		*out -= b;
 	return out;
 }
 
@@ -235,6 +236,7 @@ void CHeroWindow::update(const CGHeroInstance * hero, bool redrawNeeded)
 			boost::algorithm::replace_first(helpBox, "%s", CGI->generaltexth->allTexts[43]);
 
 			garr = std::make_shared<CGarrisonInt>(15, 485, 8, Point(), curHero);
+			garr->createSlots();
 			auto split = std::make_shared<CButton>(Point(539, 519), "hsbtns9.def", CButton::tooltip(CGI->generaltexth->allTexts[256], helpBox), [&](){ garr->splitClick(); });
 			garr->addSplitBtn(split);
 		}

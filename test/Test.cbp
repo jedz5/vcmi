@@ -20,6 +20,9 @@
 					<Add directory="mock" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_filesystem$(#boost.libsuffix32)" />
+					<Add option="-lboost_system$(#boost.libsuffix32)" />
+					<Add option="-lboost_thread$(#boost.libsuffix32)" />
 					<Add directory="$(#boost.lib32)" />
 				</Linker>
 			</Target>
@@ -36,6 +39,9 @@
 					<Add directory="mock" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_filesystem$(#boost.libsuffix64)" />
+					<Add option="-lboost_system$(#boost.libsuffix64)" />
+					<Add option="-lboost_thread$(#boost.libsuffix64)" />
 					<Add directory="$(#boost.lib64)" />
 				</Linker>
 			</Target>
@@ -51,7 +57,7 @@
 			<Add option="-Wno-unused-local-typedefs" />
 			<Add option="-D_WIN32_WINNT=0x0501" />
 			<Add option="-D_WIN32" />
-			<Add option="-DBOOST_THREAD_USE_LIB" />
+			<Add option="-DBOOST_ALL_DYN_LINK" />
 			<Add option="-DBOOST_SYSTEM_NO_DEPRECATED" />
 			<Add option="-DVCMI_NO_EXTRA_VERSION" />
 			<Add directory="$(#zlib.include)" />
@@ -65,9 +71,6 @@
 		</Compiler>
 		<Linker>
 			<Add option="-lVCMI_lib" />
-			<Add option="-lboost_filesystem$(#boost.libsuffix)" />
-			<Add option="-lboost_system$(#boost.libsuffix)" />
-			<Add option="-lboost_thread$(#boost.libsuffix)" />
 			<Add library="../AI/VCAI.dll" />
 			<Add directory="../" />
 		</Linker>

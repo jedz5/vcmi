@@ -51,7 +51,7 @@ class MotionInterested;
 class TimeInterested;
 class IShowable;
 struct CPathsInfo;
-
+class CGOutpost;
 namespace boost
 {
 	class mutex;
@@ -137,6 +137,7 @@ public:
 	void heroManaPointsChanged(const CGHeroInstance * hero) override;
 	void heroMovePointsChanged(const CGHeroInstance * hero) override;
 	void heroVisitsTown(const CGHeroInstance* hero, const CGTownInstance * town) override;
+	void heroVisitsOutpost(const CGHeroInstance * hero, ObjectInstanceID opid) override;
 	void receivedResource() override;
 	void showInfoDialog(const std::string & text, const std::vector<Component> & components, int soundID) override;
 	void showRecruitmentDialog(const CGDwelling *dwelling, const CArmedInstance *dst, int level) override;
@@ -167,6 +168,7 @@ public:
 	void centerView (int3 pos, int focusTime) override;
 	void objectPropertyChanged(const SetObjectProperty * sop) override;
 	void objectRemoved(const CGObjectInstance *obj) override;
+	void playerBlocked(int reason, bool start) override;
 	void gameOver(PlayerColor player, const EVictoryLossCheckResult & victoryLossCheckResult) override;
 	void playerStartsTurn(PlayerColor player) override; //called before yourTurn on active itnerface
 	void showComp(const Component &comp, std::string message) override; //display component in the advmapint infobox
@@ -206,7 +208,8 @@ public:
 	bool ctrlPressed() const; //determines if ctrl key is pressed (left or right or both)
 	bool altPressed() const; //determines if alt key is pressed (left or right or both)
 	void redrawHeroWin(const CGHeroInstance * hero);
-	void openTownWindow(const CGTownInstance * town); //shows townscreen
+	void openTownWindow(const CGTownInstance * town); //shows town screen
+	void openOutpostWindow(const CGOutpost * op, const CGHeroInstance* hero = 0); //shows outpost screen
 	void openHeroWindow(const CGHeroInstance * hero); //shows hero window with given hero
 	void updateInfo(const CGObjectInstance * specific);
 	void init(std::shared_ptr<CCallback> CB) override;
@@ -229,6 +232,7 @@ public:
 	void removeLastNodeFromPath(const CGHeroInstance *ho);
 	CGPath *getAndVerifyPath( const CGHeroInstance * h );
 	void acceptTurn(); //used during hot seat after your turn message is close
+	void tryOutposting(const CGHeroInstance *h);
 	void tryDiggging(const CGHeroInstance *h);
 	void showShipyardDialogOrProblemPopup(const IShipyard *obj); //obj may be town or shipyard;
 	void requestReturningToMainMenu(bool won);

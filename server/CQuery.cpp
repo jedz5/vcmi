@@ -164,6 +164,7 @@ void CObjectVisitQuery::onExposure(QueryPtr topQuery)
 void Queries::popQuery(PlayerColor player, QueryPtr query)
 {
 	//LOG_TRACE_PARAMS(logGlobal, "player='%s', query='%s'", player % query);
+	logGlobal->trace("pop query(%d) %s with id %d", player, typeid(*query).name(), query->queryID);
 	if(topQuery(player) != query)
 	{
 		logGlobal->trace("Cannot remove, not a top!");
@@ -213,6 +214,7 @@ void Queries::addQuery(QueryPtr query)
 void Queries::addQuery(PlayerColor player, QueryPtr query)
 {
 	//LOG_TRACE_PARAMS(logGlobal, "player='%d', query='%s'", player.getNum() % query);
+	logGlobal->trace("add query(%d) %s with id %d", player, typeid(*query).name(), query->queryID);
 	query->onAdding(player);
 	queries[player].push_back(query);
 }
@@ -489,7 +491,8 @@ bool CGenericQuery::endsByPlayerAnswer() const
 
 void CGenericQuery::onExposure(QueryPtr topQuery)
 {
-	//do nothing
+	//town portal && level up by academy of battle
+	owner->popIfTop(*this);
 }
 
 void CGenericQuery::setReply(const JsonNode & reply)

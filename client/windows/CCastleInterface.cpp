@@ -479,7 +479,8 @@ void CHeroGSlot::set(const CGHeroInstance * newHero)
 	else if(!upg && owner->showEmpty) //up garrison
 	{
 		flag->visible = true;
-		flag->setFrame(LOCPLINT->castleInt->town->getOwner().getNum());
+		//flag->setFrame(LOCPLINT->castleInt->town->getOwner().getNum());
+		flag->setFrame(owner->town->getOwner().getNum());
 	}
 }
 
@@ -1113,6 +1114,7 @@ CCastleInterface::CCastleInterface(const CGTownInstance * Town, const CGTownInst
 	updateShadow();
 
 	garr = std::make_shared<CGarrisonInt>(305, 387, 4, Point(0,96), town->getUpperArmy(), town->visitingHero);
+	garr->createSlots();
 	garr->type |= REDRAW_PARENT;
 
 	heroes = std::make_shared<HeroSlots>(town, Point(241, 387), Point(241, 483), garr, true);

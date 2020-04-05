@@ -358,7 +358,98 @@ void CTownList::update(const CGTownInstance *)
 	}
 	CList::update();
 }
+//CTownList2::CTownList2(int size, Point position, std::string btnUp, std::string btnDown) :
+//	CTownList(size, position, btnUp, btnDown)
+//{
+//	//CList(size, position, btnUp, btnDown, LOCPLINT->towns.size(), 306, 307, std::bind(&CTownList::createTownItem, this, _1))
+//	listBox = std::make_shared<CListBox>(std::bind(&CTownList2::createTownItem, Point(1, scrollUp->pos.h), Point(0, 32), size, LOCPLINT->towns.size()));
+//}
+//CTownList2::CTownItem2::CTownItem2(CTownList2 *parent, const CGTownInstance * town):CTownItem(parent,town) {
+//
+//}
+//std::shared_ptr<CIntObject> CTownList2::createTownItem(size_t index) {
+//	if (LOCPLINT->towns.size() > index)
+//		return std::make_shared<CTownItem2>(this, LOCPLINT->towns[index]);
+//	return std::make_shared<CAnimImage>("ITPA", 0);
+//}
+//void CTownList2::CTownItem2::open() {
+//	//CList::CListItem::parent->select(this->shared_from_this());
+//}
 
+std::shared_ptr<CIntObject> CTownList2::createTownItem(size_t index)
+{
+	if (LOCPLINT->towns.size() > index)
+		return std::make_shared<CTownItem2>(this, LOCPLINT->towns[index]);
+	return std::make_shared<CAnimImage>("ITPA", 0);
+}
+
+CTownList2::CTownItem2::CTownItem2(CTownList2 *parent, const CGTownInstance *Town) :
+	CListItem(parent),
+	town(Town)
+{
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
+	picture = std::make_shared<CAnimImage>("ITPA", 0);
+	pos = picture->pos;
+	update();
+}
+
+std::shared_ptr<CIntObject> CTownList2::CTownItem2::genSelection()
+{
+	return std::make_shared<CAnimImage>("ITPA", 1);
+}
+
+void CTownList2::CTownItem2::update()
+{
+	size_t iconIndex = town->town->clientInfo.icons[town->hasFort()][town->builded >= CGI->modh->settings.MAX_BUILDING_PER_TURN];
+
+	picture->setFrame(iconIndex + 2);
+	redraw();
+}
+
+void CTownList2::CTownItem2::select(bool on)
+{
+	if (on && adventureInt->selection != town)
+		adventureInt->select(town);
+}
+
+void CTownList2::CTownItem2::open()
+{
+	//parent->select(this->shared_from_this());
+}
+
+void CTownList2::CTownItem2::showTooltip()
+{
+	CRClickPopup::createAndPush(town, GH.current->motion);
+}
+
+std::string CTownList2::CTownItem2::getHoverText()
+{
+	return town->getObjectName();
+}
+
+CTownList2::CTownList2(int size, Point position, std::string btnUp, std::string btnDown) :
+	CList(size, position, btnUp, btnDown, LOCPLINT->towns.size(), 306, 307, std::bind(&CTownList2::createTownItem, this, _1))
+{
+}
+
+void CTownList2::select(const CGTownInstance * town)
+{
+	selectIndex(vstd::find_pos(LOCPLINT->towns, town));
+}
+
+void CTownList2::update(const CGTownInstance *)
+{
+	//simplest solution for now: reset list and restore selection
+
+	listBox->resize(LOCPLINT->towns.size());
+	if (adventureInt->selection)
+	{
+		auto town = dynamic_cast<const CGTownInstance *>(adventureInt->selection);
+		if (town)
+			select(town);
+	}
+	CList::update();
+}
 const SDL_Color & CMinimapInstance::getTileColor(const int3 & pos)
 {
 	static const SDL_Color fogOfWar = {0, 0, 0, 255};

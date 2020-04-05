@@ -1,10 +1,3 @@
-if(FL_FOUND)
-	include_directories(${FL_INCLUDE_DIRS})
-else()
-	include_directories(${CMAKE_HOME_DIRECTORY}/AI/FuzzyLite/fuzzylite)
-endif()
-include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_HOME_DIRECTORY} ${CMAKE_HOME_DIRECTORY}/include ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_HOME_DIRECTORY}/lib)
-
 set(VCAI_SRCS
 		StdInc.cpp
 
@@ -12,8 +5,16 @@ set(VCAI_SRCS
 		Pathfinding/AIPathfinder.cpp
 		Pathfinding/AINodeStorage.cpp
 		Pathfinding/PathfindingManager.cpp
+		Pathfinding/Actions/BattleAction.cpp
+		Pathfinding/Actions/BoatActions.cpp
+		Pathfinding/Actions/TownPortalAction.cpp
+		Pathfinding/Rules/AILayerTransitionRule.cpp
+		Pathfinding/Rules/AIMovementAfterDestinationRule.cpp
+		Pathfinding/Rules/AIMovementToDestinationRule.cpp
+		Pathfinding/Rules/AIPreviousNodeRule.cpp
 		AIUtility.cpp
 		AIhelper.cpp
+		ArmyManager.cpp
 		ResourceManager.cpp
 		BuildingManager.cpp
 		SectorMap.cpp
@@ -54,8 +55,17 @@ set(VCAI_HEADERS
 		Pathfinding/AIPathfinder.h
 		Pathfinding/AINodeStorage.h
 		Pathfinding/PathfindingManager.h
+		Pathfinding/Actions/ISpecialAction.h
+		Pathfinding/Actions/BattleAction.h
+		Pathfinding/Actions/BoatActions.h
+		Pathfinding/Actions/TownPortalAction.h
+		Pathfinding/Rules/AILayerTransitionRule.h
+		Pathfinding/Rules/AIMovementAfterDestinationRule.h
+		Pathfinding/Rules/AIMovementToDestinationRule.h
+		Pathfinding/Rules/AIPreviousNodeRule.h
 		AIUtility.h
 		AIhelper.h
+		ArmyManager.h
 		ResourceManager.h
 		BuildingManager.h
 		SectorMap.h
@@ -98,10 +108,18 @@ if(ANDROID) # android compiles ai libs into main lib directly, so we skip this l
 endif()
 
 add_library(VCAI SHARED ${VCAI_SRCS} ${VCAI_HEADERS})
+
 if(FL_FOUND)
-	target_link_libraries(VCAI ${FL_LIBRARIES} vcmi)
+	target_include_directories(VCAI PUBLIC ${FL_INCLUDE_DIRS})
 else()
-	target_link_libraries(VCAI fl-static vcmi)
+	target_include_directories(VCAI PUBLIC ${CMAKE_HOME_DIRECTORY}/AI/FuzzyLite/fuzzylite)
+endif()
+target_include_directories(VCAI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(FL_FOUND)
+	target_link_libraries(VCAI PRIVATE ${FL_LIBRARIES} vcmi)
+else()
+	target_link_libraries(VCAI PRIVATE fl-static vcmi)
 endif()
 
 vcmi_set_output_dir(VCAI "AI")

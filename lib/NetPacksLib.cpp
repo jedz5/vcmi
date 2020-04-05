@@ -15,6 +15,7 @@
 #include "CArtHandler.h"
 #include "CHeroHandler.h"
 #include "mapObjects/CObjectHandler.h"
+#include "mapObjects/MiscObjects.h"
 #include "CModHandler.h"
 #include "VCMI_Lib.h"
 #include "mapping/CMap.h"
@@ -28,6 +29,10 @@
 #include "StartInfo.h"
 #include "CPlayerState.h"
 
+#include "mapObjects/CommonConstructors.h"
+#include "mapObjects/MapObjects.h" //needed to resolve templates for CommonConstructors.h
+#include "mapObjects/CGPandoraBox.h"
+#include "mapObjects/CRewardableObject.h"
 
 DLL_LINKAGE void SetResources::applyGs(CGameState *gs)
 {
@@ -133,7 +138,24 @@ DLL_LINKAGE void HeroVisitCastle::applyGs(CGameState *gs)
 	else
 		t->setVisitingHero(nullptr);
 }
+DLL_LINKAGE void HeroVisitOutpost::applyGs(CGameState *gs) {
+	/*const CGOutpost* op = reinterpret_cast<const CGOutpost*>(gs->getObj(tid));
 
+	CGHeroInstance *h = gs->getHero(hid);
+	std::shared_ptr<CPathsInfo> paths = std::make_shared<CPathsInfo>(gs->getMapSize(), h);
+	auto mop = const_cast<CGOutpost*>(op);
+	gs->calculatePaths(h, *paths.get());
+	for (CGTownInstance* t : gs->players[h->tempOwner].towns)
+	{
+		auto tn = paths->getNode(t->pos - int3(2, 0, 0));
+		int daysCost = (tn->turns + 1)/2 + 1;
+		int3 tt = t->pos;
+
+		if (!op->daysToGo.count(t->pos) || mop->daysToGo[t->pos] > daysCost)
+			mop->daysToGo[t->pos] = daysCost;
+	}*/
+	
+}
 DLL_LINKAGE void ChangeSpells::applyGs(CGameState *gs)
 {
 	CGHeroInstance *hero = gs->getHero(hid);
@@ -420,6 +442,9 @@ DLL_LINKAGE void RemoveObject::applyGs(CGameState *gs)
 
 		return;
 	}
+	else if (obj->ID == Obj::OUTPOST) {
+		gs->map->outpostsOnMap -= obj;
+	}
 
 	auto quest = dynamic_cast<const IQuestObject *>(obj);
 	if (quest)
@@ -676,8 +701,22 @@ DLL_LINKAGE void GiveHero::applyGs(CGameState *gs)
 
 DLL_LINKAGE void NewObject::applyGs(CGameState *gs)
 {
-	const TerrainTile &t = gs->map->getTile(pos);
-	ETerrainType terrainType = t.terType;
+	ETerrainType terrainType;
+
+	if(ID == Obj::BOAT && !gs->isInTheMap(pos)) //special handling for bug #3060 - pos outside map but visitablePos is not
+	{
+		CGObjectInstance testObject = CGObjectInstance();
+		testObject.pos = pos;
+		testObject.appearance = VLC->objtypeh->getHandlerFor(ID, subID)->getTemplates(ETerrainType::WATER).front();
+
+		const int3 previousXAxisTile = int3(pos.x - 1, pos.y, pos.z);
+		assert(gs->isInTheMap(previousXAxisTile) && (testObject.visitablePos() == previousXAxisTile)); 
+	}
+	else
+	{
+		const TerrainTile & t = gs->map->getTile(pos);
+		terrainType = t.terType;
+	}
 
 	CGObjectInstance *o = nullptr;
 	switch(ID)
@@ -699,21 +738,34 @@ DLL_LINKAGE void NewObject::applyGs(CGameState *gs)
 			cre->addToSlot(SlotID(0), new CStackInstance(CreatureID(subID), -1)); //add placeholder stack
 		}
 		break;
+	case Obj::OUTPOST:
+		o = new CGOutpost();
+		//auto he = dynamic_cast<const CGHeroInstance*>();
+		o->setOwner(gs->getObj(ObjectInstanceID(subID))->tempOwner);
+		o->instanceName = "outpost"+o->pos.toString();
+		break;
 	default:
 		o = new CGObjectInstance();
 		break;
 	}
-	o->ID = ID;
-	o->subID = subID;
+	if (ID == 232) {
+		o->ID = Obj::GARRISON2;
+		o->subID = 0;
+	}
+	else {
+		o->ID = ID;
+		o->subID = subID;
+	}
 	o->pos = pos;
 	o->appearance = VLC->objtypeh->getHandlerFor(o->ID, o->subID)->getTemplates(terrainType).front();
 	id = o->id = ObjectInstanceID(gs->map->objects.size());
-
 	gs->map->objects.push_back(o);
 	gs->map->addBlockVisTiles(o);
 	o->initObj(gs->getRandomGenerator());
 	gs->map->calculateGuardingGreaturePositions();
-
+	o->ID = ID;
+	o->subID = subID;
+	o->afterAddToMap(gs->map);
 	logGlobal->debug("Added object id=%d; address=%x; name=%s", id, (intptr_t)o, o->getObjectName());
 }
 
@@ -876,7 +928,7 @@ DLL_LINKAGE void SwapStacks::applyGs(CGameState * gs)
 
 DLL_LINKAGE void InsertNewStack::applyGs(CGameState *gs)
 {
-	auto s = new CStackInstance(type, count);
+	auto s = new CStackInstance(type, count,daysCost);
 	auto obj = gs->getArmyInstance(army);
 	if(obj)
 		obj->putStack(slot, s);
@@ -974,7 +1026,7 @@ DLL_LINKAGE void RebalanceStacks::applyGs(CGameState * gs)
 		else //split stack to an empty slot
 		{
 			src.army->changeStackCount(src.slot, -count);
-			dst.army->addToSlot(dst.slot, srcType->idNumber, count, false);
+			dst.army->addToSlot(dst.slot, srcType->idNumber, count, false,src.getStack()->daysCost);
 			if (stackExp)
 				dst.army->setStackExp(dst.slot, src.army->getStackExperience(src.slot));
 		}
@@ -1160,7 +1212,13 @@ DLL_LINKAGE void NewTurn::applyGs(CGameState *gs)
 
 	for(CGTownInstance* t : gs->map->towns)
 		t->builded = 0;
-
+	for (auto& op : gs->map->outpostsOnMap) {
+		for (auto& st : op->stacks) {
+			st.second->daysCost -= 1;
+			if (st.second->daysCost < 0)
+				st.second->daysCost = 0;
+		}
+	}
 	if(gs->getDate(Date::DAY_OF_WEEK) == 1)
 		gs->updateRumor();
 
@@ -1422,6 +1480,7 @@ DLL_LINKAGE void StartAction::applyGs(CGameState *gs)
 	case EActionType::WAIT:
 		st->defendingAnim = false;
 		st->waiting = true;
+		st->waitedThisTurn = true;
 		break;
 	case EActionType::HERO_SPELL: //no change in current stack state
 		break;
@@ -1519,6 +1578,9 @@ DLL_LINKAGE void BattleObstaclesChanged::applyBattle(IBattleState * battleState)
 			break;
 		case BattleChanges::EOperation::ADD:
 			battleState->addObstacle(change);
+			break;
+		case BattleChanges::EOperation::UPDATE:
+			battleState->updateObstacle(change);
 			break;
 		default:
 			logNetwork->error("Unknown obstacle operation %d", (int)change.operation);

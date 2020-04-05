@@ -24,7 +24,7 @@ class CTextBox;
 class CButton;
 class CSlider;
 class CArmyTooltip;
-
+class CGOutpost;
 // Window GUI class
 class CSimpleWindow : public WindowBase
 {
@@ -114,6 +114,7 @@ public:
 	CInfoBoxPopup(Point position, const CGTownInstance * town);
 	CInfoBoxPopup(Point position, const CGHeroInstance * hero);
 	CInfoBoxPopup(Point position, const CGGarrison * garr);
+	CInfoBoxPopup(Point position, const CGOutpost * op);
 };
 
 /// component selection window

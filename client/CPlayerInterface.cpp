@@ -13,6 +13,7 @@
 #include "battle/CBattleInterfaceClasses.h"
 #include "../CCallback.h"
 #include "windows/CCastleInterface.h"
+#include "windows/COutpostInterface.h"
 #include "gui/CCursorHandler.h"
 #include "windows/CKingdomInterface.h"
 #include "CGameInfo.h"
@@ -353,16 +354,11 @@ void CPlayerInterface::heroMoved(const TryMoveHero & details)
 		// most likely this is connected with the way that this manual animation+framerate handling is solved
 		adventureInt->updateScreen = true;
 #endif
-		adventureInt->show(screen);
-		{
-			//evil returns here ...
-			//todo: get rid of it
-			logGlobal->trace("before [un]locks in %s", __FUNCTION__);
-			auto unlockPim = vstd::makeUnlockGuard(*pim); //let frame to be rendered
-			GH.mainFPSmng->framerateDelay(); //for animation purposes
-			logGlobal->trace("after [un]locks in %s", __FUNCTION__);
-		}
 
+		//evil returns here ...
+		//todo: get rid of it
+		auto unlockPim = vstd::makeUnlockGuard(*pim); //let frame to be rendered
+		GH.mainFPSmng->framerateDelay(); //for animation purposes
 	}
 	//main moving done
 
@@ -467,10 +463,16 @@ void CPlayerInterface::openTownWindow(const CGTownInstance * town)
 	castleInt = nullptr;
 
 	auto newCastleInt = std::make_shared<CCastleInterface>(town);
-
 	GH.pushInt(newCastleInt);
 }
-
+void CPlayerInterface::openOutpostWindow(const CGOutpost * op, const CGHeroInstance* hero)
+{
+	if (castleInt)
+		castleInt->close();
+	castleInt = nullptr;
+	auto newCastleInt = std::make_shared<COutpostInterface>(op,hero,towns[0]);
+	GH.pushInt(newCastleInt);
+}
 int3 CPlayerInterface::repairScreenPos(int3 pos)
 {
 	if (pos.x<-CGI->mh->frameW)
@@ -606,7 +608,19 @@ void CPlayerInterface::heroVisitsTown(const CGHeroInstance* hero, const CGTownIn
 	waitWhileDialog();
 	openTownWindow(town);
 }
-
+void CPlayerInterface::heroVisitsOutpost(const CGHeroInstance * hero, ObjectInstanceID opid)
+{
+	EVENT_HANDLER_CALLED_BY_CLIENT;
+	if (hero->tempOwner != playerID)
+		return;
+	if (stillMoveHero.get() == DURING_MOVE  && adventureInt->terrain.currentPath && adventureInt->terrain.currentPath->nodes.size() > 1) //to ignore calls on passing through garrisons
+	{
+		return;
+	}
+	waitWhileDialog();
+	auto obj = cb->getObj(opid);
+	openOutpostWindow(dynamic_cast<const CGOutpost*>(obj),hero);
+}
 void CPlayerInterface::garrisonsChanged(ObjectInstanceID id1, ObjectInstanceID id2)
 {
 	std::vector<const CGObjectInstance *> instances;
@@ -704,7 +718,6 @@ void CPlayerInterface::battleStart(const CCreatureSet *army1, const CCreatureSet
 		// Player shouldn't be able to move on adventure map if quick combat is going
 		adventureInt->quickCombatLock();
 	}
-
 	//Don't wait for dialogs when we are non-active hot-seat player
 	if (LOCPLINT == this)
 		waitForAllDialogs();
@@ -743,6 +756,12 @@ void CPlayerInterface::battleUnitsChanged(const std::vector<UnitChanges> & units
 
 				if(unit->alive() && animation->isDead())
 					animation->setType(CCreatureAnim::HOLDING);
+
+				if (unit->isClone())
+				{
+					std::unique_ptr<ColorShifterDeepBlue> shifter(new ColorShifterDeepBlue());
+					animation->shiftColor(shifter.get());
+				}
 
 				//TODO: handle more cases
 			}
@@ -1607,6 +1626,29 @@ void CPlayerInterface::objectRemoved(const CGObjectInstance * obj)
 	}
 }
 
+void CPlayerInterface::playerBlocked(int reason, bool start)
+{
+	//if(reason == PlayerBlocked::EReason::UPCOMING_BATTLE)
+	//{
+	//	if(CSH->howManyPlayerInterfaces() > 1 && LOCPLINT != this && LOCPLINT->makingTurn == false) 
+	//	{ 
+	//		//one of our players who isn't last in order got attacked not by our another player (happens for example in hotseat mode)
+	//		boost::unique_lock<boost::mutex> lock(eventsM); //TODO: copied from yourTurn, no idea if it's needed
+	//		LOCPLINT = this;
+	//		GH.curInt = this;
+	//		adventureInt->selection = nullptr;
+	//		adventureInt->setPlayer(playerID);
+	//		std::string msg = CGI->generaltexth->localizedTexts["adventureMap"]["playerAttacked"].String();
+	//		boost::replace_first(msg, "%s", cb->getStartInfo()->playerInfos.find(playerID)->second.name);
+	//		std::vector<std::shared_ptr<CComponent>> cmp;
+	//		cmp.push_back(std::make_shared<CComponent>(CComponent::flag, playerID.getNum(), 0));
+	//		makingTurn = true; //workaround for stiff showInfoDialog implementation
+	//		showInfoDialog(msg, cmp);
+	//		makingTurn = false;
+	//	}
+	//}
+}
+
 bool CPlayerInterface::ctrlPressed() const
 {
 	return isCtrlKeyDown();
@@ -2126,11 +2168,21 @@ void CPlayerInterface::gameOver(PlayerColor player, const EVictoryLossCheckResul
 		if (victoryLossCheckResult.loss())
 			showInfoDialog(CGI->generaltexth->allTexts[95]);
 
-		if (LOCPLINT == this)
+		//we assume GH.curInt == LOCPLINT
+		auto previousInterface = LOCPLINT; //without multiple player interfaces some of lines below are useless, but for hotseat we wanna swap player interface temporarily
+		LOCPLINT = this; //this is needed for dialog to show and avoid freeze, dialog showing logic should be reworked someday
+		GH.curInt = this; //waiting for dialogs requires this to get events
+		if(!makingTurn)
 		{
-			GH.curInt = this; //waiting for dialogs requires this to get events
-			waitForAllDialogs(); //wait till all dialogs are displayed and closed
+			makingTurn = true; //also needed for dialog to show with current implementation
+			waitForAllDialogs();
+			makingTurn = false;
 		}
+		else
+			waitForAllDialogs();
+
+		GH.curInt = previousInterface;
+		LOCPLINT = previousInterface;
 
 		if(CSH->howManyPlayerInterfaces() == 1 && !settings["session"]["spectate"].Bool()) //all human players eliminated
 		{
@@ -2147,11 +2199,13 @@ void CPlayerInterface::gameOver(PlayerColor player, const EVictoryLossCheckResul
 		if (victoryLossCheckResult.victory() && LOCPLINT == this)
 		{
 			// end game if current human player has won
+			CSH->sendClientDisconnecting();
 			requestReturningToMainMenu(true);
 		}
 		else if(CSH->howManyPlayerInterfaces() == 1 && !settings["session"]["spectate"].Bool())
 		{
 			//all human players eliminated
+			CSH->sendClientDisconnecting();
 			requestReturningToMainMenu(false);
 		}
 
@@ -2348,6 +2402,40 @@ void CPlayerInterface::acceptTurn()
 	}
 }
 
+void CPlayerInterface::tryOutposting(const CGHeroInstance *h)
+{
+	std::string hlp;
+	CGI->mh->getTerrainDescr(h->getPosition(false), hlp, false);
+	auto isDoOutpost = h->doOutpostStatus();
+	if (hlp.length())
+		isDoOutpost = EDiggingStatus::TILE_OCCUPIED; //TODO integrate with canDig
+
+	int msgToShow = -1;
+	switch (isDoOutpost)
+	{
+	case EDiggingStatus::CAN_DIG:
+		break;
+	case EDiggingStatus::LACK_OF_MOVEMENT:
+		msgToShow = 56; //"Digging for artifacts requires a whole day, try again tomorrow."
+		break;
+	case EDiggingStatus::TILE_OCCUPIED:
+		msgToShow = 97; //Try searching on clear ground.
+		break;
+	case EDiggingStatus::WRONG_TERRAIN:
+		msgToShow = 60; ////Try looking on land!
+		break;
+	default:
+		assert(0);
+	}
+
+	if (msgToShow < 0)
+		cb->doOutpost(h);
+	else
+		if(msgToShow == 56)
+			showInfoDialog("you need 2000 gold!");
+		else
+			showInfoDialog(CGI->generaltexth->allTexts[msgToShow]);
+}
 void CPlayerInterface::tryDiggging(const CGHeroInstance *h)
 {
 	std::string hlp;
@@ -2467,7 +2555,6 @@ void CPlayerInterface::showShipyardDialogOrProblemPopup(const IShipyard *obj)
 
 void CPlayerInterface::requestReturningToMainMenu(bool won)
 {
-	CSH->state = EClientState::DISCONNECTING;
 	CCS->soundh->ambientStopAllChannels();
 	if(won && cb->getStartInfo()->campState)
 		CSH->startCampaignScenario(cb->getStartInfo()->campState);
@@ -2563,13 +2650,14 @@ void CPlayerInterface::playerStartsTurn(PlayerColor player)
 	else
 	{
 		adventureInt->infoBar.showSelection();
-		while (GH.listInt.front() != adventureInt && !dynamic_cast<CInfoWindow*>(GH.listInt.front().get())) //don't remove dialogs that expect query answer
+		while (GH.listInt.front() != adventureInt && !(dynamic_cast<CInfoWindow*>(GH.listInt.front().get())|| dynamic_cast<CLevelWindow*>(GH.listInt.front().get()))) //don't remove dialogs that expect query answer
 			GH.popInts(1);
 	}
 
 	if(CSH->howManyPlayerInterfaces() == 1)
 	{
 		GH.curInt = this;
+		LOCPLINT = this;
 		adventureInt->startTurn();
 	}
 	if (player != playerID && this == LOCPLINT)

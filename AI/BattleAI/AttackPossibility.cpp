@@ -29,7 +29,7 @@ int64_t AttackPossibility::damageDiff() const
 	if(attack.attacker->unitSide() == attack.defender->unitSide())
 		diff = -dealtDmgValue - receivedDmgValue;
 	else
-		diff = dealtDmgValue - receivedDmgValue;
+		diff = dealtDmgValue - 2*receivedDmgValue; // no retaliate first
 
 	//mind control
 	auto actualSide = getCbc()->playerToSide(getCbc()->battleGetOwner(attack.attacker));

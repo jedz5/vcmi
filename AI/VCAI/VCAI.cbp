@@ -17,6 +17,10 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_system$(#boost.libsuffix32)" />
+					<Add option="-lboost_thread$(#boost.libsuffix32)" />
+					<Add option="-lboost_chrono$(#boost.libsuffix32)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="../" />
 					<Add directory="$(#boost.lib32)" />
 				</Linker>
@@ -33,6 +37,10 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-lboost_system$(#boost.libsuffix32)" />
+					<Add option="-lboost_thread$(#boost.libsuffix32)" />
+					<Add option="-lboost_chrono$(#boost.libsuffix32)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="../" />
 					<Add directory="$(#boost.lib32)" />
 				</Linker>
@@ -48,6 +56,10 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_system$(#boost.libsuffix64)" />
+					<Add option="-lboost_thread$(#boost.libsuffix64)" />
+					<Add option="-lboost_chrono$(#boost.libsuffix64)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="../" />
 					<Add directory="$(#boost.lib64)" />
 				</Linker>
@@ -64,7 +76,7 @@
 			<Add option="-Wno-sign-compare" />
 			<Add option="-Wno-unused-parameter" />
 			<Add option="-Wno-overloaded-virtual" />
-			<Add option="-DBOOST_THREAD_USE_LIB" />
+			<Add option="-DBOOST_ALL_DYN_LINK" />
 			<Add option="-DBOOST_SYSTEM_NO_DEPRECATED" />
 			<Add option="-D_WIN32_WINNT=0x0501" />
 			<Add option="-D_WIN32" />
@@ -75,16 +87,14 @@
 		</Compiler>
 		<Linker>
 			<Add option="-lFuzzyLite" />
-			<Add option="-lboost_system$(#boost.libsuffix)" />
-			<Add option="-lboost_thread$(#boost.libsuffix)" />
-			<Add option="-lboost_chrono$(#boost.libsuffix)" />
-			<Add option="-lVCMI_lib" />
 			<Add directory="../.." />
 		</Linker>
 		<Unit filename="AIUtility.cpp" />
 		<Unit filename="AIUtility.h" />
 		<Unit filename="AIhelper.cpp" />
 		<Unit filename="AIhelper.h" />
+		<Unit filename="ArmyManager.cpp" />
+		<Unit filename="ArmyManager.h" />
 		<Unit filename="BuildingManager.cpp" />
 		<Unit filename="BuildingManager.h" />
 		<Unit filename="FuzzyEngines.cpp" />
@@ -146,8 +156,23 @@
 		<Unit filename="Pathfinding/AIPathfinder.h" />
 		<Unit filename="Pathfinding/AIPathfinderConfig.cpp" />
 		<Unit filename="Pathfinding/AIPathfinderConfig.h" />
+		<Unit filename="Pathfinding/Actions/BattleAction.cpp" />
+		<Unit filename="Pathfinding/Actions/BattleAction.h" />
+		<Unit filename="Pathfinding/Actions/BoatActions.cpp" />
+		<Unit filename="Pathfinding/Actions/BoatActions.h" />
+		<Unit filename="Pathfinding/Actions/ISpecialAction.h" />
+		<Unit filename="Pathfinding/Actions/TownPortalAction.cpp" />
+		<Unit filename="Pathfinding/Actions/TownPortalAction.h" />
 		<Unit filename="Pathfinding/PathfindingManager.cpp" />
 		<Unit filename="Pathfinding/PathfindingManager.h" />
+		<Unit filename="Pathfinding/Rules/AILayerTransitionRule.cpp" />
+		<Unit filename="Pathfinding/Rules/AILayerTransitionRule.h" />
+		<Unit filename="Pathfinding/Rules/AIMovementAfterDestinationRule.cpp" />
+		<Unit filename="Pathfinding/Rules/AIMovementAfterDestinationRule.h" />
+		<Unit filename="Pathfinding/Rules/AIMovementToDestinationRule.cpp" />
+		<Unit filename="Pathfinding/Rules/AIMovementToDestinationRule.h" />
+		<Unit filename="Pathfinding/Rules/AIPreviousNodeRule.cpp" />
+		<Unit filename="Pathfinding/Rules/AIPreviousNodeRule.h" />
 		<Unit filename="ResourceManager.cpp" />
 		<Unit filename="ResourceManager.h" />
 		<Unit filename="SectorMap.cpp" />

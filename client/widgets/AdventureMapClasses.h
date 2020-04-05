@@ -151,6 +151,7 @@ public:
 /// List of towns which is shown at the right of the adventure map screen or in the town screen
 class CTownList	: public CList
 {
+protected:
 	class CTownItem : public CListItem
 	{
 		std::shared_ptr<CAnimImage> picture;
@@ -181,7 +182,51 @@ public:
 	/// Update town. Will add or remove it from the list if needed
 	void update(const CGTownInstance * town = nullptr);
 };
+//class CTownList2 : public CTownList {
+//protected:
+//	class CTownItem2 : public CTownItem {
+//	public:
+//		void open() override;
+//		CTownItem2(CTownList2 *parent, const CGTownInstance * town);
+//	};
+//	std::shared_ptr<CIntObject> createTownItem(size_t index);
+//public:
+//	CTownList2(int size, Point position, std::string btnUp, std::string btnDown);
+//};
+/// List of towns which is shown at the right of the adventure map screen or in the town screen
+class CTownList2 : public CList
+{
+protected:
+	class CTownItem2 : public CListItem
+	{
+		std::shared_ptr<CAnimImage> picture;
+	public:
+		const CGTownInstance * const town;
 
+		CTownItem2(CTownList2 *parent, const CGTownInstance * town);
+
+		std::shared_ptr<CIntObject> genSelection() override;
+		void update();
+		void select(bool on) override;
+		void open() override;
+		void showTooltip() override;
+		std::string getHoverText() override;
+	};
+
+	std::shared_ptr<CIntObject> createTownItem(size_t index);
+public:
+	/**
+	* @brief CTownList2
+	* @param size, position, btnUp, btnDown @see CList::CList
+	*/
+	CTownList2(int size, Point position, std::string btnUp, std::string btnDown);
+
+	/// Select specific town and scroll if needed
+	void select(const CGTownInstance * town = nullptr);
+
+	/// Update town. Will add or remove it from the list if needed
+	void update(const CGTownInstance * town = nullptr);
+};
 class CMinimap;
 
 class CMinimapInstance : public CIntObject

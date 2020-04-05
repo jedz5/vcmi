@@ -16,6 +16,8 @@
 					<Add option="-ggdb" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_system$(#boost.libsuffix32)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="$(#boost.lib32)" />
 				</Linker>
 			</Target>
@@ -29,6 +31,8 @@
 					<Add option="-O2" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_system$(#boost.libsuffix32)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="$(#boost.lib32)" />
 				</Linker>
 			</Target>
@@ -42,6 +46,8 @@
 					<Add option="-ggdb" />
 				</Compiler>
 				<Linker>
+					<Add option="-lboost_system$(#boost.libsuffix64)" />
+					<Add option="-lVCMI_lib" />
 					<Add directory="$(#boost.lib64)" />
 				</Linker>
 			</Target>
@@ -59,12 +65,11 @@
 			<Add option="-fpermissive" />
 			<Add option="-D_WIN32_WINNT=0x0501" />
 			<Add option="-D_WIN32" />
+			<Add option="-DBOOST_ALL_DYN_LINK" />
 			<Add directory="$(#boost.include)" />
 			<Add directory="../../include" />
 		</Compiler>
 		<Linker>
-			<Add option="-lboost_system$(#boost.libsuffix)" />
-			<Add option="-lVCMI_lib" />
 			<Add directory="../.." />
 		</Linker>
 		<Unit filename="CEmptyAI.cpp" />

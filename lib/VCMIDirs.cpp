@@ -20,8 +20,9 @@ bfs::path IVCMIDirs::fullLibraryPath(const std::string &desiredFolder, const std
 	return libraryPath() / desiredFolder / libraryName(baseLibName);
 }
 
-void IVCMIDirs::init()
+void IVCMIDirs::init(std::string localData)
 {
+	localpath = localData;
 	// TODO: Log errors
 	bfs::create_directories(userDataPath());
 	bfs::create_directories(userCachePath());
@@ -136,16 +137,16 @@ class VCMIDirsWIN32 final : public IVCMIDirs
 
 		std::string genHelpString() const override;
 
-		void init() override;
+		void init(std::string localData) override;
 	protected:
 		boost::filesystem::path oldUserDataPath() const;
 		boost::filesystem::path oldUserSavePath() const;
 };
 
-void VCMIDirsWIN32::init()
+void VCMIDirsWIN32::init(std::string localData)
 {
 	// Call base (init dirs)
-	IVCMIDirs::init();
+	IVCMIDirs::init(localData);
 
 	// Moves one directory (from) contents to another directory (to)
 	// Shows user the "moving file dialog" and ask to resolve conflits.
@@ -268,12 +269,12 @@ void VCMIDirsWIN32::init()
 
 bfs::path VCMIDirsWIN32::userDataPath() const
 {
-	wchar_t profileDir[MAX_PATH];
+	/*wchar_t profileDir[MAX_PATH];
 
 	if (SHGetSpecialFolderPathW(nullptr, profileDir, CSIDL_MYDOCUMENTS, FALSE) != FALSE)
-		return bfs::path(profileDir) / "My Games" / "vcmi";
-
-	return ".";
+		return bfs::path(profileDir) / "MyGames" / "vcmi";*/
+	
+	return bfs::path(".")/ localpath;
 }
 
 bfs::path VCMIDirsWIN32::oldUserDataPath() const
@@ -639,7 +640,7 @@ void VCMIDirsAndroid::init()
 // Getters for interfaces are separated for clarity.
 namespace VCMIDirs
 {
-	const IVCMIDirs& get()
+	const IVCMIDirs& get(std::string localData)
 	{
 		#ifdef VCMI_WINDOWS
 			static VCMIDirsWIN32 singleton;
@@ -659,7 +660,7 @@ namespace VCMIDirs
 			#endif
 			boost::filesystem::path::imbue(std::locale());
 
-			singleton.init();
+			singleton.init(localData);
 			initialized = true;
 		}
 		return singleton;

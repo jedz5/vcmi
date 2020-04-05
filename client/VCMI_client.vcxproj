@@ -39,7 +39,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -72,11 +72,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30128.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\VCMI\vcmi_devversionRD</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(VCMI_Out)$(Configuration)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(VCMI_Out)</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(VCMI_Out)</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RD|x64'">$(Configuration)\</IntDir>
@@ -95,10 +95,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LibraryWPath />
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;D:\python35\include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\project\boost_1_72_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;D:\python35\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_72_0\lib32\vc14_x86\lib;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -106,17 +108,20 @@
       </Optimization>
       <DisableSpecificWarnings>4251;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AssemblerOutput>NoListing</AssemblerOutput>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <AdditionalOptions>/MP4 /Zm150</AdditionalOptions>
       <AdditionalIncludeDirectories>$(FFMPEGDIR);$(SDLDIR);$(BOOSTDIR);$(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderOutputFile>D:\project\vcmi\PCHS\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;SDL.lib;zlib.lib;SDL_image.lib;SDL_ttf.lib;SDL_mixer.lib;VCMI_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;zlib.lib;SDL2.lib;SDL2main.lib;VCMI_lib.lib;SDL2_mixer.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ShowProgress>NotSet</ShowProgress>
       <OptimizeReferences>true</OptimizeReferences>
       <Profile>true</Profile>
-      <AdditionalLibraryDirectories>$(FFMPEGDIR)\lib;.;..\..\libs;..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\VCMI\vcmi_devversionRD;D:\VCMI\vcmi_devversionRD\AI</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>$(ProjectDir)DPIaware.manifest;%(AdditionalManifestFiles)</AdditionalManifestFiles>
@@ -150,6 +155,8 @@
       </AdditionalOptions>
       <AdditionalIncludeDirectories>$(FFMPEGDIR);$(SDLDIR);$(BOOSTDIR);$(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <PrecompiledHeaderOutputFile>$(VCMI_in)\PCHS\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <AdditionalDependencies>avcodec.lib;avdevice.lib;avfilter.lib;avformat.lib;avutil.lib;postproc.lib;swresample.lib;swscale.lib;zlib.lib;SDL2.lib;SDL2main.lib;VCMI_lib.lib;SDL2_mixer.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -157,11 +164,12 @@
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <ShowProgress>NotSet</ShowProgress>
-      <AdditionalLibraryDirectories>$(VCMI_Out)$(Configuration)\;$(VCMI_Out)$(Configuration)\AI</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCMI_Out);$(VCMI_Out)\AI</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <OptimizeReferences>true</OptimizeReferences>
       <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
       <AdditionalOptions>/LTCG /d2:-notypeopt %(AdditionalOptions)</AdditionalOptions>
+      <Profile>true</Profile>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -180,6 +188,7 @@
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <ShowProgress>NotSet</ShowProgress>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -239,6 +248,7 @@
     <ClCompile Include="windows\CCreatureWindow.cpp" />
     <ClCompile Include="windows\CHeroWindow.cpp" />
     <ClCompile Include="windows\CKingdomInterface.cpp" />
+    <ClCompile Include="windows\COutpostInterface.cpp" />
     <ClCompile Include="windows\CQuestLog.cpp" />
     <ClCompile Include="windows\CreaturePurchaseCard.cpp" />
     <ClCompile Include="windows\CSpellWindow.cpp" />
@@ -304,6 +314,7 @@
     <ClInclude Include="windows\CCreatureWindow.h" />
     <ClInclude Include="windows\CHeroWindow.h" />
     <ClInclude Include="windows\CKingdomInterface.h" />
+    <ClInclude Include="windows\COutpostInterface.h" />
     <ClInclude Include="windows\CQuestLog.h" />
     <ClInclude Include="windows\CreaturePurchaseCard.h" />
     <ClInclude Include="windows\CSpellWindow.h" />

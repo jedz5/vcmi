@@ -315,7 +315,7 @@ void CGarrisonSlot::clickLeft(tribool down, bool previousState)
 			}
 
 			if((owner->getSplittingMode() || LOCPLINT->shiftPressed()) // split window
-				&& (!creature || creature == selection->creature))
+				&& (!creature || creature == selection->creature ))
 			{
 				refr = split();
 			}
@@ -374,7 +374,7 @@ CGarrisonSlot::CGarrisonSlot(CGarrisonInt * Owner, int x, int y, SlotID IID, CGa
 	creature(nullptr),
 	upg(Upg)
 {
-	OBJECT_CONSTRUCTION_CAPTURING(255-DISPOSE);
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
 
 	pos.x += x;
 	pos.y += y;
@@ -399,8 +399,7 @@ CGarrisonSlot::CGarrisonSlot(CGarrisonInt * Owner, int x, int y, SlotID IID, CGa
 	}
 
 	stackCount = std::make_shared<CLabel>(pos.w, pos.h, owner->smallIcons ? FONT_TINY : FONT_MEDIUM, BOTTOMRIGHT, Colors::WHITE);
-
-	update();
+	//update();
 }
 
 void CGarrisonSlot::splitIntoParts(CGarrisonSlot::EGarrisonType type, int amount, int maxOfSplittedSlots)
@@ -443,6 +442,7 @@ void CGarrisonInt::addSplitBtn(std::shared_ptr<CButton> button)
 
 void CGarrisonInt::createSlots()
 {
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
 	int distance = interx + (smallIcons ? 32 : 58);
 	for(int i=0; i<2; i++)
 	{
@@ -452,14 +452,19 @@ void CGarrisonInt::createSlots()
 		{
 			for(auto & elem : armedObjs[i]->Slots())
 			{
-				garrisonSlots[elem.first.getNum()] = std::make_shared<CGarrisonSlot>(this, i*garOffset.x + (elem.first.getNum()*distance), i*garOffset.y, elem.first, static_cast<CGarrisonSlot::EGarrisonType>(i), elem.second);
+				auto gs = std::make_shared<CGarrisonSlot>(this, i*garOffset.x + (elem.first.getNum()*distance), i*garOffset.y, elem.first, static_cast<CGarrisonSlot::EGarrisonType>(i), elem.second);
+				gs->update();
+				garrisonSlots[elem.first.getNum()] = gs;
 			}
 		}
 		for(int j=0; j<7; j++)
 		{
-			if(!garrisonSlots[j])
-				garrisonSlots[j] = std::make_shared<CGarrisonSlot>(this, i*garOffset.x + (j*distance), i*garOffset.y, SlotID(j), static_cast<CGarrisonSlot::EGarrisonType>(i), nullptr);
-			if(twoRows && j>=4)
+			if (!garrisonSlots[j]) {
+				auto gs = std::make_shared<CGarrisonSlot>(this, i*garOffset.x + (j*distance), i*garOffset.y, SlotID(j), static_cast<CGarrisonSlot::EGarrisonType>(i), nullptr);
+				gs->update();
+				garrisonSlots[j] = gs;
+			}
+				if(twoRows && j>=4)
 			{
 				garrisonSlots[j]->moveBy(Point(-126, 37));
 			}
@@ -504,13 +509,11 @@ CGarrisonInt::CGarrisonInt(int x, int y, int inx, const Point & garsOffset,
 	removableUnits(_removableUnits),
 	twoRows(_twoRows)
 {
-	OBJECT_CONSTRUCTION_CAPTURING(255-DISPOSE);
-
+	
 	setArmy(s1, false);
 	setArmy(s2, true);
 	pos.x += x;
 	pos.y += y;
-	createSlots();
 }
 
 const CGarrisonSlot * CGarrisonInt::getSelection()
@@ -540,10 +543,14 @@ void CGarrisonInt::setSplittingMode(bool on)
 
 	if(inSplittingMode || on)
 	{
+		auto sl = getSelection();
 		for(auto slot : availableSlots)
 		{
-			if(slot.get() != getSelection())
-				slot->setHighlight( ( on && (slot->our() || slot->ally()) && (slot->creature == nullptr || slot->creature == getSelection()->creature)));
+			if(slot.get() != sl)
+				slot->setHighlight(  on 
+					&& (slot->our() || slot->ally()) 
+					&& (slot->creature == nullptr || (slot->creature == sl->creature && slot->myStack->daysCost == sl->myStack->daysCost)) 
+					&& ((sl->myStack->daysCost == 0 && slot->upg) || (slot->upg == sl->upg)));
 		}
 		inSplittingMode = on;
 	}
@@ -569,4 +576,174 @@ void CGarrisonInt::setArmy(const CArmedInstance * army, bool bottomGarrison)
 {
 	owned[bottomGarrison] =  army ? (army->tempOwner == LOCPLINT->playerID || army->tempOwner == PlayerColor::UNFLAGGABLE) : false;
 	armedObjs[bottomGarrison] = army;
+}
+
+COutpostInt::COutpostInt(int x, int y, int inx,
+	const Point & garsOffset,
+	const CGOutpost * s1, const CGHeroInstance * s2,
+	bool _removableUnits,
+	bool smallImgs,
+	bool _twoRows):CGarrisonInt(x,y,inx,garsOffset,reinterpret_cast<const CArmedInstance*>(s1), reinterpret_cast<const CArmedInstance*>(s2),_removableUnits,smallImgs,_twoRows){
+	
+}
+	//bool _twoRows = false):CGarrisonInt(x, y, inx, garsOffset, s1, s2, _removableUnits, smallImgs, _twoRows) {}
+
+void COutpostInt::splitClick() {
+	if (!getSelection())
+		return;
+	setSplittingMode(!getSplittingMode());
+	redraw();
+}
+void COutpostInt::setSplittingMode(bool on)
+{
+	assert(on == false || highlighted != nullptr); //can't be in splitting mode without selection
+
+	if (inSplittingMode || on)
+	{
+		auto sl = getSelection();
+		for (auto slot : availableSlots)
+		{
+			if (sl->upg && !slot->upg)
+				continue;
+			if (slot.get() != sl)
+				slot->setHighlight((on && (slot->our() || slot->ally()) && ((slot->creature == nullptr && (sl->myStack->daysCost == 0 || sl->upg == slot->upg)) || (slot->creature == sl->creature && slot->myStack->daysCost == sl->myStack->daysCost))));
+		}
+		inSplittingMode = on;
+	}
+}
+void COutpostInt::createSlots()
+{
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
+	int distance = interx + (smallIcons ? 32 : 58);
+	for (int i = 0; i < 2; i++)
+	{
+		std::vector<std::shared_ptr<CGarrisonSlot>> garrisonSlots;
+		garrisonSlots.resize(7);
+		if (armedObjs[i])
+		{
+			for (auto & elem : armedObjs[i]->Slots())
+			{
+				auto os = std::make_shared<COutpostSlot>(this, i*garOffset.x + (elem.first.getNum()*distance), i*garOffset.y, elem.first, static_cast<CGarrisonSlot::EGarrisonType>(i), elem.second);
+				os->update();
+				garrisonSlots[elem.first.getNum()] = os;
+			}
+		}
+		for (int j = 0; j < 7; j++)
+		{
+			if (!garrisonSlots[j]) {
+				auto os = std::make_shared<COutpostSlot>(this, i*garOffset.x + (j*distance), i*garOffset.y, SlotID(j), static_cast<CGarrisonSlot::EGarrisonType>(i), nullptr);
+				os->update();
+				garrisonSlots[j] = os;
+			}
+			if (twoRows && j >= 4)
+			{
+				garrisonSlots[j]->moveBy(Point(-126, 37));
+			}
+		}
+		vstd::concatenate(availableSlots, garrisonSlots);
+	}
+}
+
+COutpostSlot::COutpostSlot(COutpostInt * Owner, int x, int y, SlotID IID, CGarrisonSlot::EGarrisonType Upg, const CStackInstance * Creature)
+	: CGarrisonSlot(Owner,x,y,IID,Upg,Creature)
+{
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
+
+	stackDaysCost = std::make_shared<CLabel>(pos.w, pos.h, owner->smallIcons ? FONT_TINY : FONT_MEDIUM, TOPLEFT, Colors::GREEN);
+	
+}
+void COutpostSlot::update()
+{
+	CGarrisonSlot::update();
+	if (creature)
+	{
+		stackDaysCost->enable();
+		stackDaysCost->setText(boost::lexical_cast<std::string>(myStack->daysCost));
+	}
+	else
+	{
+		stackDaysCost->disable();
+	}
+}
+bool COutpostSlot::mustForceReselection() const
+{
+	const CGarrisonSlot * selection = owner->getSelection();
+	bool withAlly = selection->our() ^ our();
+	if (selection->upg && !upg)
+		return true;
+	if (!creature || !selection->creature)
+		return false;
+	// Attempt to take creatures from ally (select theirs first)
+	//if (!selection->our())
+	//	return true;
+	// Attempt to swap creatures with ally (select ours first)
+	//if (selection->creature != creature && withAlly)
+	//	return true;
+	/*if (!owner->removableUnits)
+	{
+		if (selection->upg == EGarrisonType::UP)
+			return true;
+		else
+			return creature || upg == EGarrisonType::UP;
+	}*/
+	return false;
+}
+void COutpostSlot::clickLeft(tribool down, bool previousState) 
+{
+	if (down)
+	{
+		bool refr = false;
+		const CGarrisonSlot * selection = owner->getSelection();
+		if (!selection)
+		{
+			refr = highlightOrDropArtifact();
+			handleSplittingShortcuts();
+		}
+		else if (selection == this)
+			refr = viewInfo();
+		// Re-highlight if troops aren't removable or not ours.
+		else if (mustForceReselection())
+		{
+			if (creature)
+				owner->selectSlot(this);
+			redraw();
+			refr = true;
+		}
+		else
+		{
+			const CArmedInstance * selectedObj = owner->armedObjs[selection->upg];
+			/*bool lastHeroStackSelected = false;
+			if (selectedObj->stacksCount() == 1
+				&& owner->getSelection()->upg != upg
+				&& dynamic_cast<const CGHeroInstance*>(selectedObj))
+			{
+				lastHeroStackSelected = true;
+			}*/
+
+			if ((owner->getSplittingMode() || LOCPLINT->shiftPressed()) // split window
+				&& (creature == nullptr || (creature == selection->creature && myStack->daysCost == selection->myStack->daysCost))
+				&& ((selection->myStack->daysCost == 0 && upg) || (upg == selection->upg)))
+			{
+				refr = split();
+			}
+			//else if (!creature && lastHeroStackSelected) // split all except last creature
+			//	LOCPLINT->cb->splitStack(selectedObj, owner->armedObjs[upg], selection->ID, ID, selection->myStack->count - 1);
+			else if ((creature != selection->creature || myStack->daysCost != selection->myStack->daysCost) 
+				&& ((selection->myStack->daysCost == 0 && upg) || (upg == selection->upg))) // swap
+				LOCPLINT->cb->swapCreatures(selectedObj, owner->armedObjs[upg],  selection->ID, ID);
+			//else if (lastHeroStackSelected) // merge last stack to other hero stack
+			//	refr = split();
+			else if (!selection->upg) { //merge up/up or up/down //(selection->upg) || (selection->myStack->daysCost ==0 || myStack && (selection->myStack->daysCost == myStack->daysCost))
+				if(selection->myStack->daysCost ==0 || myStack && (selection->myStack->daysCost == myStack->daysCost))// merge
+					LOCPLINT->cb->mergeStacks(selectedObj, owner->armedObjs[upg], selection->ID, ID);
+			}else //merge down/down
+				LOCPLINT->cb->mergeStacks(selectedObj, owner->armedObjs[upg], selection->ID, ID);
+		}
+		if (refr)
+		{
+			// Refresh Statusbar
+			hover(false);
+			hover(true);
+		}
+	}
 }

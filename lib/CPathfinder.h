@@ -454,7 +454,6 @@ struct DLL_LINKAGE TurnInfo
 		int flyingMovementVal;
 		bool waterWalking;
 		int waterWalkingVal;
-
 		BonusCache(TBonusListPtr bonusList);
 	};
 	std::unique_ptr<BonusCache> bonusCache;

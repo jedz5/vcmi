@@ -96,7 +96,6 @@ void VCAI::heroMoved(const TryMoveHero & details)
 
 	validateObject(details.id); //enemy hero may have left visible area
 	auto hero = cb->getHero(details.id);
-	ah->resetPaths();
 
 	const int3 from = CGHeroInstance::convertPosition(details.start, false);
 	const int3 to = CGHeroInstance::convertPosition(details.end, false);
@@ -333,9 +332,9 @@ void VCAI::heroExchangeStarted(ObjectInstanceID hero1, ObjectInstanceID hero2, Q
 		}
 		else //regular criteria
 		{
-			if(firstHero->getFightingStrength() > secondHero->getFightingStrength() && canGetArmy(firstHero, secondHero))
+			if(firstHero->getFightingStrength() > secondHero->getFightingStrength() && ah->canGetArmy(firstHero, secondHero))
 				transferFrom2to1(firstHero, secondHero);
-			else if(canGetArmy(secondHero, firstHero))
+			else if(ah->canGetArmy(secondHero, firstHero))
 				transferFrom2to1(secondHero, firstHero);
 		}
 
@@ -376,8 +375,6 @@ void VCAI::newObject(const CGObjectInstance * obj)
 	NET_EVENT_HANDLER;
 	if(obj->isVisitable())
 		addVisitableObj(obj);
-
-	ah->resetPaths();
 }
 
 //to prevent AI from accessing objects that got deleted while they became invisible (Cover of Darkness, enemy hero moved etc.) below code allows AI to know deletion of objects out of sight
@@ -436,8 +433,6 @@ void VCAI::objectRemoved(const CGObjectInstance * obj)
 				unreserveObject(h, hero->boat);
 		}
 	}
-
-	ah->resetPaths();
 
 	//TODO
 	//there are other places where CGObjectinstance ptrs are stored...
@@ -608,6 +603,7 @@ void VCAI::yourTurn()
 	LOG_TRACE(logAi);
 	NET_EVENT_HANDLER;
 	status.startedTurn();
+	TResources currentRes = cb->getResourceAmount();
 	makingTurn = make_unique<boost::thread>(&VCAI::makeTurn, this);
 }
 
@@ -768,7 +764,6 @@ void makePossibleUpgrades(const CArmedInstance * obj)
 void VCAI::makeTurn()
 {
 	MAKING_TURN;
-
 	auto day = cb->getDate(Date::EDateType::DAY);
 	logAi->info("Player %d (%s) starting turn, day %d", playerID, playerID.getStr(), day);
 
@@ -795,7 +790,6 @@ void VCAI::makeTurn()
 	}
 	markHeroAbleToExplore(primaryHero());
 	visitedHeroes.clear();
-	ai->ah->resetPaths();
 
 	try
 	{
@@ -827,6 +821,18 @@ void VCAI::makeTurn()
 	}
 
 	endTurn();
+}
+
+std::vector<HeroPtr> VCAI::getMyHeroes() const
+{
+	std::vector<HeroPtr> ret;
+
+	for(auto h : cb->getHeroesInfo())
+	{
+		ret.push_back(h);
+	}
+
+	return ret;
 }
 
 void VCAI::mainLoop()
@@ -861,6 +867,8 @@ void VCAI::mainLoop()
 		goalsToRemove.clear();
 		elementarGoals.clear();
 		ultimateGoalsFromBasic.clear();
+		
+		ah->updatePaths(getMyHeroes());
 
 		logAi->debug("Main loop: decomposing %i basic goals", basicGoals.size());
 
@@ -1048,110 +1056,59 @@ void VCAI::moveCreaturesToHero(const CGTownInstance * t)
 	}
 }
 
-bool VCAI::canGetArmy(const CGHeroInstance * army, const CGHeroInstance * source)
+void VCAI::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)
 {
-	//TODO: merge with pickBestCreatures
-	//if (ai->primaryHero().h == source)
-	if(army->tempOwner != source->tempOwner)
-	{
-		logAi->error("Why are we even considering exchange between heroes from different players?");
-		return false;
-	}
+	const CArmedInstance * armies[] = {destinationArmy, source};
 
-	const CArmedInstance * armies[] = {army, source};
-
-	//we calculate total strength for each creature type available in armies
-	std::map<const CCreature *, int> creToPower;
-	for(auto armyPtr : armies)
-	{
-		for(auto & i : armyPtr->Slots())
-		{
-			//TODO: allow splitting stacks?
-			creToPower[i.second->type] += i.second->getPower();
-		}
-	}
-	//TODO - consider more than just power (ie morale penalty, hero specialty in certain stacks, etc)
-	int armySize = creToPower.size();
-	armySize = std::min((source->needsLastStack() ? armySize - 1 : armySize), GameConstants::ARMY_SIZE); //can't move away last stack
-	std::vector<const CCreature *> bestArmy; //types that'll be in final dst army
-	for(int i = 0; i < armySize; i++) //pick the creatures from which we can get most power, as many as dest can fit
-	{
-		typedef const std::pair<const CCreature *, int> & CrePowerPair;
-		auto creIt = boost::max_element(creToPower, [](CrePowerPair lhs, CrePowerPair rhs)
-		{
-			return lhs.second < rhs.second;
-		});
-		bestArmy.push_back(creIt->first);
-		creToPower.erase(creIt);
-		if(creToPower.empty())
-			break;
-	}
+	auto bestArmy = ah->getSortedSlots(destinationArmy, source);
 
 	//foreach best type -> iterate over slots in both armies and if it's the appropriate type, send it to the slot where it belongs
-	for(int i = 0; i < bestArmy.size(); i++) //i-th strongest creature type will go to i-th slot
+	for(SlotID i = SlotID(0); i.getNum() < bestArmy.size() && i.validSlot(); i.advance(1)) //i-th strongest creature type will go to i-th slot
 	{
+		const CCreature * targetCreature = bestArmy[i.getNum()].creature;
+
 		for(auto armyPtr : armies)
 		{
-			for(int j = 0; j < GameConstants::ARMY_SIZE; j++)
+			for(SlotID j = SlotID(0); j.validSlot(); j.advance(1))
 			{
-				if(armyPtr->getCreature(SlotID(j)) == bestArmy[i] && armyPtr != army) //it's a searched creature not in dst ARMY
+				if(armyPtr->getCreature(j) == targetCreature && (i != j || armyPtr != destinationArmy)) //it's a searched creature not in dst SLOT
 				{
-					//FIXME: line below is useless when simulating exchange between two non-singular armies
-					if(!(armyPtr->needsLastStack() && armyPtr->stacksCount() == 1)) //can't take away last creature
-						return true; //at least one exchange will be performed
-					else
-						return false; //no further exchange possible
-				}
-			}
-		}
-	}
-	return false;
-}
+					//can't take away last creature without split. generate a new stack with 1 creature which is weak but fast
+					if(armyPtr == source
+						&& source->needsLastStack()
+						&& source->stacksCount() == 1
+						&& (!destinationArmy->hasStackAtSlot(i) || destinationArmy->getCreature(i) == targetCreature))
+					{
+						auto weakest = ah->getWeakestCreature(bestArmy);
+						
+						if(weakest->creature == targetCreature)
+						{
+							if(1 == source->getStackCount(j))
+								break;
 
-void VCAI::pickBestCreatures(const CArmedInstance * army, const CArmedInstance * source)
-{
-	//TODO - what if source is a hero (the last stack problem) -> it'd good to create a single stack of weakest cre
-	const CArmedInstance * armies[] = {army, source};
+							// move all except 1 of weakest creature from source to destination
+							cb->splitStack(
+								source,
+								destinationArmy,
+								j,
+								destinationArmy->getSlotFor(targetCreature),
+								destinationArmy->getStackCount(i) + source->getStackCount(j) - 1);
 
-	//we calculate total strength for each creature type available in armies
-	std::map<const CCreature *, int> creToPower;
-	for(auto armyPtr : armies)
-	{
-		for(auto & i : armyPtr->Slots())
-		{
-			//TODO: allow splitting stacks?
-			creToPower[i.second->type] += i.second->getPower();
-		}
-	}
-	//TODO - consider more than just power (ie morale penalty, hero specialty in certain stacks, etc)
-	int armySize = creToPower.size();
+							break;
+						}
+						else
+						{
+							// Source last stack is not weakest. Move 1 of weakest creature from destination to source
+							cb->splitStack(
+								destinationArmy,
+								source,
+								destinationArmy->getSlotFor(weakest->creature),
+								source->getFreeSlot(),
+								1);
+						}
+					}
 
-	armySize = std::min((source->needsLastStack() ? armySize - 1 : armySize), GameConstants::ARMY_SIZE); //can't move away last stack
-	std::vector<const CCreature *> bestArmy; //types that'll be in final dst army
-	for(int i = 0; i < armySize; i++) //pick the creatures from which we can get most power, as many as dest can fit
-	{
-		typedef const std::pair<const CCreature *, int> & CrePowerPair;
-		auto creIt = boost::max_element(creToPower, [](CrePowerPair lhs, CrePowerPair rhs)
-		{
-			return lhs.second < rhs.second;
-		});
-		bestArmy.push_back(creIt->first);
-		creToPower.erase(creIt);
-		if(creToPower.empty())
-			break;
-	}
-
-	//foreach best type -> iterate over slots in both armies and if it's the appropriate type, send it to the slot where it belongs
-	for(int i = 0; i < bestArmy.size(); i++) //i-th strongest creature type will go to i-th slot
-	{
-		for(auto armyPtr : armies)
-		{
-			for(int j = 0; j < GameConstants::ARMY_SIZE; j++)
-			{
-				if(armyPtr->getCreature(SlotID(j)) == bestArmy[i] && (i != j || armyPtr != army)) //it's a searched creature not in dst SLOT
-				{
-					if(!(armyPtr->needsLastStack() && armyPtr->stacksCount() == 1)) //can't take away last creature
-						cb->mergeOrSwapStacks(armyPtr, army, SlotID(j), SlotID(i));
+					cb->mergeOrSwapStacks(armyPtr, destinationArmy, j, i);
 				}
 			}
 		}
@@ -1159,7 +1116,7 @@ void VCAI::pickBestCreatures(const CArmedInstance * army, const CArmedInstance *
 
 	//TODO - having now strongest possible army, we may want to think about arranging stacks
 
-	auto hero = dynamic_cast<const CGHeroInstance *>(army);
+	auto hero = dynamic_cast<const CGHeroInstance *>(destinationArmy);
 	if(hero)
 		checkHeroArmy(hero);
 }
@@ -1325,10 +1282,7 @@ bool VCAI::isGoodForVisit(const CGObjectInstance * obj, HeroPtr h, const AIPath 
 	const CGObjectInstance * topObj = cb->getVisitableObjs(obj->visitablePos()).back(); //it may be hero visiting this obj
 																						//we don't try visiting object on which allied or owned hero stands
 																						// -> it will just trigger exchange windows and AI will be confused that obj behind doesn't get visited
-	if (topObj->ID == Obj::HERO && cb->getPlayerRelations(h->tempOwner, topObj->tempOwner) != PlayerRelations::ENEMIES)
-		return false;
-	else
-		return true; //all of the following is met
+	return !(topObj->ID == Obj::HERO && cb->getPlayerRelations(h->tempOwner, topObj->tempOwner) != PlayerRelations::ENEMIES); //all of the following is met
 }
 
 bool VCAI::isTileNotReserved(const CGHeroInstance * h, int3 t) const
@@ -1392,12 +1346,14 @@ void VCAI::wander(HeroPtr h)
 	while(h->movement)
 	{
 		validateVisitableObjs();
+		ah->updatePaths(getMyHeroes());
+
 		std::vector<ObjectIdRef> dests;
 
 		//also visit our reserved objects - but they are not prioritized to avoid running back and forth
 		vstd::copy_if(reservedHeroesMap[h], std::back_inserter(dests), [&](ObjectIdRef obj) -> bool
 		{
-			return ah->getPathsToTile(h, obj->visitablePos()).size();
+			return ah->isTileAccessible(h, obj->visitablePos());
 		});
 
 		int pass = 0;
@@ -1429,15 +1385,15 @@ void VCAI::wander(HeroPtr h)
 			if(cb->getVisitableObjs(h->visitablePos()).size() > 1)
 				moveHeroToTile(h->visitablePos(), h); //just in case we're standing on blocked subterranean gate
 
-			auto compareReinforcements = [h](const CGTownInstance * lhs, const CGTownInstance * rhs) -> bool
+			auto compareReinforcements = [&](const CGTownInstance * lhs, const CGTownInstance * rhs) -> bool
 			{
 				const CGHeroInstance * hptr = h.get();
-				auto r1 = howManyReinforcementsCanGet(hptr, lhs),
-					r2 = howManyReinforcementsCanGet(hptr, rhs);
+				auto r1 = ah->howManyReinforcementsCanGet(hptr, lhs),
+					r2 = ah->howManyReinforcementsCanGet(hptr, rhs);
 				if (r1 != r2)
 					return r1 < r2;
 				else
-					return howManyReinforcementsCanBuy(hptr, lhs) < howManyReinforcementsCanBuy(hptr, rhs);
+					return ah->howManyReinforcementsCanBuy(hptr, lhs) < ah->howManyReinforcementsCanBuy(hptr, rhs);
 			};
 
 			std::vector<const CGTownInstance *> townsReachable;
@@ -1475,11 +1431,11 @@ void VCAI::wander(HeroPtr h)
 			else if(cb->getResourceAmount(Res::GOLD) >= GameConstants::HERO_GOLD_COST)
 			{
 				std::vector<const CGTownInstance *> towns = cb->getTownsInfo();
-				vstd::erase_if(towns, [](const CGTownInstance * t) -> bool
+				vstd::erase_if(towns, [&](const CGTownInstance * t) -> bool
 				{
 					for(const CGHeroInstance * h : cb->getHeroesInfo())
 					{
-						if(!t->getArmyStrength() || howManyReinforcementsCanGet(h, t))
+						if(!t->getArmyStrength() || ah->howManyReinforcementsCanGet(h, t))
 							return true;
 					}
 					return false;
@@ -1676,7 +1632,6 @@ bool VCAI::isAbleToExplore(HeroPtr h)
 void VCAI::clearPathsInfo()
 {
 	heroesUnableToExplore.clear();
-	ah->resetPaths();
 }
 
 void VCAI::validateVisitableObjs()
@@ -2492,6 +2447,8 @@ void VCAI::recruitHero(const CGTownInstance * t, bool throwing)
 
 void VCAI::finish()
 {
+	//we want to lock to avoid multiple threads from calling makingTurn->join() at same time
+	boost::lock_guard<boost::mutex> multipleCleanupGuard(turnInterruptionMutex);
 	if(makingTurn)
 	{
 		makingTurn->interrupt();

@@ -41,7 +41,7 @@ const CCreature* CCreatureSet::getCreature(SlotID slot) const
 		return nullptr;
 }
 
-bool CCreatureSet::setCreature(SlotID slot, CreatureID type, TQuantity quantity) /*slots 0 to 6 */
+bool CCreatureSet::setCreature(SlotID slot, CreatureID type, TQuantity quantity, int daysCost) /*slots 0 to 6 */
 {
 	if(!slot.validSlot())
 	{
@@ -58,22 +58,22 @@ bool CCreatureSet::setCreature(SlotID slot, CreatureID type, TQuantity quantity)
 	if(hasStackAtSlot(slot)) //remove old creature
 		eraseStack(slot);
 
-	putStack(slot, new CStackInstance(type, quantity));
+	putStack(slot, new CStackInstance(type, quantity,daysCost));
 	return true;
 }
 
-SlotID CCreatureSet::getSlotFor(CreatureID creature, ui32 slotsAmount) const /*returns -1 if no slot available */
+SlotID CCreatureSet::getSlotFor(CreatureID creature, ui32 slotsAmount, int daysCost) const /*returns -1 if no slot available */
 {
-	return getSlotFor(VLC->creh->creatures[creature], slotsAmount);
+	return getSlotFor(VLC->creh->creatures[creature], slotsAmount, daysCost);
 }
 
-SlotID CCreatureSet::getSlotFor(const CCreature *c, ui32 slotsAmount) const
+SlotID CCreatureSet::getSlotFor(const CCreature *c, ui32 slotsAmount, int daysCost) const
 {
 	assert(c->valid());
 	for(auto & elem : stacks)
 	{
 		assert(elem.second->type->valid());
-		if(elem.second->type == c)
+		if(elem.second->type == c && elem.second->daysCost == daysCost)
 		{
 			return elem.first; //if there is already such creature we return its slot id
 		}
@@ -93,7 +93,7 @@ SlotID CCreatureSet::getFreeSlot(ui32 slotsAmount) const
 	return SlotID(); //no slot available
 }
 
-int CCreatureSet::getStackCount(SlotID slot) const
+TQuantity CCreatureSet::getStackCount(SlotID slot) const
 {
 	auto i = stacks.find(slot);
 	if (i != stacks.end())
@@ -157,13 +157,13 @@ void CCreatureSet::sweep()
 	}
 }
 
-void CCreatureSet::addToSlot(SlotID slot, CreatureID cre, TQuantity count, bool allowMerging)
+void CCreatureSet::addToSlot(SlotID slot, CreatureID cre, TQuantity count, bool allowMerging, int daysCost)
 {
 	const CCreature *c = VLC->creh->creatures[cre];
 
 	if(!hasStackAtSlot(slot))
 	{
-		setCreature(slot, cre, count);
+		setCreature(slot, cre, count,daysCost);
 	}
 	else if(getCreature(slot) == c && allowMerging) //that slot was empty or contained same type creature
 	{
@@ -450,12 +450,12 @@ bool CCreatureSet::canBeMergedWith(const CCreatureSet &cs, bool allowMergingStac
 
 		//get types of creatures that need their own slot
 		for(auto & elem : cs.stacks)
-			if ((j = cres.getSlotFor(elem.second->type)).validSlot())
+			if ((j = cres.getSlotFor(elem.second->type, GameConstants::ARMY_SIZE, elem.second->daysCost)).validSlot())
 				cres.addToSlot(j, elem.second->type->idNumber, 1, true);  //merge if possible
 			//cres.addToSlot(elem.first, elem.second->type->idNumber, 1, true);
 		for(auto & elem : stacks)
 		{
-			if ((j = cres.getSlotFor(elem.second->type)).validSlot())
+			if ((j = cres.getSlotFor(elem.second->type, GameConstants::ARMY_SIZE, elem.second->daysCost)).validSlot())
 				cres.addToSlot(j, elem.second->type->idNumber, 1, true);  //merge if possible
 			else
 				return false; //no place found
@@ -532,26 +532,29 @@ CStackInstance::CStackInstance()
 	init();
 }
 
-CStackInstance::CStackInstance(CreatureID id, TQuantity Count)
+CStackInstance::CStackInstance(CreatureID id, TQuantity Count,int days)
 	: armyObj(_armyObj)
 {
 	init();
 	setType(id);
 	count = Count;
+	daysCost = days;
 }
 
-CStackInstance::CStackInstance(const CCreature *cre, TQuantity Count)
+CStackInstance::CStackInstance(const CCreature *cre, TQuantity Count,int days)
 	: armyObj(_armyObj)
 {
 	init();
 	setType(cre);
 	count = Count;
+	daysCost = days;
 }
 
 void CStackInstance::init()
 {
 	experience = 0;
 	count = 0;
+	daysCost = 0;
 	type = nullptr;
 	idRand = -1;
 	_armyObj = nullptr;
@@ -865,15 +868,16 @@ CStackBasicDescriptor::CStackBasicDescriptor()
 {
 	type = nullptr;
 	count = -1;
+	daysCost = 0;
 }
 
-CStackBasicDescriptor::CStackBasicDescriptor(CreatureID id, TQuantity Count)
-	: type (VLC->creh->creatures[id]), count(Count)
+CStackBasicDescriptor::CStackBasicDescriptor(CreatureID id, TQuantity Count,int daysCost)
+	: type (VLC->creh->creatures[id]), count(Count),daysCost(daysCost)
 {
 }
 
-CStackBasicDescriptor::CStackBasicDescriptor(const CCreature *c, TQuantity Count)
-	: type(c), count(Count)
+CStackBasicDescriptor::CStackBasicDescriptor(const CCreature *c, TQuantity Count,int daysCost)
+	: type(c), count(Count), daysCost(daysCost)
 {
 }
 
@@ -913,7 +917,7 @@ CSimpleArmy::operator bool() const
 	return army.size();
 }
 
-bool CSimpleArmy::setCreature(SlotID slot, CreatureID cre, TQuantity count)
+bool CSimpleArmy::setCreature(SlotID slot, CreatureID cre, TQuantity count,int daysCost)
 {
 	assert(!vstd::contains(army, slot));
 	army[slot] = std::make_pair(cre, count);

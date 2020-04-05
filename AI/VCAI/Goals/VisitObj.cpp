@@ -53,7 +53,7 @@ TGoalVec VisitObj::getAllPossibleSubgoals()
 			if(isSafeToVisit(hero, pos))
 				goalList.push_back(sptr(VisitObj(obj->id.getNum()).sethero(hero)));
 			else
-				goalList.push_back(sptr(GatherArmy(evaluateDanger(pos, hero.h) * SAFE_ATTACK_CONSTANT).sethero(hero).setisAbstract(true)));
+				goalList.push_back(sptr(GatherArmy(fh->evaluateDanger(pos, hero.h) * SAFE_ATTACK_CONSTANT).sethero(hero).setisAbstract(true)));
 
 			return goalList;
 		}
@@ -67,7 +67,7 @@ TGoalVec VisitObj::getAllPossibleSubgoals()
 				if(isSafeToVisit(potentialVisitor, pos))
 					goalList.push_back(sptr(VisitObj(obj->id.getNum()).sethero(potentialVisitor)));
 				else
-					goalList.push_back(sptr(GatherArmy(evaluateDanger(pos, potentialVisitor) * SAFE_ATTACK_CONSTANT).sethero(potentialVisitor).setisAbstract(true)));
+					goalList.push_back(sptr(GatherArmy(fh->evaluateDanger(pos, potentialVisitor) * SAFE_ATTACK_CONSTANT).sethero(potentialVisitor).setisAbstract(true)));
 			}
 		}
 		if(!goalList.empty())
@@ -90,10 +90,16 @@ TSubgoal VisitObj::whatToDoToAchieve()
 	return bestGoal;
 }
 
-VisitObj::VisitObj(int Objid) : CGoal(VISIT_OBJ)
+VisitObj::VisitObj(int Objid)
+	: CGoal(VISIT_OBJ)
 {
 	objid = Objid;
-	tile = ai->myCb->getObjInstance(ObjectInstanceID(objid))->visitablePos();
+	auto obj = ai->myCb->getObjInstance(ObjectInstanceID(objid));
+	if(obj)
+		tile = obj->visitablePos();
+	else
+		logAi->error("VisitObj constructed with invalid object instance %d", Objid);
+
 	priority = 3;
 }
 

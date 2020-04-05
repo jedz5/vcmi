@@ -406,7 +406,7 @@ public:
 	//Helper lists
 	std::vector< ConstTransitivePtr<CGHeroInstance> > heroesOnMap;
 	std::map<TeleportChannelID, std::shared_ptr<TeleportChannel> > teleportChannels;
-
+	std::vector< ConstTransitivePtr<CGOutpost> > outpostsOnMap;
 	/// associative list to identify which hero/creature id belongs to which object id(index for objects)
 	std::map<si32, ObjectInstanceID> questIdentifierToId;
 
@@ -434,6 +434,7 @@ public:
 		h & artInstances;
 		h & quests;
 		h & allHeroes;
+		h & outpostsOnMap;
 		h & questIdentifierToId;
 
 		//TODO: viccondetails

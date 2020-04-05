@@ -240,7 +240,26 @@ struct HeroVisitCastle : public CPackForClient
 		h & hid;
 	}
 };
+struct HeroVisitOutpost : public CPackForClient
+{
+	HeroVisitOutpost() { flags = 0; };
+	void applyCl(CClient *cl);
+	DLL_LINKAGE void applyGs(CGameState *gs);
 
+	ui8 flags; //1 - start
+	ObjectInstanceID tid, hid;
+	bool start() //if hero is entering castle (if false - leaving)
+	{
+		return flags & 1;
+	}
+
+	template <typename Handler> void serialize(Handler &h, const int version)
+	{
+		h & flags;
+		h & tid;
+		h & hid;
+	}
+};
 struct ChangeSpells : public CPackForClient
 {
 	ChangeSpells():learn(1){}
@@ -849,9 +868,9 @@ struct InsertNewStack : CGarrisonOperationPack
 	SlotID slot;
 	CreatureID type;
 	TQuantity count;
-
+	int daysCost;
 	InsertNewStack()
-		: count(0)
+		: count(0),daysCost(0)
 	{
 	}
 
@@ -864,6 +883,7 @@ struct InsertNewStack : CGarrisonOperationPack
 		h & slot;
 		h & type;
 		h & count;
+		h & daysCost;
 	}
 };
 
@@ -1993,14 +2013,15 @@ struct RazeStructure : public BuildStructure
 
 struct RecruitCreatures : public CPackForServer
 {
-	RecruitCreatures():amount(0), level(0){};
-	RecruitCreatures(ObjectInstanceID TID, ObjectInstanceID DST, CreatureID CRID, si32 Amount, si32 Level):
-	    tid(TID), dst(DST), crid(CRID), amount(Amount), level(Level){};
+	RecruitCreatures():amount(0), level(0),days(0){};
+	RecruitCreatures(ObjectInstanceID TID, ObjectInstanceID DST, CreatureID CRID, si32 Amount, si32 Level,int daysCost):
+	    tid(TID), dst(DST), crid(CRID), amount(Amount), level(Level),days(daysCost){};
 	ObjectInstanceID tid; //dwelling id, or town
 	ObjectInstanceID dst; //destination ID, e.g. hero
 	CreatureID crid;
 	ui32 amount;//creature amount
 	si32 level;//dwelling level to buy from, -1 if any
+	int days;
 	bool applyGh(CGameHandler *gh);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
@@ -2010,6 +2031,7 @@ struct RecruitCreatures : public CPackForServer
 		h & crid;
 		h & amount;
 		h & level;
+		h & days;
 	}
 };
 
@@ -2228,7 +2250,18 @@ struct DigWithHero : public CPackForServer
 		h & id;
 	}
 };
+struct DoOutpost : public CPackForServer
+{
+	DoOutpost() {}
+	ObjectInstanceID id; //outpost hero id
 
+	bool applyGh(CGameHandler *gh);
+	template <typename Handler> void serialize(Handler &h, const int version)
+	{
+		h & static_cast<CPackForServer &>(*this);
+		h & id;
+	}
+};
 struct CastAdvSpell : public CPackForServer
 {
 	CastAdvSpell(){}

@@ -68,6 +68,7 @@ protected:
 	ESpellCastResult applyAdventureEffects(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const override;
 	ESpellCastResult beginCast(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const override;
 private:
+	int portTownNum = 2;
 	const CGTownInstance * findNearestTown(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const std::vector <const CGTownInstance*> & pool) const;
 	int movementCost(const AdventureSpellCastParameters & parameters) const;
 	std::vector <const CGTownInstance*> getPossibleTowns(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const;

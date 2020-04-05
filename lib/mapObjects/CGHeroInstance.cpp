@@ -927,7 +927,7 @@ si32 CGHeroInstance::manaRegain() const
 	if (hasBonusOfType(Bonus::FULL_MANA_REGENERATION))
 		return manaLimit();
 
-	return 1 + valOfBonuses(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::MYSTICISM) + valOfBonuses(Bonus::MANA_REGENERATION); //1 + Mysticism level
+	return 2* getPrimSkillLevel(PrimarySkill::KNOWLEDGE) + valOfBonuses(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::MYSTICISM) + valOfBonuses(Bonus::MANA_REGENERATION); //2*KNOWLEDGE + Mysticism level
 }
 
 si32 CGHeroInstance::getManaNewTurn() const
@@ -1100,6 +1100,14 @@ int CGHeroInstance::movementPointsAfterEmbark(int MPsBefore, int basicCost, bool
 EDiggingStatus CGHeroInstance::diggingStatus() const
 {
 	if(movement < maxMovePoints(true))
+		return EDiggingStatus::LACK_OF_MOVEMENT;
+
+	return cb->getTile(getPosition(false))->getDiggingStatus();
+}
+
+EDiggingStatus CGHeroInstance::doOutpostStatus() const
+{
+	if (cb->getResource(tempOwner,Res::GOLD) < 2000)
 		return EDiggingStatus::LACK_OF_MOVEMENT;
 
 	return cb->getTile(getPosition(false))->getDiggingStatus();

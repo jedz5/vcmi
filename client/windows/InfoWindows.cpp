@@ -396,7 +396,13 @@ CInfoBoxPopup::CInfoBoxPopup(Point position, const CGGarrison * garr)
 	OBJECT_CONSTRUCTION_CAPTURING(255-DISPOSE);
 	tooltip = std::make_shared<CArmyTooltip>(Point(9, 10), iah);
 }
+CInfoBoxPopup::CInfoBoxPopup(Point position, const CGOutpost * op) : CWindowObject(RCLICK_POPUP | PLAYER_COLORED, "TOWNQVBK", toScreen(position)) {
+	InfoAboutTown iah;
+	LOCPLINT->cb->getTownInfo(op, iah);
 
+	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
+	tooltip = std::make_shared<CArmyTooltip>(Point(9, 10), iah);
+}
 std::shared_ptr<WindowBase> CRClickPopup::createInfoWin(Point position, const CGObjectInstance * specific) //specific=0 => draws info about selected town/hero
 {
 	if(nullptr == specific)
@@ -417,6 +423,8 @@ std::shared_ptr<WindowBase> CRClickPopup::createInfoWin(Point position, const CG
 	case Obj::GARRISON:
 	case Obj::GARRISON2:
 		return std::make_shared<CInfoBoxPopup>(position, dynamic_cast<const CGGarrison *>(specific));
+	case Obj::OUTPOST:
+		return std::make_shared<CInfoBoxPopup>(position, dynamic_cast<const CGOutpost *>(specific));
 	default:
 		return std::shared_ptr<WindowBase>();
 	}

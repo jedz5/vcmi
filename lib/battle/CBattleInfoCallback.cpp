@@ -203,6 +203,70 @@ si8 CBattleInfoCallback::battleCanTeleportTo(const battle::Unit * stack, BattleH
 	return true;
 }
 
+std::vector<PossiblePlayerBattleAction> CBattleInfoCallback::getClientActionsForStack(const CStack * stack, const BattleClientInterfaceData & data)
+{
+	RETURN_IF_NOT_BATTLE(std::vector<PossiblePlayerBattleAction>());
+	std::vector<PossiblePlayerBattleAction> allowedActionList;
+	if(data.tacticsMode) //would "if(battleGetTacticDist() > 0)" work?
+	{
+		allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_TACTICS);
+		allowedActionList.push_back(PossiblePlayerBattleAction::CHOOSE_TACTICS_STACK);
+	}
+	else
+	{
+		if(stack->canCast()) //TODO: check for battlefield effects that prevent casting?
+		{
+			if(stack->hasBonusOfType(Bonus::SPELLCASTER) && data.creatureSpellToCast != -1)
+			{
+				const CSpell *spell = SpellID(data.creatureSpellToCast).toSpell();
+				PossiblePlayerBattleAction act = getCasterAction(spell, stack, spells::Mode::CREATURE_ACTIVE);
+				allowedActionList.push_back(act);
+			}
+			if(stack->hasBonusOfType(Bonus::RANDOM_SPELLCASTER))
+				allowedActionList.push_back(PossiblePlayerBattleAction::RANDOM_GENIE_SPELL);
+			if(stack->hasBonusOfType(Bonus::DAEMON_SUMMONING))
+				allowedActionList.push_back(PossiblePlayerBattleAction::RISE_DEMONS);
+		}
+		if(stack->canShoot())
+			allowedActionList.push_back(PossiblePlayerBattleAction::SHOOT);
+		if(stack->hasBonusOfType(Bonus::RETURN_AFTER_STRIKE))
+			allowedActionList.push_back(PossiblePlayerBattleAction::ATTACK_AND_RETURN);
+
+		allowedActionList.push_back(PossiblePlayerBattleAction::ATTACK); //all active stacks can attack
+		allowedActionList.push_back(PossiblePlayerBattleAction::WALK_AND_ATTACK); //not all stacks can always walk, but we will check this elsewhere
+
+		if(stack->canMove() && stack->Speed(0, true)) //probably no reason to try move war machines or bound stacks
+			allowedActionList.push_back(PossiblePlayerBattleAction::MOVE_STACK);
+
+		auto siegedTown = battleGetDefendedTown();
+		if(siegedTown && siegedTown->hasFort() && stack->hasBonusOfType(Bonus::CATAPULT)) //TODO: check shots
+			allowedActionList.push_back(PossiblePlayerBattleAction::CATAPULT);
+		if(stack->hasBonusOfType(Bonus::HEALER))
+			allowedActionList.push_back(PossiblePlayerBattleAction::HEAL);
+	}
+
+	return allowedActionList;
+}
+
+PossiblePlayerBattleAction CBattleInfoCallback::getCasterAction(const CSpell * spell, const spells::Caster * caster, spells::Mode mode) const
+{
+	RETURN_IF_NOT_BATTLE(PossiblePlayerBattleAction::INVALID);
+	PossiblePlayerBattleAction spellSelMode = PossiblePlayerBattleAction::ANY_LOCATION;
+
+	const CSpell::TargetInfo ti(spell, caster->getSpellSchoolLevel(spell), mode);
+
+	if(ti.massive || ti.type == spells::AimType::NO_TARGET)
+		spellSelMode = PossiblePlayerBattleAction::NO_LOCATION;
+	else if(ti.type == spells::AimType::LOCATION && ti.clearAffected)
+		spellSelMode = PossiblePlayerBattleAction::FREE_LOCATION;
+	else if(ti.type == spells::AimType::CREATURE)
+		spellSelMode = PossiblePlayerBattleAction::AIMED_SPELL_CREATURE;
+	else if(ti.type == spells::AimType::OBSTACLE)
+		spellSelMode = PossiblePlayerBattleAction::OBSTACLE;
+
+	return spellSelMode;
+}
+
 std::set<BattleHex> CBattleInfoCallback::battleGetAttackedHexes(const CStack* attacker, BattleHex destinationTile, BattleHex attackerPos) const
 {
 	std::set<BattleHex> attackedHexes;
@@ -289,57 +353,68 @@ battle::Units CBattleInfoCallback::battleAliveUnits(ui8 side) const
 
 //T is battle::Unit descendant
 template <typename T>
-const T * takeOneUnit(std::vector<const T *> & all, const int turn, int8_t & lastMoved)
+const T * takeOneUnit(std::vector<const T*> & all, const int turn, int8_t & lastMoved, int phase)
 {
-	const T * ret = nullptr;
-	size_t i, //fastest stack
-			j=0; //fastest stack of the other side
-	for(i = 0; i < all.size(); i++)
+	const T * returnedUnit = nullptr;
+	size_t currentUnitIndex = 0;
+
+	for(size_t i = 0; i < all.size(); i++)
+	{
+		int32_t currentUnitSpeed = -1;
+		int32_t returnedUnitSpeed = -1;
+		if(returnedUnit)
+			returnedUnitSpeed = returnedUnit->getInitiative(turn);
 		if(all[i])
-			break;
-
-	//no stacks left
-	if(i == all.size())
-		return nullptr;
-
-	const T * fastest = all[i], *other = nullptr;
-	int bestSpeed = fastest->getInitiative(turn);
-
-	if(fastest->unitSide() == lastMoved)
-	{
-		ret = fastest;
-	}
-	else
-	{
-		for(j = i + 1; j < all.size(); j++)
 		{
-			if(!all[j]) continue;
-			if(all[j]->unitSide() != lastMoved || all[j]->getInitiative(turn) != bestSpeed)
+			currentUnitSpeed = all[i]->getInitiative(turn);
+			switch(phase)
+			{
+			case 1: // Faster first, attacker priority, higher slot first
+				if(returnedUnit == nullptr || currentUnitSpeed > returnedUnitSpeed)
+				{
+					returnedUnit = all[i];
+					currentUnitIndex = i;
+				}
+				else if(currentUnitSpeed == returnedUnitSpeed)
+				{
+					if(lastMoved == -1 && turn <= 0 && all[i]->unitSide() == BattleSide::ATTACKER
+						&& !(returnedUnit->unitSide() == all[i]->unitSide() && returnedUnit->unitSlot() < all[i]->unitSlot())) // Turn 0 attacker priority
+					{
+						returnedUnit = all[i];
+						currentUnitIndex = i;
+					}
+					else if(lastMoved != -1 && all[i]->unitSide() != lastMoved
+						&& !(returnedUnit->unitSide() == all[i]->unitSide() && returnedUnit->unitSlot() < all[i]->unitSlot())) // Alternate equal speeds units
+					{
+						returnedUnit = all[i];
+						currentUnitIndex = i;
+					}
+				}
 				break;
-		}
-
-		if(j >= all.size())
-		{
-			ret = fastest;
-		}
-		else
-		{
-			other = all[j];
-			if(other->getInitiative(turn) != bestSpeed)
-				ret = fastest;
-			else
-				ret = other;
+			case 2: // Slower first, higher slot first
+			case 3:
+				if(returnedUnit == nullptr || currentUnitSpeed < returnedUnitSpeed)
+				{
+					returnedUnit = all[i];
+					currentUnitIndex = i;
+				}
+				else if(currentUnitSpeed == returnedUnitSpeed && lastMoved != -1 && all[i]->unitSide() != lastMoved
+					&& !(returnedUnit->unitSide() == all[i]->unitSide() && returnedUnit->unitSlot() < all[i]->unitSlot())) // Alternate equal speeds units
+				{
+					returnedUnit = all[i];
+					currentUnitIndex = i;
+				}
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
-	assert(ret);
-	if(ret == fastest)
-		all[i] = nullptr;
-	else
-		all[j] = nullptr;
-
-	lastMoved = ret->unitSide();
-	return ret;
+	if(!returnedUnit)
+		return nullptr;
+	all[currentUnitIndex] = nullptr;
+	return returnedUnit;
 }
 
 void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & out, const size_t maxUnits, const int maxTurns, const int turn, int8_t lastMoved) const
@@ -419,27 +494,38 @@ void CBattleInfoCallback::battleGetTurnOrder(std::vector<battle::Units> & out, c
 		phase[p].push_back(one);
 	}
 
-	boost::sort(phase[0], CMP_stack(0, actualTurn));
+	boost::sort(phase[0], CMP_stack(0, actualTurn, lastMoved));
 	std::copy(phase[0].begin(), phase[0].end(), std::back_inserter(out.back()));
 
 	if(outputFull())
 		return;
 
 	for(int i = 1; i < 4; i++)
-		boost::sort(phase[i], CMP_stack(i, actualTurn));
-
-	if(lastMoved < 0)
-		lastMoved = BattleSide::ATTACKER;
+		boost::sort(phase[i], CMP_stack(i, actualTurn, lastMoved));	
 
 	int pi = 1;
 	while(!outputFull() && pi < 4)
 	{
-		auto current = takeOneUnit(phase[pi], actualTurn, lastMoved);
-		if(!current)
+		const battle::Unit * current = nullptr;
+		if(phase[pi].empty())
 			pi++;
 		else
-			out.back().push_back(current);
+		{
+			current = takeOneUnit(phase[pi], actualTurn, lastMoved, pi);
+			if(!current)
+			{
+				pi++;
+			}
+			else
+			{
+				out.back().push_back(current);
+				lastMoved = current->unitSide();	
+			}
+		}
 	}
+
+	if(lastMoved < 0)
+		lastMoved = BattleSide::ATTACKER;
 
 	if(!outputFull() && (maxTurns == 0 || out.size() < maxTurns))
 		battleGetTurnOrder(out, maxUnits, maxTurns, actualTurn + 1, lastMoved);
@@ -577,11 +663,8 @@ bool CBattleInfoCallback::battleCanAttack(const CStack * stack, const CStack * t
 	auto &id = stack->getCreature()->idNumber;
 	if (id == CreatureID::FIRST_AID_TENT || id == CreatureID::CATAPULT)
 		return false;
-
-	if (!target->alive())
-		return false;
-
-	return true;
+	
+	return target->alive();
 }
 
 bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, BattleHex dest) const
@@ -610,12 +693,11 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, BattleHe
 	if(attacker->creatureIndex() == CreatureID::CATAPULT && defender) //catapult cannot attack creatures
 		return false;
 
-	if(attacker->canShoot()
+	return attacker->canShoot()
 		&& battleMatchOwner(attacker, defender)
 		&& defender->alive()
-		&& (!battleIsUnitBlocked(attacker) || attacker->hasBonusOfType(Bonus::FREE_SHOOTING)))
-		return true;
-	return false;
+		&& (!battleIsUnitBlocked(attacker)
+		|| attacker->hasBonusOfType(Bonus::FREE_SHOOTING));
 }
 
 TDmgRange CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo & info) const

@@ -143,7 +143,7 @@ bool BuildStructure::applyGh(CGameHandler * gh)
 
 bool RecruitCreatures::applyGh(CGameHandler * gh)
 {
-	return gh->recruitCreatures(tid, dst, crid, amount, level);
+	return gh->recruitCreatures(tid, dst, crid, amount, level,days);
 }
 
 bool UpgradeCreature::applyGh(CGameHandler * gh)
@@ -199,10 +199,14 @@ bool TradeOnMarketplace::applyGh(CGameHandler * gh)
 	if(player >= PlayerColor::PLAYER_LIMIT)
 		throwAndComplain(gh, "No player can use this market!");
 
-	if(hero && (player != hero->tempOwner || hero->visitablePos() != market->visitablePos()))
+	bool allyTownSkillTrade = (mode == EMarketMode::RESOURCE_SKILL && gh->getPlayerRelations(player, hero->tempOwner) == PlayerRelations::ALLIES);
+
+	if(hero && (!(player == hero->tempOwner || allyTownSkillTrade)
+		|| hero->visitablePos() != market->visitablePos()))
 		throwAndComplain(gh, "This hero can't use this marketplace!");
 
-	throwOnWrongPlayer(gh, player);
+	if(!allyTownSkillTrade)
+		throwOnWrongPlayer(gh, player);
 
 	bool result = true;
 
@@ -301,7 +305,7 @@ bool MakeAction::applyGh(CGameHandler * gh)
 	if(b->tacticDistance)
 	{
 		if(ba.actionType != EActionType::WALK && ba.actionType != EActionType::END_TACTIC_PHASE
-			&& ba.actionType != EActionType::RETREAT && ba.actionType != EActionType::SURRENDER)
+			&& ba.actionType != EActionType::NO_ACTION && ba.actionType != EActionType::RETREAT && ba.actionType != EActionType::SURRENDER)
 			throwNotAllowedAction();
 		if(!vstd::contains(gh->connections[b->sides[b->tacticsSide].color], c))
 			throwNotAllowedAction();
@@ -341,7 +345,11 @@ bool DigWithHero::applyGh(CGameHandler * gh)
 	throwOnWrongOwner(gh, id);
 	return gh->dig(gh->getHero(id));
 }
-
+bool DoOutpost::applyGh(CGameHandler * gh)
+{
+	throwOnWrongOwner(gh, id);
+	return gh->doOutpost(gh->getHero(id));
+}
 bool CastAdvSpell::applyGh(CGameHandler * gh)
 {
 	throwOnWrongOwner(gh, hid);

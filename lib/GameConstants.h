@@ -687,6 +687,7 @@ public:
 		MAGIC_CLOUDS = 229,
 		MAGIC_PLAINS2 = 230,
 		ROCKLANDS = 231,
+		OUTPOST = 232
 	};
 	Obj(EObj _num = NO_OBJ) : num(_num)
 	{}

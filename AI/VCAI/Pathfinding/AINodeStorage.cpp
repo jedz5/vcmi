@@ -9,20 +9,19 @@
 */
 #include "StdInc.h"
 #include "AINodeStorage.h"
+#include "Actions/TownPortalAction.h"
 #include "../Goals/Goals.h"
 #include "../../../CCallback.h"
 #include "../../../lib/mapping/CMap.h"
 #include "../../../lib/mapObjects/MapObjects.h"
-
 #include "../../../lib/PathfinderUtil.h"
 #include "../../../lib/CPlayerState.h"
-extern boost::thread_specific_ptr<CCallback> cb;
-
 
 AINodeStorage::AINodeStorage(const int3 & Sizes)
 	: sizes(Sizes)
 {
 	nodes.resize(boost::extents[sizes.x][sizes.y][sizes.z][EPathfindingLayer::NUM_LAYERS][NUM_CHAINS]);
+	dangerEvaluator.reset(new FuzzyHelper());
 }
 
 AINodeStorage::~AINodeStorage() = default;
@@ -186,30 +185,12 @@ std::vector<CGPathNode *> AINodeStorage::calculateNeighbours(
 	return neighbours;
 }
 
-void AINodeStorage::setHero(HeroPtr heroPtr)
+void AINodeStorage::setHero(HeroPtr heroPtr, const VCAI * _ai)
 {
 	hero = heroPtr.get();
+	cb = _ai->myCb.get();
+	ai = _ai;
 }
-
-class TownPortalAction : public ISpecialAction
-{
-private:
-	const CGTownInstance * target;
-	const HeroPtr  hero;
-
-public:
-	TownPortalAction(const CGTownInstance * target)
-		:target(target)
-	{
-	}
-
-	virtual Goals::TSubgoal whatToDo(HeroPtr hero) const override
-	{
-		const CGTownInstance * targetTown = target; // const pointer is not allowed in settown
-
-		return sptr(Goals::AdventureSpellCast(hero, SpellID::TOWN_PORTAL).settown(targetTown).settile(targetTown->visitablePos()));
-	}
-};
 
 std::vector<CGPathNode *> AINodeStorage::calculateTeleportations(
 	const PathNodeInfo & source,
@@ -299,7 +280,7 @@ void AINodeStorage::calculateTownPortalTeleportations(
 				AIPathNode * node = nodeOptional.get();
 
 				node->theNodeBefore = source.node;
-				node->specialAction.reset(new TownPortalAction(targetTown));
+				node->specialAction.reset(new AIPathfinding::TownPortalAction(targetTown));
 				node->moveRemains = source.node->moveRemains;
 				
 				neighbours.push_back(node);
@@ -349,7 +330,7 @@ bool AINodeStorage::isTileAccessible(const int3 & pos, const EPathfindingLayer l
 	return node.action != CGPathNode::ENodeAction::UNKNOWN;
 }
 
-std::vector<AIPath> AINodeStorage::getChainInfo(int3 pos, bool isOnLand) const
+std::vector<AIPath> AINodeStorage::getChainInfo(const int3 & pos, bool isOnLand) const
 {
 	std::vector<AIPath> paths;
 	auto chains = nodes[pos.x][pos.y][pos.z][isOnLand ? EPathfindingLayer::LAND : EPathfindingLayer::SAIL];
@@ -378,6 +359,8 @@ std::vector<AIPath> AINodeStorage::getChainInfo(int3 pos, bool isOnLand) const
 
 			current = getAINode(current->theNodeBefore);
 		}
+
+		path.targetObjectDanger = evaluateDanger(pos);
 
 		paths.push_back(path);
 	}
@@ -424,8 +407,7 @@ float AIPath::movementCost() const
 uint64_t AIPath::getTotalDanger(HeroPtr hero) const
 {
 	uint64_t pathDanger = getPathDanger();
-	uint64_t objDanger = evaluateDanger(nodes.front().coord, hero.get()); // bank danger is not checked by pathfinder
-	uint64_t danger = pathDanger > objDanger ? pathDanger : objDanger;
+	uint64_t danger = pathDanger > targetObjectDanger ? pathDanger : targetObjectDanger;
 
 	return danger;
 }

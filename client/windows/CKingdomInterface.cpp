@@ -771,6 +771,7 @@ CTownItem::CTownItem(const CGTownInstance * Town)
 	fort = std::make_shared<CTownInfo>(111, 31, town, false);
 
 	garr = std::make_shared<CGarrisonInt>(313, 3, 4, Point(232,0), town->getUpperArmy(), town->visitingHero, true, true, true);
+	garr->createSlots();
 	heroes = std::make_shared<HeroSlots>(town, Point(244,6), Point(475,6), garr, false);
 
 	size_t iconIndex = town->town->clientInfo.icons[town->hasFort()][town->builded >= CGI->modh->settings.MAX_BUILDING_PER_TURN];
@@ -912,7 +913,7 @@ CHeroItem::CHeroItem(const CGHeroInstance * Hero)
 	artButtons->setSelected(0);
 
 	garr = std::make_shared<CGarrisonInt>(6, 78, 4, Point(), hero, nullptr, true, true);
-
+	garr->createSlots();
 	portrait = std::make_shared<CAnimImage>("PortraitsLarge", hero->portrait, 0, 5, 6);
 	heroArea = std::make_shared<CHeroArea>(5, 6, hero);
 

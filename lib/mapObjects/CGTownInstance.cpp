@@ -679,6 +679,11 @@ void CGTownInstance::onHeroVisit(const CGHeroInstance * h) const
 		else
 		{
 			cb->setOwner(this, h->tempOwner);
+			if(cb->gameState()->getPlayerStatus(h->getOwner()) == EPlayerStatus::WINNER)
+			{
+				return; //we just won game, we do not need to perform any extra actions
+				//TODO: check how does H3 behave, visiting town on victory can affect campaigns (spells learned, +1 stat building visited)
+			}
 			removeCapitols(h->getOwner());
 			cb->heroVisitCastle(this, h);
 		}
@@ -859,9 +864,7 @@ bool CGTownInstance::passableFor(PlayerColor color) const
 	if ( tempOwner == PlayerColor::NEUTRAL )//neutral guarded - no one can visit
 		return false;
 
-	if (cb->getPlayerRelations(tempOwner, color) != PlayerRelations::ENEMIES)
-		return true;
-	return false;
+	return cb->getPlayerRelations(tempOwner, color) != PlayerRelations::ENEMIES;
 }
 
 void CGTownInstance::getOutOffsets( std::vector<int3> &offsets ) const

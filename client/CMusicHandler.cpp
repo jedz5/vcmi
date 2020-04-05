@@ -61,11 +61,10 @@ void CAudioBase::init()
 
 void CAudioBase::release()
 {
-	if (initialized)
-	{
+	if(!(CCS->soundh->initialized && CCS->musich->initialized))
 		Mix_CloseAudio();
-		initialized = false;
-	}
+
+	initialized = false;
 }
 
 void CAudioBase::setVolume(ui32 percent)
@@ -176,7 +175,7 @@ int CSoundHandler::ambientDistToVolume(int distance) const
 void CSoundHandler::ambientStopSound(std::string soundId)
 {
 	stopSound(ambientChannels[soundId]);
-	setChannelVolume(ambientChannels[soundId], 100);
+	setChannelVolume(ambientChannels[soundId], volume);
 }
 
 // Plays a sound, and return its channel so we can fade it out later

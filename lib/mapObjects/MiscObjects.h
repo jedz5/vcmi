@@ -14,7 +14,7 @@
 #include "../ResourceSet.h"
 
 class CMap;
-
+class CCallback;
 /// Legacy class, use CRewardableObject instead
 class DLL_LINKAGE CTeamVisited: public CGObjectInstance
 {
@@ -169,7 +169,6 @@ class DLL_LINKAGE CGGarrison : public CArmedInstance
 {
 public:
 	bool removableUnits;
-
 	bool passableFor(PlayerColor color) const override;
 	void onHeroVisit(const CGHeroInstance * h) const override;
 	void battleFinished(const CGHeroInstance *hero, const BattleResult &result) const override;
@@ -178,6 +177,26 @@ public:
 	{
 		h & static_cast<CArmedInstance&>(*this);
 		h & removableUnits;
+	}
+protected:
+	void serializeJsonOptions(JsonSerializeFormat & handler) override;
+};
+
+class DLL_LINKAGE CGOutpost : public CArmedInstance
+{
+public:
+	bool inputUnits;
+	std::map<int3, int> daysToGo;
+	bool passableFor(PlayerColor color) const override;
+	void onHeroVisit(const CGHeroInstance * h) const override;
+	void battleFinished(const CGHeroInstance *hero, const BattleResult &result) const override;
+	void afterAddToMap(CMap * map) override;
+	void updateDaysCost(CCallback* cb);
+	template <typename Handler> void serialize(Handler &h, const int version)
+	{
+		h & static_cast<CArmedInstance&>(*this);
+		h & inputUnits;
+		h & daysToGo;
 	}
 protected:
 	void serializeJsonOptions(JsonSerializeFormat & handler) override;

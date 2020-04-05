@@ -770,7 +770,13 @@ void CMapHandler::CMapBlitter::drawObjects(SDL_Surface * targetSurf, const Terra
 		if (!canDrawObject(obj))
 			continue;
 
-		auto objData = findObjectBitmap(obj, info->anim);
+		uint8_t animationFrame;
+		if(obj->ID == Obj::HERO) //non-generic animation frame pick for hero and boat
+			animationFrame = info->heroAnim;
+		else
+			animationFrame = info->anim;
+
+		auto objData = findObjectBitmap(obj, animationFrame);
 		if (objData.objBitmap)
 		{
 			Rect srcRect(object.rect.x, object.rect.y, tileSize, tileSize);
@@ -1140,7 +1146,7 @@ bool CMapHandler::updateObjectsFade()
 				if ((*objIter).fadeAnimKey == (*iter).first)
 				{
 					logAnim->trace("Fade anim finished for obj at %s; remaining: %d", pos.toString(), fadeAnims.size() - 1);
-					if (anim->fadingMode == CFadeAnimation::EMode::OUT)
+					if (anim->fadingMode == CFadeAnimation::EMode::Fading_OUT)
 						objs.erase(objIter); // if this was fadeout, remove the object from the map
 					else
 						(*objIter).fadeAnimKey = -1; // for fadein, just remove its connection to the finished fade
@@ -1182,7 +1188,7 @@ bool CMapHandler::startObjectFade(TerrainTileObject & obj, bool in, int3 pos)
 			}
 		}
 		auto anim = new CFadeAnimation();
-		anim->init(in ? CFadeAnimation::EMode::IN : CFadeAnimation::EMode::OUT, fadeBitmap, true);
+		anim->init(in ? CFadeAnimation::EMode::Fading_IN : CFadeAnimation::EMode::Fading_OUT, fadeBitmap, true);
 		fadeAnims[++fadeAnimCounter] = std::pair<int3, CFadeAnimation*>(pos, anim);
 		obj.fadeAnimKey = fadeAnimCounter;
 

@@ -47,6 +47,7 @@ class CCampaign;
 class CCampaignState;
 class IModableArt;
 class CGGarrison;
+class CGOutpost;
 class CGameInfo;
 struct QuestInfo;
 class CQuest;

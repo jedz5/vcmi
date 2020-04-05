@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "QuickRecruitmentWindow.h"
 #include "../../lib/mapObjects/CGTownInstance.h"
+#include "../../lib/mapObjects/MiscObjects.h"
 #include "../CPlayerInterface.h"
 #include "../widgets/Buttons.h"
 #include "../gui/CGuiHandler.h"
@@ -101,16 +102,29 @@ void QuickRecruitmentWindow::maxAllCards(std::vector<std::shared_ptr<CreaturePur
 
 void QuickRecruitmentWindow::purhaseUnits()
 {
+	auto visitor = op ? reinterpret_cast<const CArmedInstance*>(op) : town->getUpperArmy();
+	auto days = [&]() {
+		if (op) {
+			auto dd = op->daysToGo;
+			return dd[town->pos];
+		}
+		else
+		{
+			return 0;
+		}
+	};
 	for(auto selected : cards)
 	{
 		if(selected->slider->getValue())
 		{
-			auto onRecruit = [=](CreatureID id, int count){ LOCPLINT->cb->recruitCreatures(town, town->getUpperArmy(), id, count, selected->creatureOnTheCard->level-1); };
+			
+			auto onRecruit = [=](CreatureID id, int count,int daysCost){ LOCPLINT->cb->recruitCreatures(town,visitor, id, count, selected->creatureOnTheCard->level-1,days()); };
 			CreatureID crid =  selected->creatureOnTheCard->idNumber;
-			SlotID dstslot = town -> getSlotFor(crid);
+			
+			SlotID dstslot = visitor -> getSlotFor(crid, GameConstants::ARMY_SIZE, days());
 			if(!dstslot.validSlot())
 				continue;
-			onRecruit(crid, selected->slider->getValue());
+			onRecruit(crid, selected->slider->getValue(),days());
 		}
 	}
 	close();
@@ -146,9 +160,9 @@ void QuickRecruitmentWindow::updateAllSliders()
 	totalCost->set(LOCPLINT->cb->getResourceAmount() - allAvailableResources);
 }
 
-QuickRecruitmentWindow::QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition)
+QuickRecruitmentWindow::QuickRecruitmentWindow(const CGTownInstance * townd, Rect startupPosition, const CGOutpost* op)
 	: CWindowObject(PLAYER_COLORED | BORDERED),
-	town(townd)
+	town(townd),op(op)
 {
 	OBJECT_CONSTRUCTION_CAPTURING(ACTIVATE + DEACTIVATE + UPDATE + SHOWALL);
 

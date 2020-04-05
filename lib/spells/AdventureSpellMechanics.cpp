@@ -344,7 +344,7 @@ ESpellCastResult TownPortalMechanics::applyAdventureEffects(const SpellCastEnvir
 	const CGTownInstance * destination = nullptr;
 	const int moveCost = movementCost(parameters);
 
-    if(parameters.caster->getSpellSchoolLevel(owner) < 2)
+    if(false) //always nearest 2 towns//parameters.caster->getSpellSchoolLevel(owner) < 2
     {
 		std::vector <const CGTownInstance*> pool = getPossibleTowns(env, parameters);
 		destination = findNearestTown(env, parameters, pool);
@@ -367,17 +367,30 @@ ESpellCastResult TownPortalMechanics::applyAdventureEffects(const SpellCastEnvir
     else if(env->getMap()->isInTheMap(parameters.pos))
 	{
 		const TerrainTile & tile = env->getMap()->getTile(parameters.pos);
-		if(tile.visitableObjects.empty() || tile.visitableObjects.back()->ID != Obj::TOWN)
+
+		const auto topObj = tile.topVisitableObj(false);
+
+		if(!topObj)
 		{
-			env->complain("No town at destination tile");
+			env->complain("Destination tile is not visitable" + parameters.pos.toString());
+			return ESpellCastResult::ERROR;
+		}
+		else if(topObj->ID == Obj::HERO)
+		{
+			env->complain("Can't teleport to occupied town at " + parameters.pos.toString());
+			return ESpellCastResult::ERROR;
+		}
+		else if(topObj->ID != Obj::TOWN)
+		{
+			env->complain("No town at destination tile " + parameters.pos.toString());
 			return ESpellCastResult::ERROR;
 		}
 
-		destination = dynamic_cast<CGTownInstance*>(tile.visitableObjects.back());
+		destination = dynamic_cast<const CGTownInstance*>(topObj);
 
 		if(nullptr == destination)
 		{
-			env->complain("[Internal error] invalid town object");
+			env->complain("[Internal error] invalid town object at " + parameters.pos.toString());
 			return ESpellCastResult::ERROR;
 		}
 
@@ -397,7 +410,7 @@ ESpellCastResult TownPortalMechanics::applyAdventureEffects(const SpellCastEnvir
 
 		if(destination->visitingHero)
 		{
-			env->complain("Can't teleport to occupied town!");
+			env->complain("[Internal error] Can't teleport to occupied town");
 			return ESpellCastResult::ERROR;
 		}
 	}
@@ -420,8 +433,7 @@ ESpellCastResult TownPortalMechanics::applyAdventureEffects(const SpellCastEnvir
 ESpellCastResult TownPortalMechanics::beginCast(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const
 {
 	std::vector<const CGTownInstance *>	towns = getPossibleTowns(env, parameters);
-
-	if(towns.empty())
+	if (towns.empty())
 	{
 		InfoWindow iw;
 		iw.player = parameters.caster->tempOwner;
@@ -429,6 +441,8 @@ ESpellCastResult TownPortalMechanics::beginCast(const SpellCastEnvironment * env
 		env->sendAndApply(&iw);
 		return ESpellCastResult::CANCEL;
 	}
+	//auto destination = findNearestTown(env, parameters, towns);
+	
 
 	const int moveCost = movementCost(parameters);
 
@@ -441,7 +455,8 @@ ESpellCastResult TownPortalMechanics::beginCast(const SpellCastEnvironment * env
 		return ESpellCastResult::CANCEL;
 	}
 
-	if(!parameters.pos.valid() && parameters.caster->getSpellSchoolLevel(owner) >= 2)
+	//if(false) always to the nearest !parameters.pos.valid() && parameters.caster->getSpellSchoolLevel(owner) >= 2
+	//auto chooseTown = [&]()
 	{
 		auto queryCallback = [=](const JsonNode & reply) -> void
 		{
@@ -470,8 +485,21 @@ ESpellCastResult TownPortalMechanics::beginCast(const SpellCastEnvironment * env
 		};
 
 		MapObjectSelectDialog request;
-
-		for(auto t : towns)
+		std::vector<const CGTownInstance*> tempTowns;//
+		if (towns.size() <= portTownNum)
+			tempTowns = towns;
+		else
+		{
+			auto townsCopy = towns;
+			for (int i = 0; i < portTownNum; i++)
+			{
+				auto t = findNearestTown(env, parameters, townsCopy);
+				tempTowns.push_back(t);
+				townsCopy -= t;
+			}
+		}
+		
+		for(auto t : tempTowns)
 		{
 			if(t->visitingHero == nullptr) //empty town
 				request.objects.push_back(t->id);
@@ -496,8 +524,8 @@ ESpellCastResult TownPortalMechanics::beginCast(const SpellCastEnvironment * env
 
 		return ESpellCastResult::PENDING;
 	}
-
-	return ESpellCastResult::OK;
+	
+	//return ESpellCastResult::OK;
 }
 
 const CGTownInstance * TownPortalMechanics::findNearestTown(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters, const std::vector <const CGTownInstance *> & pool) const

@@ -70,6 +70,7 @@ void registerTypesMapObjects1(Serializer &s)
 		s.template registerType<CGPandoraBox, CGEvent>();
 	s.template registerType<CArmedInstance, CGCreature>();
 	s.template registerType<CArmedInstance, CGGarrison>();
+	s.template registerType<CArmedInstance, CGOutpost>();
 	s.template registerType<CArmedInstance, CGArtifact>();
 	s.template registerType<CArmedInstance, CGResource>();
 	s.template registerType<CArmedInstance, CGMine>();
@@ -104,6 +105,7 @@ void registerTypesMapObjectTypes(Serializer &s)
 	REGISTER_GENERIC_HANDLER(CGDwelling);
 	REGISTER_GENERIC_HANDLER(CGEvent);
 	REGISTER_GENERIC_HANDLER(CGGarrison);
+	REGISTER_GENERIC_HANDLER(CGOutpost);
 	REGISTER_GENERIC_HANDLER(CGHeroPlaceholder);
 	REGISTER_GENERIC_HANDLER(CGHeroInstance);
 	REGISTER_GENERIC_HANDLER(CGKeymasterTent);
@@ -226,6 +228,7 @@ void registerTypesClientPacks1(Serializer &s)
 	s.template registerType<CPackForClient, SetPrimSkill>();
 	s.template registerType<CPackForClient, SetSecSkill>();
 	s.template registerType<CPackForClient, HeroVisitCastle>();
+	s.template registerType<CPackForClient, HeroVisitOutpost>();
 	s.template registerType<CPackForClient, ChangeSpells>();
 	s.template registerType<CPackForClient, SetMana>();
 	s.template registerType<CPackForClient, SetMovePoints>();
@@ -339,6 +342,7 @@ void registerTypesServerPacks(Serializer &s)
 	s.template registerType<CPackForServer, MakeAction>();
 	s.template registerType<CPackForServer, MakeCustomAction>();
 	s.template registerType<CPackForServer, DigWithHero>();
+	s.template registerType<CPackForServer, DoOutpost>();
 	s.template registerType<CPackForServer, CastAdvSpell>();
 	s.template registerType<CPackForServer, CastleTeleportHero>();
 	s.template registerType<CPackForServer, CommitPackage>();

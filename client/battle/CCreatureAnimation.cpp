@@ -115,7 +115,7 @@ float AnimationControls::getProjectileSpeed()
 
 float AnimationControls::getSpellEffectSpeed()
 {
-	return settings["battle"]["animationSpeed"].Float() * 60;
+	return settings["battle"]["animationSpeed"].Float() * 30;
 }
 
 float AnimationControls::getMovementDuration(const CCreature * creature)
@@ -140,6 +140,15 @@ void CCreatureAnimation::setType(CCreatureAnim::EAnimType type)
 	once = false;
 
 	play();
+}
+
+void CCreatureAnimation::shiftColor(const ColorShifter* shifter)
+{
+	if(forward)
+		forward->shiftColor(shifter);
+
+	if(reverse)
+		reverse->shiftColor(shifter);
 }
 
 CCreatureAnimation::CCreatureAnimation(const std::string & name_, TSpeedController controller)

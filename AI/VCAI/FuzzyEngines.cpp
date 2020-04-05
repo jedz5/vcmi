@@ -19,10 +19,12 @@
 #define UNGUARDED_OBJECT (100.0f) //we consider unguarded objects 100 times weaker than us
 
 extern boost::thread_specific_ptr<VCAI> ai;
+extern FuzzyHelper * fh;
 
 engineBase::engineBase()
 {
-	engine.addRuleBlock(&rules);
+	rules = new fl::RuleBlock();
+	engine.addRuleBlock(rules);
 }
 
 void engineBase::configure()
@@ -33,7 +35,7 @@ void engineBase::configure()
 
 void engineBase::addRule(const std::string & txt)
 {
-	rules.addRule(fl::Rule::parse(txt, &engine));
+	rules->addRule(fl::Rule::parse(txt, &engine));
 }
 
 struct armyStructure
@@ -203,7 +205,7 @@ TacticalAdvantageEngine::TacticalAdvantageEngine()
 float TacticalAdvantageEngine::getTacticalAdvantage(const CArmedInstance * we, const CArmedInstance * enemy)
 {
 	float output = 1;
-	try
+	/*try //TODO: rework this engine, it tends to produce nonsense output
 	{
 		armyStructure ourStructure = evaluateArmyStructure(we);
 		armyStructure enemyStructure = evaluateArmyStructure(enemy);
@@ -248,7 +250,7 @@ float TacticalAdvantageEngine::getTacticalAdvantage(const CArmedInstance * we, c
 			log << names[i] << ": " << tab[i]->getValue() << " ";
 		logAi->error(log.str());
 		assert(false);
-	}
+	}*/
 
 	return output;
 }
@@ -342,7 +344,7 @@ void HeroMovementGoalEngineBase::setSharedFuzzyVariables(Goals::AbstractGoal & g
 	}
 
 	float strengthRatioData = 10.0f; //we are much stronger than enemy
-	ui64 danger = evaluateDanger(goal.tile, goal.hero.h);
+	ui64 danger = fh->evaluateDanger(goal.tile, goal.hero.h);
 	if(danger)
 		strengthRatioData = (fl::scalar)goal.hero.h->getTotalStrength() / danger;
 

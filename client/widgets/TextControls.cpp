@@ -102,13 +102,14 @@ CMultiLineLabel::CMultiLineLabel(Rect position, EFonts Font, EAlignment Align, c
 {
 	pos.w = position.w;
 	pos.h = position.h;
-	splitText(Text);
+	splitText(Text, true);
 }
 
-void CMultiLineLabel::setVisibleSize(Rect visibleSize)
+void CMultiLineLabel::setVisibleSize(Rect visibleSize, bool redrawElement)
 {
 	this->visibleSize = visibleSize;
-	redraw();
+	if(redrawElement)
+		redraw();
 }
 
 void CMultiLineLabel::scrollTextBy(int distance)
@@ -116,16 +117,16 @@ void CMultiLineLabel::scrollTextBy(int distance)
 	scrollTextTo(visibleSize.y + distance);
 }
 
-void CMultiLineLabel::scrollTextTo(int distance)
+void CMultiLineLabel::scrollTextTo(int distance, bool redrawAfterScroll)
 {
 	Rect size = visibleSize;
 	size.y = distance;
-	setVisibleSize(size);
+	setVisibleSize(size, redrawAfterScroll);
 }
 
 void CMultiLineLabel::setText(const std::string &Txt)
 {
-	splitText(Txt);
+	splitText(Txt, false); //setText used below can handle redraw
 	CLabel::setText(Txt);
 }
 
@@ -221,7 +222,7 @@ void CMultiLineLabel::showAll(SDL_Surface * to)
 	}
 }
 
-void CMultiLineLabel::splitText(const std::string &Txt)
+void CMultiLineLabel::splitText(const std::string &Txt, bool redrawAfter)
 {
 	lines.clear();
 
@@ -234,7 +235,8 @@ void CMultiLineLabel::splitText(const std::string &Txt)
 	 textSize.x = 0;
 	for(const std::string &line : lines)
 		vstd::amax( textSize.x, f->getStringWidth(line.c_str()));
-	redraw();
+	if(redrawAfter)
+		redraw();
 }
 
 Rect CMultiLineLabel::getTextLocation()
@@ -356,6 +358,7 @@ CGStatusBar::CGStatusBar(std::shared_ptr<CPicture> background_, EFonts Font, EAl
 	pos = background->pos;
 	getBorderSize();
 	textLock = false;
+	autoRedraw = false;
 }
 
 CGStatusBar::CGStatusBar(int x, int y, std::string name, int maxw)
@@ -370,11 +373,7 @@ CGStatusBar::CGStatusBar(int x, int y, std::string name, int maxw)
 		background->srcRect = new Rect(0, 0, maxw, pos.h);
 	}
 	textLock = false;
-}
-
-CGStatusBar::~CGStatusBar()
-{
-	GH.statusbar = oldStatusBar;
+	autoRedraw = false;
 }
 
 void CGStatusBar::show(SDL_Surface * to)
@@ -384,7 +383,6 @@ void CGStatusBar::show(SDL_Surface * to)
 
 void CGStatusBar::init()
 {
-	oldStatusBar = GH.statusbar;
 	GH.statusbar = shared_from_this();
 }
 

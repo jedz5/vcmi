@@ -196,7 +196,8 @@ int main(int argc, char * argv[])
 		("donotstartserver,d","do not attempt to start server and just connect to it instead server")
 		("serverport", po::value<si64>(), "override port specified in config file")
 		("saveprefix", po::value<std::string>(), "prefix for auto save files")
-		("savefrequency", po::value<si64>(), "limit auto save creation to each N days");
+		("savefrequency", po::value<si64>(), "limit auto save creation to each N days")
+		("localData", po::value<std::string>(), "myGame2");
 
 	if(argc > 1)
 	{
@@ -228,8 +229,10 @@ int main(int argc, char * argv[])
 	console = new CConsoleHandler();
 	*console->cb = processCommand;
 	console->start();
-
-	const bfs::path logPath = VCMIDirs::get().userCachePath() / "VCMI_Client_log.txt";
+	std::string lp = "myGame";
+	if (vm.count("localData"))
+		lp = ::vm["localData"].as<std::string>();
+	const bfs::path logPath = VCMIDirs::get(lp).userCachePath() / "VCMI_Client_log.txt";
 	CBasicLogConfigurator logConfig(logPath, console);
 	logConfig.configureDefault();
 	logGlobal->info(NAME);
@@ -1056,6 +1059,39 @@ static bool recreateWindow(int w, int h, int bpp, bool fullscreen, int displayIn
 
 	#ifdef VCMI_ANDROID
 		mainWindow = SDL_CreateWindow(NAME.c_str(), SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex),SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex), 0, 0, SDL_WINDOW_FULLSCREEN);
+
+		// SDL on Android doesn't do proper letterboxing, and will show an annoying flickering in the blank space in case you're not using the full screen estate
+		// That's why we need to make sure our width and height we'll use below have the same aspect ratio as the screen itself to ensure we fill the full screen estate
+
+		SDL_Rect screenRect;
+
+		if(SDL_GetDisplayBounds(0, &screenRect) == 0)
+		{
+			int screenWidth, screenHeight;
+			double aspect;
+
+			screenWidth = screenRect.w;
+			screenHeight = screenRect.h;
+
+			aspect = (double)screenWidth / (double)screenHeight;
+
+			logGlobal->info("Screen size and aspect ration: %dx%d (%lf)", screenWidth, screenHeight, aspect);
+
+			if((double)w / aspect > (double)h)
+			{
+				h = (int)round((double)w / aspect);
+			}
+			else
+			{
+				w = (int)round((double)h * aspect);
+			}
+
+			logGlobal->info("Changing logical screen size to %dx%d", w, h);
+		}
+		else
+		{
+			logGlobal->error("Can't fix aspect ratio for screen");
+		}
 	#else
 
 		if(fullscreen)
@@ -1265,6 +1301,7 @@ static void handleEvent(SDL_Event & ev)
 			break;
 		case EUserEvent::CAMPAIGN_START_SCENARIO:
 			{
+				CSH->campaignServerRestartLock.set(true);
 				CSH->endGameplay();
 				auto ourCampaign = std::shared_ptr<CCampaignState>(reinterpret_cast<CCampaignState *>(ev.user.data1));
 				auto & epilogue = ourCampaign->camp->scenarios[ourCampaign->mapsConquered.back()].epilog;
@@ -1281,6 +1318,7 @@ static void handleEvent(SDL_Event & ev)
 				}
 				else
 				{
+					CSH->campaignServerRestartLock.waitUntil(false);
 					finisher();
 				}
 			}

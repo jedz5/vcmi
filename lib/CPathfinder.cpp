@@ -309,7 +309,9 @@ void CPathfinder::calculatePaths()
 	while(!pq.empty())
 	{
 		auto node = pq.top();
-		auto excludeOurHero = node->coord == initialNode->coord;
+		auto myHeros = gs->players[gs->getCurrentPlayer()].heroes;
+		auto excludeOurHero = node->coord == initialNode->coord; 
+			//(boost::find_if(myHeros, [&](const CGHeroInstance* h) ->bool{return h->pos == node->coord; }) != myHeros.end());
 
 		source.setNode(gs, node, excludeOurHero);
 		pq.pop();
@@ -712,6 +714,7 @@ PathfinderBlockingRule::BlockingReason MovementAfterDestinationRule::getBlocking
 		}
 		else if(destination.nodeObject->ID == Obj::GARRISON
 			|| destination.nodeObject->ID == Obj::GARRISON2
+			|| destination.nodeObject->ID == Obj::OUTPOST
 			|| destination.nodeObject->ID == Obj::BORDER_GATE)
 		{
 			/// Transit via unguarded garrisons is always possible
@@ -830,7 +833,7 @@ void DestinationActionRule::process(
 
 			if(action == CGPathNode::NORMAL)
 			{
-				if(pathfinderConfig->options.originalMovementRules && destination.guarded)
+				if(destination.guarded)
 					action = CGPathNode::BATTLE;
 				else
 					action = CGPathNode::VISIT;

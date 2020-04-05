@@ -1183,11 +1183,30 @@ void CMapLoaderH3M::readObjects()
 				}
 				else
 				{
-					gar->removableUnits = true;
+					gar->removableUnits = false;
 				}
 				reader.skip(8);
 				break;
 			}
+		case Obj::OUTPOST:
+		{
+			auto  gar = new CGOutpost();
+			gar->ID = Obj::OUTPOST;
+			nobj = gar;
+			nobj->setOwner(PlayerColor(reader.readUInt8()));
+			reader.skip(3);
+			readCreatureSet(gar, 7);
+			if (map->version > EMapFormat::ROE)
+			{
+				gar->inputUnits = reader.readBool();
+			}
+			else
+			{
+				gar->inputUnits = false;
+			}
+			reader.skip(8);
+			break;
+		}
 		case Obj::ARTIFACT:
 		case Obj::RANDOM_ART:
 		case Obj::RANDOM_TREASURE_ART:
@@ -1987,6 +2006,7 @@ CGTownInstance * CMapLoaderH3M::readTown(int castleID)
 			}
 		}
 	}
+	nt->obligatorySpells.push_back(SpellID(SpellID::TOWN_PORTAL));
 
 	for(int i = 0; i < 9; ++i)
 	{
@@ -2104,19 +2124,19 @@ std::set<BuildingID> CMapLoaderH3M::convertBuildings(const std::set<BuildingID> 
 	{
 		//village hall is always present
 		ret.insert(BuildingID::VILLAGE_HALL);
-	}
 
-	if(ret.find(BuildingID::CITY_HALL) != ret.end())
-	{
-		ret.insert(BuildingID::EXTRA_CITY_HALL);
-	}
-	if(ret.find(BuildingID::TOWN_HALL) != ret.end())
-	{
-		ret.insert(BuildingID::EXTRA_TOWN_HALL);
-	}
-	if(ret.find(BuildingID::CAPITOL) != ret.end())
-	{
-		ret.insert(BuildingID::EXTRA_CAPITOL);
+		if(ret.find(BuildingID::CITY_HALL) != ret.end())
+		{
+			ret.insert(BuildingID::EXTRA_CITY_HALL);
+		}
+		if(ret.find(BuildingID::TOWN_HALL) != ret.end())
+		{
+			ret.insert(BuildingID::EXTRA_TOWN_HALL);
+		}
+		if(ret.find(BuildingID::CAPITOL) != ret.end())
+		{
+			ret.insert(BuildingID::EXTRA_CAPITOL);
+		}
 	}
 
 	return ret;

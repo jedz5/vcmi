@@ -663,6 +663,8 @@ void CModHandler::loadConfigFromFile (std::string name)
 	logMod->debug("\tWINNING_HERO_WITH_NO_TROOPS_RETREATS\t%d", static_cast<int>(settings.WINNING_HERO_WITH_NO_TROOPS_RETREATS));
 	settings.BLACK_MARKET_MONTHLY_ARTIFACTS_CHANGE = hardcodedFeatures["BLACK_MARKET_MONTHLY_ARTIFACTS_CHANGE"].Bool();
 	logMod->debug("\tBLACK_MARKET_MONTHLY_ARTIFACTS_CHANGE\t%d", static_cast<int>(settings.BLACK_MARKET_MONTHLY_ARTIFACTS_CHANGE));
+	settings.NO_RANDOM_SPECIAL_WEEKS_AND_MONTHS = hardcodedFeatures["NO_RANDOM_SPECIAL_WEEKS_AND_MONTHS"].Bool();
+	logMod->debug("\tNO_RANDOM_SPECIAL_WEEKS_AND_MONTHS\t%d", static_cast<int>(settings.NO_RANDOM_SPECIAL_WEEKS_AND_MONTHS));
 
 	const JsonNode & gameModules = settings.data["modules"];
 	modules.STACK_EXP = gameModules["STACK_EXPERIENCE"].Bool();
@@ -800,17 +802,6 @@ std::vector<std::string> CModHandler::getModList(std::string path)
 	{
 		std::string name = entry.getName();
 		name.erase(0, modDir.size()); //Remove path prefix
-
-		// check if wog is actually present. Hack-ish but better than crash
-		// TODO: remove soon (hopefully - before 0.96)
-		if (name == "WOG")
-		{
-			if (!CResourceHandler::get("initial")->existsResource(ResourceID("DATA/ZVS", EResType::DIRECTORY)) &&
-				!CResourceHandler::get("initial")->existsResource(ResourceID("MODS/WOG/DATA/ZVS", EResType::DIRECTORY)))
-			{
-				continue;
-			}
-		}
 
 		if (!name.empty())
 			foundMods.push_back(name);

@@ -3,7 +3,8 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <QTDIR>D:\Program files co nie\Qt\5.9.1\msvc2015\</QTDIR>
-    <VCMI_Out>D:\VCMI\vcmi_devversion</VCMI_Out>
+    <VCMI_in>D:\project\vcmi</VCMI_in>
+	<VCMI_Out>D:\VCMI\vcmi_devversionRD</VCMI_Out>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
@@ -11,8 +12,8 @@
     <BuildMacro Include="QTDIR">
       <Value>$(QTDIR)</Value>
     </BuildMacro>
-    <BuildMacro Include="VCMI_Out">
-      <Value>$(VCMI_Out)</Value>
+    <BuildMacro Include="OutDir">
+      <Value>$(OutDir)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
   </ItemGroup>

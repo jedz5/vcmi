@@ -139,10 +139,10 @@ public:
 	void takeCreatures(ObjectInstanceID objid, const std::vector<CStackBasicDescriptor> &creatures) override;
 	bool changeStackType(const StackLocation &sl, const CCreature *c) override;
 	bool changeStackCount(const StackLocation &sl, TQuantity count, bool absoluteValue = false) override;
-	bool insertNewStack(const StackLocation &sl, const CCreature *c, TQuantity count) override;
+	bool insertNewStack(const StackLocation &sl, const CCreature *c, TQuantity count, int daysCost = 0) override;
 	bool eraseStack(const StackLocation &sl, bool forceRemoval = false) override;
 	bool swapStacks(const StackLocation &sl1, const StackLocation &sl2) override;
-	bool addToSlot(const StackLocation &sl, const CCreature *c, TQuantity count) override;
+	bool addToSlot(const StackLocation &sl, const CCreature *c, TQuantity count,int daysCost = 0) override;
 	void tryJoiningArmy(const CArmedInstance *src, const CArmedInstance *dst, bool removeObjWhenFinished, bool allowMerging) override;
 	bool moveStack(const StackLocation &src, const StackLocation &dst, TQuantity count = -1) override;
 
@@ -224,7 +224,7 @@ public:
 	bool buySecSkill( const IMarket *m, const CGHeroInstance *h, SecondarySkill skill);
 	bool garrisonSwap(ObjectInstanceID tid);
 	bool upgradeCreature( ObjectInstanceID objid, SlotID pos, CreatureID upgID );
-	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, ui32 cram, si32 level);
+	bool recruitCreatures(ObjectInstanceID objid, ObjectInstanceID dst, CreatureID crid, ui32 cram, si32 level,int daysCost = 0);
 	bool buildStructure(ObjectInstanceID tid, BuildingID bid, bool force=false);//force - for events: no cost, no checkings
 	bool razeStructure(ObjectInstanceID tid, BuildingID bid);
 	bool disbandCreature( ObjectInstanceID id, SlotID pos );
@@ -239,6 +239,7 @@ public:
 	void objectVisitEnded(const CObjectVisitQuery &query);
 	void engageIntoBattle( PlayerColor player );
 	bool dig(const CGHeroInstance *h);
+	bool doOutpost(const CGHeroInstance *h);
 	void moveArmy(const CArmedInstance *src, const CArmedInstance *dst, bool allowMerging);
 
 	template <typename Handler> void serialize(Handler &h, const int version)

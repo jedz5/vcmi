@@ -19,44 +19,44 @@ class CCreatureSet;
 class CGarrisonSlot;
 class CStackInstance;
 class CLabel;
-
+class CGOutpost;
 /// A single garrison slot which holds one creature of a specific amount
 class CGarrisonSlot : public CIntObject
 {
-	SlotID ID; //for identification
-	CGarrisonInt *owner;
-	const CStackInstance * myStack; //nullptr if slot is empty
-	const CCreature * creature;
 
-	/// Type of Garrison for slot (up or down)
-	enum EGarrisonType
-	{
-		UP=0,  ///< 0 - up garrison (Garrisoned)
-		DOWN,  ///< 1 - down garrison (Visiting)
-	} upg; ///< Flag indicating if it is the up or down garrison
-
+	
 	std::shared_ptr<CAnimImage> creatureImage;
 	std::shared_ptr<CAnimImage> selectionImage; // image for selection, not always visible
 	std::shared_ptr<CLabel> stackCount;
 
-	bool viewInfo();
-	bool highlightOrDropArtifact();
-	bool split();
-	bool mustForceReselection() const;
-
-	void setHighlight(bool on);
 public:
+	SlotID ID; //for identification
+	CGarrisonInt *owner;
+	/// Type of Garrison for slot (up or down)
+	enum EGarrisonType
+	{
+		UP = 0,  ///< 0 - up garrison (Garrisoned)
+		DOWN,  ///< 1 - down garrison (Visiting)
+	} upg; ///< Flag indicating if it is the up or down garrison
+
+	const CStackInstance * myStack; //nullptr if slot is empty
+	const CCreature * creature;
+	bool highlightOrDropArtifact();
+	virtual bool mustForceReselection() const;
+	virtual bool viewInfo();
+	virtual bool split();
+	void setHighlight(bool on);
 	virtual void hover (bool on) override; //call-in
 	const CArmedInstance * getObj() const;
 	bool our() const;
 	bool ally() const;
-	void clickRight(tribool down, bool previousState) override;
-	void clickLeft(tribool down, bool previousState) override;
-	void update();
+	virtual void clickRight(tribool down, bool previousState) override;
+	virtual void clickLeft(tribool down, bool previousState) override;
+	virtual void update();
 	CGarrisonSlot(CGarrisonInt *Owner, int x, int y, SlotID IID, EGarrisonType Upg=EGarrisonType::UP, const CStackInstance * Creature=nullptr);
 
-	void splitIntoParts(EGarrisonType type, int amount, int maxOfSplittedSlots);
-	void handleSplittingShortcuts();
+	virtual void splitIntoParts(EGarrisonType type, int amount, int maxOfSplittedSlots);
+	virtual void handleSplittingShortcuts();
 
 	friend class CGarrisonInt;
 };
@@ -64,13 +64,12 @@ public:
 /// Class which manages slots of upper and lower garrison, splitting of units
 class CGarrisonInt :public CIntObject
 {
+public:
 	/// Chosen slot. Should be changed only via selectSlot.
 	CGarrisonSlot * highlighted;
 	bool inSplittingMode;
 	std::vector<std::shared_ptr<CGarrisonSlot>> availableSlots;  ///< Slots of upper and lower garrison
 
-	void createSlots();
-public:
 	int interx;  ///< Space between slots
 	Point garOffset;  ///< Offset between garrisons (not used if only one hero)
 	std::vector<std::shared_ptr<CButton>> splitButtons;  ///< May be empty if no buttons
@@ -82,23 +81,24 @@ public:
 		 twoRows,         ///< slots Will be placed in 2 rows
 		 owned[2];        ///< player Owns up or down army ([0] upper, [1] lower)
 
-	void selectSlot(CGarrisonSlot * slot); ///< @param slot null = deselect
+	virtual void createSlots();
+	virtual void selectSlot(CGarrisonSlot * slot); ///< @param slot null = deselect
 	const CGarrisonSlot * getSelection();
 
-	void setSplittingMode(bool on);
-	bool getSplittingMode();
+	virtual void setSplittingMode(bool on);
+	virtual bool getSplittingMode();
 
 	std::vector<CGarrisonSlot *> getEmptySlots(CGarrisonSlot::EGarrisonType type);
 
 	const CArmedInstance * armedObjs[2];  ///< [0] is upper, [1] is down
 
-	void setArmy(const CArmedInstance * army, bool bottomGarrison);
-	void addSplitBtn(std::shared_ptr<CButton> button);
+	virtual void setArmy(const CArmedInstance * army, bool bottomGarrison);
+	virtual void addSplitBtn(std::shared_ptr<CButton> button);
 
-	void recreateSlots();
+	virtual void recreateSlots();
 
-	void splitClick();  ///< handles click on split button
-	void splitStacks(int amountLeft, int amountRight);  ///< TODO: comment me
+	virtual void splitClick();  ///< handles click on split button
+	virtual void splitStacks(int amountLeft, int amountRight);  ///< TODO: comment me
 
 	/// Constructor
 	/// @param x, y Position
@@ -122,3 +122,23 @@ public:
 	virtual void updateGarrisons() = 0;
 };
 
+class COutpostInt : public CGarrisonInt {
+public:
+	void splitClick() override;
+	void setSplittingMode(bool on) override;
+	void createSlots() override;
+	COutpostInt(int x, int y, int inx,
+		const Point & garsOffset,
+		const CGOutpost * s1, const CGHeroInstance * s2 = nullptr,
+		bool _removableUnits = true,
+		bool smallImgs = false,
+		bool _twoRows = false);
+};
+class COutpostSlot : public CGarrisonSlot {
+public:
+	std::shared_ptr<CLabel> stackDaysCost;
+	COutpostSlot(COutpostInt *Owner, int x, int y, SlotID IID, EGarrisonType Upg = EGarrisonType::UP, const CStackInstance * Creature = nullptr);
+	void update() override;
+	virtual void clickLeft(tribool down, bool previousState) override;
+	virtual bool mustForceReselection() const override;
+};

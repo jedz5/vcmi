@@ -49,6 +49,7 @@
 #include "gui/CGuiHandler.h"
 #include "CMT.h"
 #include "CServerHandler.h"
+#include "windows/CAdvmapInterface.h"
 
 #ifdef VCMI_ANDROID
 #include "lib/CAndroidVMHelper.h"
@@ -237,21 +238,23 @@ void CClient::serialize(BinaryDeserializer & h, const int version)
 		if(!vstd::contains(CSH->getAllClientPlayers(CSH->c->connectionID), pid))
 		{
 			logGlobal->trace("Player %s is not belong to this client. Destroying interface", pid);
+			nInt.reset();
 		}
 		else if(isHuman && !vstd::contains(CSH->getHumanColors(), pid))
 		{
 			logGlobal->trace("Player %s is no longer controlled by human. Destroying interface", pid);
+			nInt.reset();
 		}
 		else if(!isHuman && vstd::contains(CSH->getHumanColors(), pid))
 		{
 			logGlobal->trace("Player %s is no longer controlled by AI. Destroying interface", pid);
+			nInt.reset();
 		}
 		else
 		{
 			installNewPlayerInterface(nInt, pid);
 			continue;
 		}
-		nInt.reset();
 	}
 	logNetwork->trace("Loaded client part of save %d ms", CSH->th->getDiff());
 }
@@ -482,11 +485,17 @@ void CClient::battleStarted(const BattleInfo * info)
 	//If quick combat is not, do not prepare interfaces for battleint
 	if(!settings["adventure"]["quickCombat"].Bool())
 	{
-		if(vstd::contains(playerint, leftSide.color) && playerint[leftSide.color]->human)
+		if (vstd::contains(playerint, leftSide.color) && playerint[leftSide.color]->human) {
 			att = std::dynamic_pointer_cast<CPlayerInterface>(playerint[leftSide.color]);
-
-		if(vstd::contains(playerint, rightSide.color) && playerint[rightSide.color]->human)
+			LOCPLINT = att.get(); // when in hot-seat player1 rest and player2 was attacked by AI
+			GH.curInt = att.get();
+		}
+		if (vstd::contains(playerint, rightSide.color) && playerint[rightSide.color]->human) {
 			def = std::dynamic_pointer_cast<CPlayerInterface>(playerint[rightSide.color]);
+			LOCPLINT = def.get();
+			GH.curInt = def.get();
+		}
+			
 	}
 
 	if(!settings["session"]["headless"].Bool())
@@ -549,9 +558,19 @@ void CClient::battleFinished()
 	for(auto & side : gs->curB->sides)
 		if(battleCallbacks.count(side.color))
 			battleCallbacks[side.color]->setBattle(nullptr);
-
+	// when in hot-seat player1 rest and player2 was attacked by AI
+	if (vstd::contains(playerint, adventureInt->player) && playerint[adventureInt->player]->human) {
+		auto att = std::dynamic_pointer_cast<CPlayerInterface>(playerint[adventureInt->player]);
+		LOCPLINT = att.get();
+		GH.curInt = att.get();
+	}
 	if(settings["session"]["spectate"].Bool() && !settings["session"]["spectate-skip-battle"].Bool())
 		battleCallbacks[PlayerColor::SPECTATOR]->setBattle(nullptr);
+	if (adventureInt && adventureInt->selection)
+	{
+		int terrain = LOCPLINT->cb->getTile(adventureInt->selection->visitablePos())->terType;
+		CCS->musich->playMusicFromSet("terrain", terrain, true);
+	}
 }
 
 void CClient::startPlayerBattleAction(PlayerColor color)
@@ -646,6 +665,14 @@ PlayerColor CClient::getLocalPlayer() const
 }
 
 #ifdef VCMI_ANDROID
+extern "C" JNIEXPORT void JNICALL Java_eu_vcmi_vcmi_NativeMethods_notifyServerClosed(JNIEnv * env, jobject cls)
+{
+	logNetwork->info("Received server closed signal");
+	if (CSH) {
+		CSH->campaignServerRestartLock.setn(false);
+	}
+}
+
 extern "C" JNIEXPORT void JNICALL Java_eu_vcmi_vcmi_NativeMethods_notifyServerReady(JNIEnv * env, jobject cls)
 {
 	logNetwork->info("Received server ready signal");

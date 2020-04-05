@@ -28,7 +28,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -40,7 +40,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'" Label="Configuration">
@@ -75,29 +75,31 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(VCMI_Out)\AI\</OutDir>
+    <OutDir>..\..\..\..\VCMI\vcmi_devversionRD\AI</OutDir>
+    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;D:\python35\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(VCMI_Out)\AI\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|Win32'">
-    <OutDir>$(VCMI_Out)$(Configuration)\AI</OutDir>
-    <IncludePath>D:\project\boost_1_57_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;D:\project\fuzzylite;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\project\boost_1_57_0\lib32-msvc-14.0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;D:\project\fuzzylite\debug\bin;$(LibraryPath)</LibraryPath>
+    <OutDir>$(VCMI_Out)\AI</OutDir>
+    <IncludePath>D:\project\boost_1_72_0;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\include;D:\project\SDL2\include;D:\project\zlib128-dll\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\project\boost_1_72_0\lib32\vc14_x86\lib;D:\project\ffmpeg-20160418-git-13406b6-win32-dev\lib;D:\project\SDL2\lib\x86;D:\project\zlib128-dll\lib;D:\python35\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RD|x64'">
     <OutDir>$(VCMI_Out)\AI\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(FUZZYLITEDIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\project\vcmi\AI\FuzzyLite\fuzzylite</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <AdditionalOptions>/Zm210 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>VCMI_lib.lib;FuzzyLite.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libs;..\..;..</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\VCMI\vcmi_devversionRD\;D:\VCMI\vcmi_devversionRD\AI</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -119,11 +121,12 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>StdInc.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeaderOutputFile>$(VCMI_in)\PCHS\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <AdditionalDependencies>VCMI_lib.lib;FuzzyLite.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VCMI_Out)$(Configuration)\;$(VCMI_Out)$(Configuration)\AI</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VCMI_Out);$(VCMI_Out)\AI</AdditionalLibraryDirectories>
       <AdditionalOptions>/d2:-notypeopt %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
@@ -143,6 +146,7 @@
   <ItemGroup>
     <ClCompile Include="AIhelper.cpp" />
     <ClCompile Include="AIUtility.cpp" />
+    <ClCompile Include="ArmyManager.cpp" />
     <ClCompile Include="BuildingManager.cpp" />
     <ClCompile Include="FuzzyEngines.cpp" />
     <ClCompile Include="FuzzyHelper.cpp" />
@@ -170,10 +174,21 @@
     <ClCompile Include="Goals\Win.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapObjectsEvaluator.cpp" />
+    <ClInclude Include="ArmyManager.h" />
+    <ClInclude Include="Pathfinding\Actions\BattleAction.h" />
+    <ClInclude Include="Pathfinding\Actions\TownPortalAction.h" />
+    <ClCompile Include="Pathfinding\Actions\BattleAction.cpp" />
+    <ClCompile Include="Pathfinding\Actions\TownPortalAction.cpp" />
+    <ClInclude Include="Pathfinding\Actions\BoatActions.h" />
+    <ClCompile Include="Pathfinding\Actions\BoatActions.cpp" />
     <ClCompile Include="Pathfinding\AINodeStorage.cpp" />
     <ClCompile Include="Pathfinding\AIPathfinder.cpp" />
     <ClCompile Include="Pathfinding\AIPathfinderConfig.cpp" />
     <ClCompile Include="Pathfinding\PathfindingManager.cpp" />
+    <ClCompile Include="Pathfinding\Rules\AILayerTransitionRule.cpp" />
+    <ClCompile Include="Pathfinding\Rules\AIMovementAfterDestinationRule.cpp" />
+    <ClCompile Include="Pathfinding\Rules\AIMovementToDestinationRule.cpp" />
+    <ClCompile Include="Pathfinding\Rules\AIPreviousNodeRule.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="SectorMap.cpp" />
     <ClCompile Include="StdInc.cpp">
@@ -216,10 +231,15 @@
     <ClInclude Include="Goals\VisitTile.h" />
     <ClInclude Include="Goals\Win.h" />
     <ClInclude Include="MapObjectsEvaluator.h" />
+    <ClInclude Include="Pathfinding\Actions\ISpecialAction.h" />
     <ClInclude Include="Pathfinding\AINodeStorage.h" />
     <ClInclude Include="Pathfinding\AIPathfinder.h" />
     <ClInclude Include="Pathfinding\AIPathfinderConfig.h" />
     <ClInclude Include="Pathfinding\PathfindingManager.h" />
+    <ClInclude Include="Pathfinding\Rules\AILayerTransitionRule.h" />
+    <ClInclude Include="Pathfinding\Rules\AIMovementAfterDestinationRule.h" />
+    <ClInclude Include="Pathfinding\Rules\AIMovementToDestinationRule.h" />
+    <ClInclude Include="Pathfinding\Rules\AIPreviousNodeRule.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="SectorMap.h" />
     <ClInclude Include="StdInc.h" />

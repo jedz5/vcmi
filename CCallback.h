@@ -53,7 +53,7 @@ public:
 	//town
 	virtual void recruitHero(const CGObjectInstance *townOrTavern, const CGHeroInstance *hero)=0;
 	virtual bool buildBuilding(const CGTownInstance *town, BuildingID buildingID)=0;
-	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1)=0;
+	virtual void recruitCreatures(const CGDwelling *obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1,int daysCost = 0)=0;
 	virtual bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE)=0; //if newID==-1 then best possible upgrade will be made
 	virtual void swapGarrisonHero(const CGTownInstance *town)=0;
 
@@ -129,7 +129,7 @@ public:
 	bool swapArtifacts(const ArtifactLocation &l1, const ArtifactLocation &l2) override;
 	bool assembleArtifacts(const CGHeroInstance * hero, ArtifactPosition artifactSlot, bool assemble, ArtifactID assembleTo) override;
 	bool buildBuilding(const CGTownInstance *town, BuildingID buildingID) override;
-	void recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1) override;
+	void recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level=-1, int days = 0) override;
 	bool dismissCreature(const CArmedInstance *obj, SlotID stackPos) override;
 	bool upgradeCreature(const CArmedInstance *obj, SlotID stackPos, CreatureID newID=CreatureID::NONE) override;
 	void endTurn() override;
@@ -143,6 +143,7 @@ public:
 	void sendMessage(const std::string &mess, const CGObjectInstance * currentObject = nullptr) override;
 	void buildBoat(const IShipyard *obj) override;
 	void dig(const CGObjectInstance *hero) override;
+	void doOutpost(const CGObjectInstance *hero);
 	void castSpell(const CGHeroInstance *hero, SpellID spellID, const int3 &pos = int3(-1, -1, -1)) override;
 
 //friends

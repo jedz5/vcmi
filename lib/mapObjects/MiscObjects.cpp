@@ -25,6 +25,7 @@
 #include "../mapping/CMap.h"
 #include "../CPlayerState.h"
 #include "../serializer/JsonSerializeFormat.h"
+#include "../../CCallback.h"
 
 std::map <si32, std::vector<ObjectInstanceID> > CGMagi::eyelist;
 ui8 CGObelisk::obeliskCount = 0; //how many obelisks are on map
@@ -1279,12 +1280,8 @@ void CGWhirlpool::teleportDialogAnswered(const CGHeroInstance *hero, ui32 answer
 
 bool CGWhirlpool::isProtected(const CGHeroInstance * h)
 {
-	if(h->hasBonusOfType(Bonus::WHIRLPOOL_PROTECTION) ||
-		(h->stacksCount() == 1 && h->Slots().begin()->second->count == 1)) //we can't remove last unit
-	{
-		return true;
-	}
-	return false;
+	return h->hasBonusOfType(Bonus::WHIRLPOOL_PROTECTION)
+	|| (h->stacksCount() == 1 && h->Slots().begin()->second->count == 1);
 }
 
 void CGArtifact::initObj(CRandomGenerator & rand)
@@ -1827,7 +1824,7 @@ void CGGarrison::onHeroVisit (const CGHeroInstance *h) const
 	//New owner.
 	if (!ally)
 		cb->setOwner(this, h->tempOwner);
-
+		
 	cb->showGarrisonDialog(id, h->id, removableUnits);
 }
 
@@ -1857,7 +1854,73 @@ void CGGarrison::serializeJsonOptions(JsonSerializeFormat& handler)
 	serializeJsonOwner(handler);
 	CCreatureSet::serializeJson(handler, "army", 7);
 }
+void CGOutpost::onHeroVisit(const CGHeroInstance *h) const
+{
+	int ally = cb->gameState()->getPlayerRelations(h->tempOwner, tempOwner);
+	if (!ally) {
+		if (stacksCount() > 0)
+			//TODO: Find a way to apply magic garrison effects in battle.
+			cb->startBattleI(h, this);
+		else
+			cb->removeObject(this);
+		return;
+	}
 
+	if (!cb->gameState()->players[h->tempOwner].towns.size()) // no town any more
+		return;
+
+	HeroVisitOutpost vc;
+	vc.hid = h->id;
+	vc.tid = this->id;
+	vc.flags |= 1;
+	cb->sendAndApply(&vc);
+}
+
+bool CGOutpost::passableFor(PlayerColor player) const
+{
+	//FIXME: identical to same method in CGTownInstance
+
+	return true;
+}
+
+void CGOutpost::battleFinished(const CGHeroInstance *hero, const BattleResult &result) const
+{
+	if (result.winner == 0)
+		cb->removeObject(this);
+}
+void CGOutpost::afterAddToMap(CMap* map)
+{
+	map->outpostsOnMap.push_back(this);
+}
+void CGOutpost::updateDaysCost(CCallback* cb)
+{
+	const CGHeroInstance *h = *vstd::maxElementByFun(cb->getPlayer(tempOwner)->heroes, [](const CGHeroInstance* h1) {
+		return h1->level;
+	});
+	if (!h)
+		return;
+	CGHeroInstance* hh = const_cast<CGHeroInstance*>(h);
+	int3 tmp = h->getPosition();
+	hh->pos = pos + getVisitableOffset();
+	std::shared_ptr<CPathsInfo> paths = std::make_shared<CPathsInfo>(cb->getMapSize(), hh);
+	cb->calculatePaths(hh, *paths.get());
+	for (auto t : cb->getPlayer(tempOwner)->towns)
+	{
+		auto tn = paths->getNode(t->pos - int3(2, 0, 0));
+		int daysCost = (tn->turns + 1) / 2 + 1;
+		int3 tt = t->pos;
+
+		if (!daysToGo.count(t->pos) || daysToGo[t->pos] > daysCost)
+			daysToGo[t->pos] = daysCost;
+	}
+	hh->pos = tmp;
+}
+void CGOutpost::serializeJsonOptions(JsonSerializeFormat& handler)
+{
+	handler.serializeBool("inputUnits", inputUnits);
+	serializeJsonOwner(handler);
+	CCreatureSet::serializeJson(handler, "army", 7);
+}
 void CGMagi::reset()
 {
 	eyelist.clear();

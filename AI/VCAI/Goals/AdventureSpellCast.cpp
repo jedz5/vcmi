@@ -12,8 +12,8 @@
 #include "../VCAI.h"
 #include "../FuzzyHelper.h"
 #include "../AIhelper.h"
-#include "../../lib/mapping/CMap.h" //for victory conditions
-#include "../../lib/CPathfinder.h"
+#include "../../../lib/mapping/CMap.h" //for victory conditions
+#include "../../../lib/CPathfinder.h"
 
 extern boost::thread_specific_ptr<CCallback> cb;
 extern boost::thread_specific_ptr<VCAI> ai;
@@ -44,6 +44,9 @@ TSubgoal AdventureSpellCast::whatToDoToAchieve()
 	if(hero->mana < hero->getSpellCost(spell))
 		throw cannotFulfillGoalException("Hero has not enough mana to cast " + spell->name);
 
+	if(spellID == SpellID::TOWN_PORTAL && town && town->visitingHero)
+		throw cannotFulfillGoalException("The town is already occupied by " + town->visitingHero->name);
+
 	return iAmElementar();
 }
 
@@ -58,7 +61,6 @@ void AdventureSpellCast::accept(VCAI * ai)
 
 	cb->waitTillRealize = true;
 	cb->castSpell(hero.h, spellID, tile);
-	ai->ah->resetPaths();
 
 	if(town && spellID == SpellID::TOWN_PORTAL)
 	{

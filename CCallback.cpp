@@ -64,13 +64,13 @@ int CCallback::sendQueryReply(const JsonNode & reply, QueryID queryID)
 	return sendRequest(&pack);
 }
 
-void CCallback::recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level)
+void CCallback::recruitCreatures(const CGDwelling * obj, const CArmedInstance * dst, CreatureID ID, ui32 amount, si32 level, int daysCost)
 {
 	// TODO exception for neutral dwellings shouldn't be hardcoded
 	if(player != obj->tempOwner && obj->ID != Obj::WAR_MACHINE_FACTORY && obj->ID != Obj::REFUGEE_CAMP)
 		return;
 
-	RecruitCreatures pack(obj->id, dst->id, ID, amount, level);
+	RecruitCreatures pack(obj->id, dst->id, ID, amount, level,daysCost);
 	sendRequest(&pack);
 }
 
@@ -310,7 +310,12 @@ void CCallback::dig( const CGObjectInstance *hero )
 	dwh.id = hero->id;
 	sendRequest(&dwh);
 }
-
+void CCallback::doOutpost(const CGObjectInstance *hero)
+{
+	DoOutpost dop;
+	dop.id = hero->id;
+	sendRequest(&dop);
+}
 void CCallback::castSpell(const CGHeroInstance *hero, SpellID spellID, const int3 &pos)
 {
 	CastAdvSpell cas;

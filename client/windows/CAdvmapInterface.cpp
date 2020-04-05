@@ -462,7 +462,7 @@ void CTerrainRect::fadeFromCurrentView()
 	if (!fadeSurface)
 		fadeSurface = CSDL_Ext::newSurface(pos.w, pos.h);
 	SDL_BlitSurface(screen, &pos, fadeSurface, nullptr);
-	fadeAnim->init(CFadeAnimation::EMode::OUT, fadeSurface);
+	fadeAnim->init(CFadeAnimation::EMode::Fading_OUT, fadeSurface);
 }
 
 bool CTerrainRect::needsAnimUpdate()
@@ -568,6 +568,7 @@ CAdvMapInt::CAdvMapInt():
 	pos.x = pos.y = 0;
 	pos.w = screen->w;
 	pos.h = screen->h;
+	strongInterest = true; // handle all mouse move events to prevent dead mouse move space in fullscreen mode
 	townList.onSelect = std::bind(&CAdvMapInt::selectionChanged,this);
 	bg = BitmapHandler::loadBitmap(ADVOPT.mainGraphic);
 	if (ADVOPT.worldViewGraphic != "")
@@ -1029,6 +1030,11 @@ void CAdvMapInt::show(SDL_Surface * to)
 		return;
 
 	++animValHitCount; //for animations
+
+	if(animValHitCount % 2 == 0)
+	{
+		++heroAnim;
+	}
 	if(animValHitCount == 8)
 	{
 		CGI->mh->updateWater();
@@ -1036,7 +1042,6 @@ void CAdvMapInt::show(SDL_Surface * to)
 		++anim;
 		updateScreen = true;
 	}
-	++heroAnim;
 
 	if(swipeEnabled)
 	{
@@ -1450,7 +1455,8 @@ void CAdvMapInt::mouseMoved( const SDL_MouseMotionEvent & sEvent )
 #endif
 	// adventure map scrolling with mouse
 	// currently disabled in world view mode (as it is in OH3), but should work correctly if mode check is removed
-	if(!isCtrlKeyDown() &&  isActive() && mode == EAdvMapMode::NORMAL)
+	// don't scroll if there is no window in focus - these events don't seem to correspond to the actual mouse movement
+	if(!isCtrlKeyDown() && isActive() && sEvent.windowID != 0 && mode == EAdvMapMode::NORMAL)
 	{
 		if(sEvent.x<15)
 		{
@@ -1578,12 +1584,16 @@ void CAdvMapInt::tileLClicked(const int3 &mapPos)
 	//check if we can select this object
 	bool canSelect = topBlocking && topBlocking->ID == Obj::HERO && topBlocking->tempOwner == LOCPLINT->playerID;
 	canSelect |= topBlocking && topBlocking->ID == Obj::TOWN && LOCPLINT->cb->getPlayerRelations(LOCPLINT->playerID, topBlocking->tempOwner);
-
+	canSelect |= topBlocking && topBlocking->ID == Obj::OUTPOST && LOCPLINT->playerID == topBlocking->tempOwner;
 	if(selection->ID != Obj::HERO) //hero is not selected (presumably town)
 	{
 		assert(!terrain.currentPath); //path can be active only when hero is selected
-		if(selection == topBlocking) //selected town clicked
-			LOCPLINT->openTownWindow(static_cast<const CGTownInstance*>(topBlocking));
+		if (selection == topBlocking) { //selected town clicked
+			if (selection->ID == Obj::TOWN)
+				LOCPLINT->openTownWindow(static_cast<const CGTownInstance*>(topBlocking));
+			else
+				LOCPLINT->openOutpostWindow(static_cast<const CGOutpost*>(topBlocking));
+		}
 		else if(canSelect)
 			select(static_cast<const CArmedInstance*>(topBlocking), false);
 		return;
@@ -1755,6 +1765,8 @@ void CAdvMapInt::tileHovered(const int3 &mapPos)
 					CCS->curh->changeGraphic(ECursor::ADVENTURE, 3);
 				else if(objAtTile->ID == Obj::HERO && objRelations == PlayerRelations::SAME_PLAYER)
 					CCS->curh->changeGraphic(ECursor::ADVENTURE, 2);
+				else
+					CCS->curh->changeGraphic(ECursor::ADVENTURE, 0);
 			}
 			else
 				CCS->curh->changeGraphic(ECursor::ADVENTURE, 0);
@@ -1947,7 +1959,7 @@ CAdventureOptions::CAdventureOptions()
 
 	dig = std::make_shared<CButton>(Point(24, 139), "ADVDIG.DEF", CButton::tooltip(), [&](){ close(); }, SDLK_d);
 	if(const CGHeroInstance *h = adventureInt->curHero())
-		dig->addCallback(std::bind(&CPlayerInterface::tryDiggging, LOCPLINT, h));
+		dig->addCallback(std::bind(&CPlayerInterface::tryOutposting, LOCPLINT, h));
 	else
 		dig->block(true);
 }

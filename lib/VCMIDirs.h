@@ -12,6 +12,7 @@
 class DLL_LINKAGE IVCMIDirs
 {
 public:
+	std::string localpath = "myGame";
 	// Path to user-specific data directory
 	virtual boost::filesystem::path userDataPath() const = 0;
 
@@ -54,10 +55,10 @@ public:
 	// Creates not existed, but required directories.
 	// Updates directories what change name/path between versions.
 	// Function called automatically.
-	virtual void init();
+	virtual void init(std::string localData);
 };
 
 namespace VCMIDirs
 {
-	extern DLL_LINKAGE const IVCMIDirs & get();
+	extern DLL_LINKAGE const IVCMIDirs & get(std::string localData ="myGame");
 }

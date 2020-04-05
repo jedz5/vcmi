@@ -666,13 +666,13 @@ CTavernWindow::CTavernWindow(const CGObjectInstance * TavernObj)
 		recruit->addHoverText(CButton::NORMAL, CGI->generaltexth->tavernInfo[0]); //Cannot afford a Hero
 		recruit->block(true);
 	}
-	else if(LOCPLINT->castleInt && LOCPLINT->cb->howManyHeroes(true) >= VLC->modh->settings.MAX_HEROES_AVAILABLE_PER_PLAYER)
+	else if(LOCPLINT->cb->howManyHeroes(true) >= VLC->modh->settings.MAX_HEROES_AVAILABLE_PER_PLAYER)
 	{
 		//Cannot recruit. You already have %d Heroes.
 		recruit->addHoverText(CButton::NORMAL, boost::str(boost::format(CGI->generaltexth->tavernInfo[1]) % LOCPLINT->cb->howManyHeroes(true)));
 		recruit->block(true);
 	}
-	else if((!LOCPLINT->castleInt) && LOCPLINT->cb->howManyHeroes(false) >= VLC->modh->settings.MAX_HEROES_ON_MAP_PER_PLAYER)
+	else if(LOCPLINT->cb->howManyHeroes(false) >= VLC->modh->settings.MAX_HEROES_ON_MAP_PER_PLAYER)
 	{
 		//Cannot recruit. You already have %d Heroes.
 		recruit->addHoverText(CButton::NORMAL, boost::str(boost::format(CGI->generaltexth->tavernInfo[1]) % LOCPLINT->cb->howManyHeroes(false)));
@@ -925,6 +925,7 @@ CExchangeWindow::CExchangeWindow(ObjectInstanceID hero1, ObjectInstanceID hero2,
 	//garrison interface
 
 	garr = std::make_shared<CGarrisonInt>(69, 131, 4, Point(418,0), heroInst[0], heroInst[1], true, true);
+	garr->createSlots();
 	auto splitButtonCallback = [&](){ garr->splitClick(); };
 	garr->addSplitBtn(std::make_shared<CButton>( Point( 10, 132), "TSBTNS.DEF", CButton::tooltip(CGI->generaltexth->tcommands[3]), splitButtonCallback));
 	garr->addSplitBtn(std::make_shared<CButton>( Point(740, 132), "TSBTNS.DEF", CButton::tooltip(CGI->generaltexth->tcommands[3]), splitButtonCallback));
@@ -1341,6 +1342,7 @@ CGarrisonWindow::CGarrisonWindow(const CArmedInstance * up, const CGHeroInstance
 	OBJECT_CONSTRUCTION_CAPTURING(255-DISPOSE);
 
 	garr = std::make_shared<CGarrisonInt>(92, 127, 4, Point(0,96), up, down, removableUnits);
+	garr->createSlots();
 	{
 		auto split = std::make_shared<CButton>(Point(88, 314), "IDV6432.DEF", CButton::tooltip(CGI->generaltexth->tcommands[3], ""), [&](){ garr->splitClick(); } );
 		garr->addSplitBtn(split);
@@ -1414,6 +1416,7 @@ CHillFortWindow::CHillFortWindow(const CGHeroInstance * visitor, const CGObjectI
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(*background, Rect(8, pos.h - 26, pos.w - 16, 19), 8, pos.h - 26));
 
 	garr = std::make_shared<CGarrisonInt>(108, 60, 18, Point(), hero, nullptr);
+	garr->createSlots();
 	updateGarrisons();
 }
 

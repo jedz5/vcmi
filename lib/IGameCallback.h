@@ -62,10 +62,10 @@ public:
 	virtual void takeCreatures(ObjectInstanceID objid, const std::vector<CStackBasicDescriptor> &creatures) =0;
 	virtual bool changeStackCount(const StackLocation &sl, TQuantity count, bool absoluteValue = false) =0;
 	virtual bool changeStackType(const StackLocation &sl, const CCreature *c) =0;
-	virtual bool insertNewStack(const StackLocation &sl, const CCreature *c, TQuantity count = -1) =0; //count -1 => moves whole stack
+	virtual bool insertNewStack(const StackLocation &sl, const CCreature *c, TQuantity count = -1,int daysCost = 0) =0; //count -1 => moves whole stack
 	virtual bool eraseStack(const StackLocation &sl, bool forceRemoval = false) =0;
 	virtual bool swapStacks(const StackLocation &sl1, const StackLocation &sl2) =0;
-	virtual bool addToSlot(const StackLocation &sl, const CCreature *c, TQuantity count) =0; //makes new stack or increases count of already existing
+	virtual bool addToSlot(const StackLocation &sl, const CCreature *c, TQuantity count,int daysCost = 0) =0; //makes new stack or increases count of already existing
 	virtual void tryJoiningArmy(const CArmedInstance *src, const CArmedInstance *dst, bool removeObjWhenFinished, bool allowMerging) =0; //merges army from src do dst or opens a garrison window
 	virtual bool moveStack(const StackLocation &src, const StackLocation &dst, TQuantity count) = 0;
 

@@ -157,7 +157,15 @@ void HeroVisitCastle::applyCl(CClient *cl)
 		callInterfaceIfPresent(cl, h->tempOwner, &IGameEventsReceiver::heroVisitsTown, h, GS(cl)->getTown(tid));
 	}
 }
+void HeroVisitOutpost::applyCl(CClient *cl)
+{
+	const CGHeroInstance *h = cl->getHero(hid);
 
+	if (start())
+	{
+		callInterfaceIfPresent(cl, h->tempOwner, &IGameEventsReceiver::heroVisitsOutpost, h, tid);
+	}
+}
 void ChangeSpells::applyCl(CClient *cl)
 {
 	//TODO: inform interface?

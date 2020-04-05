@@ -54,8 +54,8 @@ enum class EWorldViewIcon
 enum class EMapObjectFadingType
 {
 	NONE,
-	IN,
-	OUT
+	Fading_IN,
+	Fading_OUT
 };
 
 enum class EMapAnimRedrawStatus

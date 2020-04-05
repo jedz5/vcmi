@@ -13,24 +13,11 @@
 #include "../../../lib/CPathfinder.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../AIUtility.h"
+#include "../FuzzyHelper.h"
 #include "../Goals/AbstractGoal.h"
+#include "Actions/ISpecialAction.h"
 
 struct AIPathNode;
-
-class ISpecialAction
-{
-public:
-	virtual Goals::TSubgoal whatToDo(HeroPtr hero) const = 0;
-
-	virtual void applyOnDestination(
-		HeroPtr hero,
-		CDestinationNodeInfo & destination,
-		const PathNodeInfo & source,
-		AIPathNode * dstMode,
-		const AIPathNode * srcNode) const
-	{
-	}
-};
 
 struct AIPathNode : public CGPathNode
 {
@@ -52,6 +39,7 @@ struct AIPath
 {
 	std::vector<AIPathNodeInfo> nodes;
 	std::shared_ptr<const ISpecialAction> specialAction;
+	uint64_t targetObjectDanger;
 
 	AIPath();
 
@@ -73,7 +61,10 @@ private:
 
 	/// 1-3 - position on map, 4 - layer (air, water, land), 5 - chain (normal, battle, spellcast and combinations)
 	boost::multi_array<AIPathNode, 5> nodes;
+	const CPlayerSpecificInfoCallback * cb;
+	const VCAI * ai;
 	const CGHeroInstance * hero;
+	std::unique_ptr<FuzzyHelper> dangerEvaluator;
 
 	STRONG_INLINE
 	void resetTile(const int3 & tile, EPathfindingLayer layer, CGPathNode::EAccessibility accessibility);
@@ -113,14 +104,19 @@ public:
 	bool isBattleNode(const CGPathNode * node) const;
 	bool hasBetterChain(const PathNodeInfo & source, CDestinationNodeInfo & destination) const;
 	boost::optional<AIPathNode *> getOrCreateNode(const int3 & coord, const EPathfindingLayer layer, int chainNumber);
-	std::vector<AIPath> getChainInfo(int3 pos, bool isOnLand) const;
+	std::vector<AIPath> getChainInfo(const int3 & pos, bool isOnLand) const;
 	bool isTileAccessible(const int3 & pos, const EPathfindingLayer layer) const;
 
-	void setHero(HeroPtr heroPtr);
+	void setHero(HeroPtr heroPtr, const VCAI * ai);
 
 	const CGHeroInstance * getHero() const
 	{
 		return hero;
+	}
+
+	uint64_t evaluateDanger(const int3 &  tile) const
+	{
+		return dangerEvaluator->evaluateDanger(tile, hero, ai);
 	}
 
 private:
