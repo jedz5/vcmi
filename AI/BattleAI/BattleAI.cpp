@@ -652,5 +652,320 @@ boost::optional<BattleAction> CBattleAI::considerFleeingOrSurrendering()
 	return boost::none;
 }
 
+CGeniusAI::CGeniusAI()
+	: CBattleAI()
+{
+}
+
+CGeniusAI::~CGeniusAI()
+{
+	if (cb)
+	{
+		//Restore previous state of CB - it may be shared with the main AI (like VCAI)
+		cb->waitTillRealize = wasWaitingForRealize;
+		cb->unlockGsWhenWaiting = wasUnlockingGs;
+	}
+}
+
+bool start = true;
+bool bank = false;
+const CStack* startStack;
+BattleAction CGeniusAI::activeStack(const CStack * stack)
+{
+	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
+	setCbc(cb); //TODO: make solid sure that AIs always use their callbacks (need to take care of event handlers too)
+	try
+	{
+		if (stack->type->idNumber == CreatureID::CATAPULT)
+			return useCatapult(stack);
+		if (stack->hasBonusOfType(Bonus::SIEGE_WEAPON) && stack->hasBonusOfType(Bonus::HEALER))
+		{
+			auto healingTargets = cb->battleGetStacks(CBattleInfoEssentials::ONLY_MINE);
+			std::map<int, const CStack*> woundHpToStack;
+			for (auto stack : healingTargets)
+				if (auto woundHp = stack->MaxHealth() - stack->getFirstHPleft())
+					woundHpToStack[woundHp] = stack;
+			if (woundHpToStack.empty())
+				return BattleAction::makeDefend(stack);
+			else
+				return BattleAction::makeHeal(stack, woundHpToStack.rbegin()->second); //last element of the woundHpToStack is the most wounded stack
+		}
+
+		attemptCastingSpell();
+
+		if (auto ret = getCbc()->battleIsFinished())
+		{
+			//spellcast may finish battle
+			//send special preudo-action
+			BattleAction cancel;
+			cancel.actionType = EActionType::CANCEL;
+			return cancel;
+		}
+
+		if (auto action = considerFleeingOrSurrendering())
+			return *action;
+
+
+		//evaluate casting spell for spellcasting stack
+		boost::optional<PossibleSpellcast> bestSpellcast(boost::none);
+		//TODO: faerie dragon type spell should be selected by server
+		SpellID creatureSpellToCast = cb->battleGetRandomStackSpell(CRandomGenerator::getDefault(), stack, CBattleInfoCallback::RANDOM_AIMED);
+		if (stack->hasBonusOfType(Bonus::SPELLCASTER) && stack->canCast() && creatureSpellToCast != SpellID::NONE)
+		{
+			const CSpell * spell = creatureSpellToCast.toSpell();
+
+			if (spell->canBeCast(getCbc().get(), spells::Mode::CREATURE_ACTIVE, stack))
+			{
+				std::vector<PossibleSpellcast> possibleCasts;
+				spells::BattleCast temp(getCbc().get(), stack, spells::Mode::CREATURE_ACTIVE, spell);
+				for (auto & target : temp.findPotentialTargets())
+				{
+					PossibleSpellcast ps;
+					ps.dest = target;
+					ps.spell = spell;
+					evaluateCreatureSpellcast(stack, ps);
+					possibleCasts.push_back(ps);
+				}
+
+				std::sort(possibleCasts.begin(), possibleCasts.end(), [&](const PossibleSpellcast & lhs, const PossibleSpellcast & rhs) { return lhs.value > rhs.value; });
+				if (!possibleCasts.empty() && possibleCasts.front().value > 0)
+				{
+					bestSpellcast = boost::optional<PossibleSpellcast>(possibleCasts.front());
+				}
+			}
+		}
+		//best action is from effective owner point if view, we are effective owner as we received "activeStack"		
+		if (start) {
+			bank = !(stack->getPosition().getX() == 1 || stack->occupiedHex().getX() == 1);  //if in creature bank then just fight
+			startStack = stack;
+		}
+		HypotheticBattle hb(getCbc());
+		auto reachability = hb.getReachability(stack);
+		auto hexes = hb.battleGetAvailableHexes(reachability, stack);
+		auto goNorthWest = [=]() -> BattleAction {
+			auto reachability = cb->getReachability(stack);
+			if (stack->position != BattleHex(2, 0) && stack->occupiedHex() != BattleHex(2, 0) && vstd::contains(hexes, BattleHex(2, 0)))
+				return BattleAction::makeMove(stack, BattleHex(2, 0));
+			else if (stack->position != BattleHex(2, 1) && stack->occupiedHex() != BattleHex(2, 1) && vstd::contains(hexes, BattleHex(2, 1)))
+				return BattleAction::makeMove(stack, BattleHex(2, 1));
+			else if (stack->position != BattleHex(1, 1) && stack->occupiedHex() != BattleHex(1, 1) && vstd::contains(hexes, BattleHex(1, 1)))
+				return BattleAction::makeMove(stack, BattleHex(1, 1));
+			else if (stack->position == BattleHex(2, 0) || stack->occupiedHex() == BattleHex(2, 0) || stack->position == BattleHex(2, 1) || stack->occupiedHex() == BattleHex(2, 1) || stack->position == BattleHex(1, 1) || stack->occupiedHex() == BattleHex(1, 1))
+				return BattleAction::makeDefend(stack);
+			else {
+				auto isNorthWester = [](BattleHex p1, BattleHex p2) -> bool {
+					if (p1.getX() < p2.getX())
+						return true;
+					else if (p1.getX() == p2.getX())
+						return p1.getY() <= p2.getY();
+					else
+						return false;
+				};
+
+				BattleHex dest = *std::min_element(hexes.begin(), hexes.end(), isNorthWester);
+				if (dest != stack->position && stack->occupiedHex() != dest)
+					return goTowards(stack, dest);
+				else
+					return BattleAction::makeDefend(stack);
+			}
+
+
+		};
+		auto melee = cb->battleGetStacksIf([=](const CStack * s) {
+			return s->isValidTarget(false) && s->side && !s->getCreature()->isShooting();
+		});
+		const bool tacticPhase = getCbc()->battleTacticDist() && getCbc()->battleGetTacticsSide() == stack->unitSide();
+		if (tacticPhase) {
+			if (start || stack != startStack) {
+				PotentialTargets targets(stack, &hb);
+				if (melee.size() == 0) {
+					if (stack->isShooter()) {
+						BattleAction ba;
+						ba.side = side;
+						ba.actionType = EActionType::NO_ACTION;
+						return ba;
+					}
+					auto dists = getCbc()->battleGetDistances(stack, stack->getPosition());
+					if (!targets.unreachableEnemies.empty())
+					{
+						const EnemyInfo &ei = *range::min_element(targets.unreachableEnemies, std::bind(isCloser, _1, _2, std::ref(dists)));
+						if (distToNearestNeighbour(ei.s->getPosition(), dists) < GameConstants::BFIELD_SIZE)
+						{
+							return goTowards(stack, ei.s->getPosition());
+						}
+					}
+				}
+				else {
+					if (!stack->isShooter())
+						return goNorthWest();
+					else {
+						BattleAction ba;
+						ba.side = side;
+						ba.actionType = EActionType::NO_ACTION;
+						return ba;
+					}
+				}
+			}
+			else {
+				return BattleAction::makeEndOFTacticPhase(side);
+			}
+
+		}
+		start = false;
+		//protect archer in no bank situation
+		if (!bank && melee.size() > 0 && !stack->isShooter() && stack->getCount() < 3 && stack->level() < 5)
+		{
+			return goNorthWest();
+		}
+		PotentialTargets targets(stack, &hb);
+		if (targets.possibleAttacks.size())
+		{
+			auto hlp = targets.bestAction();
+			if (bestSpellcast.is_initialized() && bestSpellcast->value > hlp.damageDiff())
+				return BattleAction::makeCreatureSpellcast(stack, bestSpellcast->dest, bestSpellcast->spell->id);
+			if (hlp.attack.shooting) {
+				if (bank)
+					return BattleAction::makeShotAttack(stack, hlp.attack.defender);
+				else if (!stack->moved() && !stack->waited() && hlp.attack.defender->getPosition().getX() > 7 && !hlp.attack.defender->moved() && !hlp.attack.defender->canShoot())
+				{
+					return BattleAction::makeWait(stack);
+				}
+				else
+				{
+					return BattleAction::makeShotAttack(stack, hlp.attack.defender);
+				}
+			}
+			else if (bestSpellcast.is_initialized())
+			{
+				return BattleAction::makeCreatureSpellcast(stack, bestSpellcast->dest, bestSpellcast->spell->id);
+			}
+			else {
+
+				PotentialTargets enemyTargets(hlp.attack.defender, &hb);
+				auto isImportant = [=]() {
+					auto important = boost::find_if(enemyTargets.possibleAttacks, [=](AttackPossibility ap) {
+						return ((ap.attack.attacker->isShooter() && !getCbc()->battleHasShootingPenalty(ap.attack.attacker, ap.attack.defender->getPosition()))
+							|| ap.attack.defender->isShooter()
+							|| ap.attack.attacker->getPosition().getX() <= 7);
+					});
+					if (important != enemyTargets.possibleAttacks.end())
+						return true;
+					return false;
+				};
+				if (bank)
+					return BattleAction::makeMeleeAttack(stack, hlp.attack.defender->getPosition(), hlp.tile);
+				else if ((enemyTargets.possibleAttacks.size() > 0 && isImportant())) //melee.size()==0 || 
+				{
+					return BattleAction::makeMeleeAttack(stack, hlp.attack.defender->getPosition(), hlp.tile);
+				}
+				else
+				{
+					if (stack->waited())
+					{
+						return goNorthWest();
+					}
+					else
+					{
+						if (!stack->moved())
+							return BattleAction::makeWait(stack);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (stack->waited())
+			{
+				if (melee.size())
+					return goNorthWest();
+				//ThreatMap threatsToUs(stack); // These lines may be usefull but they are't used in the code.
+				auto dists = getCbc()->battleGetDistances(stack, stack->getPosition());
+				if (!targets.unreachableEnemies.empty())
+				{
+					const EnemyInfo &ei = *range::min_element(targets.unreachableEnemies, std::bind(isCloser, _1, _2, std::ref(dists)));
+					if (distToNearestNeighbour(ei.s->getPosition(), dists) < GameConstants::BFIELD_SIZE)
+					{
+						return goTowards(stack, ei.s->getPosition());
+					}
+				}
+			}
+			else
+			{
+				if (!stack->moved())
+					return BattleAction::makeWait(stack);
+			}
+		}
+	}
+	catch (boost::thread_interrupted &)
+	{
+		throw;
+	}
+	catch (std::exception &e)
+	{
+		logAi->error("Exception occurred in %s %s", __FUNCTION__, e.what());
+	}
+	return BattleAction::makeDefend(stack);
+}
+
+BattleAction CGeniusAI::goTowards(const CStack * stack, BattleHex destination)
+{
+	if (!destination.isValid())
+	{
+		logAi->error("CGeniusAI::goTowards: invalid destination");
+		return BattleAction::makeDefend(stack);
+	}
+
+	auto reachability = cb->getReachability(stack);
+	auto avHexes = cb->battleGetAvailableHexes(reachability, stack);
+
+	if (vstd::contains(avHexes, destination))
+		return BattleAction::makeMove(stack, destination);
+	auto destNeighbours = destination.neighbouringTiles();
+	if (vstd::contains_if(destNeighbours, [&](BattleHex n) { return stack->coversPos(destination); }))
+	{
+		logAi->warn("Warning: already standing on neighbouring tile!");
+		//We shouldn't even be here...
+		return BattleAction::makeDefend(stack);
+	}
+	vstd::erase_if(destNeighbours, [&](BattleHex hex) { return !reachability.accessibility.accessible(hex, stack); });
+	if (!avHexes.size() || !destNeighbours.size()) //we are blocked or dest is blocked
+	{
+		return BattleAction::makeDefend(stack);
+	}
+	if (stack->hasBonusOfType(Bonus::FLYING))
+	{
+		// Flying stack doesn't go hex by hex, so we can't backtrack using predecessors.
+		// We just check all available hexes and pick the one closest to the target.
+		auto distToDestNeighbour = [&](BattleHex hex) -> int
+		{
+			auto nearestNeighbourToHex = vstd::minElementByFun(destNeighbours, [&](BattleHex a)
+			{return BattleHex::getDistance(a, hex); });
+			return BattleHex::getDistance(*nearestNeighbourToHex, hex);
+		};
+		auto nearestAvailableHex = vstd::minElementByFun(avHexes, distToDestNeighbour);
+		return BattleAction::makeMove(stack, *nearestAvailableHex);
+	}
+	else
+	{
+		BattleHex bestNeighbor = destination;
+		if (distToNearestNeighbour(destination, reachability.distances, &bestNeighbor) > GameConstants::BFIELD_SIZE)
+		{
+			return BattleAction::makeDefend(stack);
+		}
+		BattleHex currentDest = bestNeighbor;
+		while (1)
+		{
+			if (!currentDest.isValid())
+			{
+				logAi->error("CGeniusAI::goTowards: internal error");
+				return BattleAction::makeDefend(stack);
+			}
+
+			if (vstd::contains(avHexes, currentDest))
+				return BattleAction::makeMove(stack, currentDest);
+			currentDest = reachability.predecessors[currentDest];
+		}
+	}
+}
 
 

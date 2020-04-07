@@ -31,3 +31,8 @@ extern "C" DLL_EXPORT void GetNewBattleAI(std::shared_ptr<CBattleGameInterface> 
 {
 	out = std::make_shared<CBattleAI>();
 }
+
+extern "C" DLL_EXPORT void GetNewGeniusAI(std::shared_ptr<CBattleGameInterface> &out)
+{
+	out = std::make_shared<CGeniusAI>();
+}

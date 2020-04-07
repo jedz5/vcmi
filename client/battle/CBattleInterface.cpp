@@ -855,7 +855,8 @@ void CBattleInterface::doAutoFight() {
 	curInt->isAutoFightOn = true;
 	blockUI(true);
 
-	auto ai = CDynLibHandler::getNewBattleAI(settings["server"]["friendlyAI"].String());
+	//auto ai = CDynLibHandler::getNewBattleAI(settings["server"]["friendlyAI"].String());
+	auto ai = CDynLibHandler::getNewBattleAI("BattleAI", "GetNewGeniusAI");
 	ai->init(curInt->cb);
 	ai->battleStart(army1, army2, int3(0, 0, 0), attackingHeroInstance, defendingHeroInstance, curInt->cb->battleGetMySide());
 	curInt->autofightingAI = ai;

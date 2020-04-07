@@ -121,9 +121,9 @@ std::shared_ptr<CGlobalAI> CDynLibHandler::getNewAI(std::string dllname)
 	return createAnyAI<CGlobalAI>(dllname, "GetNewAI");
 }
 
-std::shared_ptr<CBattleGameInterface> CDynLibHandler::getNewBattleAI(std::string dllname)
+std::shared_ptr<CBattleGameInterface> CDynLibHandler::getNewBattleAI(std::string dllname, std::string funcName)
 {
-	return createAnyAI<CBattleGameInterface>(dllname, "GetNewBattleAI");
+	return createAnyAI<CBattleGameInterface>(dllname, funcName);
 }
 
 std::shared_ptr<CScriptingModule> CDynLibHandler::getNewScriptingModule(std::string dllname)

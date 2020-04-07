@@ -48,6 +48,7 @@ struct CurrentOffensivePotential
 
 class CBattleAI : public CBattleGameInterface
 {
+protected:
 	int side;
 	std::shared_ptr<CBattleCallback> cb;
 
@@ -81,4 +82,15 @@ public:
 	void print(const std::string &text) const;
 	BattleAction useCatapult(const CStack *stack);
 	void battleStart(const CCreatureSet * army1, const CCreatureSet * army2, int3 tile, const CGHeroInstance * hero1, const CGHeroInstance * hero2, bool Side) override;
+};
+class CGeniusAI : public CBattleAI
+{
+
+public:
+	CGeniusAI();
+	~CGeniusAI();
+
+	BattleAction activeStack(const CStack * stack) override; //called when it's turn of that stack
+	BattleAction goTowards(const CStack * stack, BattleHex hex);
+
 };

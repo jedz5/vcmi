@@ -104,7 +104,7 @@ class DLL_LINKAGE CDynLibHandler
 {
 public:
 	static std::shared_ptr<CGlobalAI> getNewAI(std::string dllname);
-	static std::shared_ptr<CBattleGameInterface> getNewBattleAI(std::string dllname);
+	static std::shared_ptr<CBattleGameInterface> getNewBattleAI(std::string dllname,std::string funcName = "GetNewBattleAI");
 	static std::shared_ptr<CScriptingModule> getNewScriptingModule(std::string dllname);
 };
 
