@@ -75,7 +75,7 @@ struct CasualtiesAfterBattle
 	void updateArmy(CGameHandler *gh);
 };
 
-class CGameHandler : public IGameCallback, CBattleInfoCallback
+class CGameHandler : public IGameCallback, public CBattleInfoCallback
 {
 	CVCMIServer * lobby;
 	std::shared_ptr<CApplier<CBaseForGHApply>> applier;

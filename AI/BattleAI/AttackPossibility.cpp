@@ -9,7 +9,7 @@
  */
 #include "StdInc.h"
 #include "AttackPossibility.h"
-
+#include "../../lib/CStack.h"
 AttackPossibility::AttackPossibility(BattleHex tile_, const BattleAttackInfo & attack_)
 	: tile(tile_),
 	attack(attack_)
@@ -74,7 +74,23 @@ AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & attackInf
 		vstd::amin(retaliation.second, ap.attackerState->getAvailableHealth());
 
 		ap.damageDealt += (attackDmg.first + attackDmg.second) / 2;
+		//multiple-hex normal attack
+		std::set<const CStack*> attackedCreatures = getCbc()->getAttackedCreatures(getCbc()->battleGetStackByPos(ap.attack.attacker->getPosition()) , hex, ap.attack.shooting); //creatures other than primary target
 
+		for (const CStack * stack : attackedCreatures)
+		{
+			if (ap.attack.defender != stack && stack->alive()) //do not hit same stack twice
+			{
+				auto attackDmg = getCbc()->battleEstimateDamage(ap.attack, &retaliation);
+
+				vstd::amin(attackDmg.first, defenderState->getAvailableHealth());
+				vstd::amin(attackDmg.second, defenderState->getAvailableHealth());
+				if(stack->side != ap.attack.attacker->unitSide())
+					ap.damageDealt += (attackDmg.first + attackDmg.second) / 2;
+				else
+					ap.damageDealt -= (attackDmg.first + attackDmg.second) / 2;
+			}
+		}
 		ap.attackerState->afterAttack(attackInfo.shooting, false);
 
 		//FIXME: use ranged retaliation

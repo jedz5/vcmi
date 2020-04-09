@@ -91,6 +91,8 @@ bool mapSorter::operator()(const std::shared_ptr<CMapInfo> aaa, const std::share
 			return boost::ilexicographical_compare(a->name, b->name);
 		case _fileName: //by filename
 			return boost::ilexicographical_compare(aaa->fileURI, bbb->fileURI);
+		case _date:
+			return aaa->localtime > bbb->localtime;
 		default:
 			return boost::ilexicographical_compare(a->name, b->name);
 		}
@@ -150,12 +152,12 @@ SelectionTab::SelectionTab(ESelectionScreen Type)
 		tabTitle = CGI->generaltexth->arraytxt[229];
 		break;
 	case ESelectionScreen::loadGame:
-		generalSortingBy = ESortBy::_fileName;
+		generalSortingBy = ESortBy::_date;
 		tabTitle = CGI->generaltexth->arraytxt[230];
 		break;
 	case ESelectionScreen::saveGame:
 		positionsToShow = 16;
-		generalSortingBy = ESortBy::_fileName;
+		generalSortingBy = ESortBy::_date;
 		tabTitle = CGI->generaltexth->arraytxt[231];
 		break;
 	case ESelectionScreen::campaignList:

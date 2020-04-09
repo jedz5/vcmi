@@ -35,7 +35,7 @@ COutpostInterface::COutpostInterface(const CGOutpost * oop, const CGHeroInstance
 {
 	OBJECT_CONSTRUCTION_CAPTURING(255 - DISPOSE);
 	op = const_cast<CGOutpost*>(oop);
-	op->updateDaysCost(LOCPLINT->cb.get());
+	op->updateDaysCost(visitingHero);
 	addUsedEvents(KEYBOARD);
 	town = to;
 	//builds = std::make_shared<CCastleBuildings>(town);

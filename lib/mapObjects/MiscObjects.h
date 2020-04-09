@@ -191,7 +191,7 @@ public:
 	void onHeroVisit(const CGHeroInstance * h) const override;
 	void battleFinished(const CGHeroInstance *hero, const BattleResult &result) const override;
 	void afterAddToMap(CMap * map) override;
-	void updateDaysCost(CCallback* cb);
+	void updateDaysCost(const CGHeroInstance * h);
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		h & static_cast<CArmedInstance&>(*this);

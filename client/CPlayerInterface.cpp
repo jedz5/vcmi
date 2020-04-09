@@ -86,7 +86,7 @@ void processCommand(const std::string &message, CClient *&client);
 extern std::queue<SDL_Event> events;
 extern boost::mutex eventsM;
 boost::recursive_mutex * CPlayerInterface::pim = new boost::recursive_mutex;
-
+int CPlayerInterface::firstCall = 1;
 CPlayerInterface * LOCPLINT;
 
 CBattleInterface * CPlayerInterface::battleInt;

@@ -92,5 +92,5 @@ public:
 
 	BattleAction activeStack(const CStack * stack) override; //called when it's turn of that stack
 	BattleAction goTowards(const CStack * stack, BattleHex hex);
-
+	void attemptCastingSpell();
 };

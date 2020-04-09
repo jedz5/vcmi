@@ -16,7 +16,7 @@ class CLabel;
 
 enum ESortBy
 {
-	_playerAm, _size, _format, _name, _viccon, _loscon, _numOfMaps, _fileName
+	_playerAm, _size, _format, _name, _viccon, _loscon, _numOfMaps, _fileName,_date
 }; //_numOfMaps is for campaigns
 
 /// Class which handles map sorting by different criteria

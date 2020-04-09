@@ -19,7 +19,7 @@
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/CStack.h"//todo: remove
-
+#include "../../lib/CConfigHandler.h"
 #define LOGL(text) print(text)
 #define LOGFL(text, formattingEl) print(boost::str(boost::format(text) % formattingEl))
 
@@ -967,5 +967,294 @@ BattleAction CGeniusAI::goTowards(const CStack * stack, BattleHex destination)
 		}
 	}
 }
+void CGeniusAI::attemptCastingSpell()
+{
+	auto hero = cb->battleGetMyHero();
+	if (!hero)
+		return;
+	if (!settings["adventure"]["useMagic"].Bool())
+		return;
+	if (cb->battleCanCastSpell(hero, spells::Mode::HERO) != ESpellCastProblem::OK)
+		return;
 
+	LOGL("Casting spells sounds like fun. Let's see...");
+	//Get all spells we can cast
+	std::vector<const CSpell*> possibleSpells;
+	vstd::copy_if(VLC->spellh->objects, std::back_inserter(possibleSpells), [hero](const CSpell *s) -> bool
+	{
+		return s->canBeCast(getCbc().get(), spells::Mode::HERO, hero);
+	});
+	LOGFL("I can cast %d spells.", possibleSpells.size());
+
+	vstd::erase_if(possibleSpells, [](const CSpell *s)
+	{
+		return spellType(s) != SpellTypes::BATTLE;
+	});
+
+	LOGFL("I know how %d of them works.", possibleSpells.size());
+
+	//Get possible spell-target pairs
+	std::vector<PossibleSpellcast> possibleCasts;
+	for (auto spell : possibleSpells)
+	{
+		spells::BattleCast temp(getCbc().get(), hero, spells::Mode::HERO, spell);
+
+		for (auto & target : temp.findPotentialTargets())
+		{
+			PossibleSpellcast ps;
+			ps.dest = target;
+			ps.spell = spell;
+			possibleCasts.push_back(ps);
+		}
+	}
+	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
+	if (possibleCasts.empty())
+		return;
+
+	using ValueMap = PossibleSpellcast::ValueMap;
+
+	auto evaluateQueue = [&](ValueMap & values, const std::vector<battle::Units> & queue, HypotheticBattle * state, size_t minTurnSpan, bool * enemyHadTurnOut) -> bool
+	{
+		bool firstRound = true;
+		bool enemyHadTurn = false;
+		size_t ourTurnSpan = 0;
+
+		bool stop = false;
+
+		for (auto & round : queue)
+		{
+			if (!firstRound)
+				state->nextRound(0);//todo: set actual value?
+			for (auto unit : round)
+			{
+				if (!vstd::contains(values, unit->unitId()))
+					values[unit->unitId()] = 0;
+
+				if (!unit->alive())
+					continue;
+
+				if (state->battleGetOwner(unit) != playerID)
+				{
+					enemyHadTurn = true;
+
+					if (!firstRound || state->battleCastSpells(unit->unitSide()) == 0)
+					{
+						//enemy could counter our spell at this point
+						//anyway, we do not know what enemy will do
+						//just stop evaluation
+						stop = true;
+						break;
+					}
+				}
+				else if (!enemyHadTurn)
+				{
+					ourTurnSpan++;
+				}
+
+				state->nextTurn(unit->unitId());
+
+				PotentialTargets pt(unit, state);
+
+				if (!pt.possibleAttacks.empty())
+				{
+					AttackPossibility ap = pt.bestAction();
+
+					auto swb = state->getForUpdate(unit->unitId());
+					*swb = *ap.attackerState;
+
+					if (ap.damageDealt > 0)
+						swb->removeUnitBonus(Bonus::UntilAttack);
+					if (ap.damageReceived > 0)
+						swb->removeUnitBonus(Bonus::UntilBeingAttacked);
+
+					for (auto affected : ap.affectedUnits)
+					{
+						swb = state->getForUpdate(affected->unitId());
+						*swb = *affected;
+
+						if (ap.damageDealt > 0)
+							swb->removeUnitBonus(Bonus::UntilBeingAttacked);
+						if (ap.damageReceived > 0 && ap.attack.defender->unitId() == affected->unitId())
+							swb->removeUnitBonus(Bonus::UntilAttack);
+					}
+				}
+
+				auto bav = pt.bestActionValue();
+
+				//best action is from effective owner`s point if view, we need to convert to our point if view
+				if (state->battleGetOwner(unit) != playerID)
+					bav = -bav;
+				values[unit->unitId()] += bav;
+			}
+
+			firstRound = false;
+
+			if (stop)
+				break;
+		}
+
+		if (enemyHadTurnOut)
+			*enemyHadTurnOut = enemyHadTurn;
+
+		return ourTurnSpan >= minTurnSpan;
+	};
+
+	RNGStub rngStub;
+
+	ValueMap valueOfStack;
+	ValueMap healthOfStack;
+
+	TStacks all = cb->battleGetAllStacks(false);
+
+	size_t ourRemainingTurns = 0;
+
+	for (auto unit : all)
+	{
+		healthOfStack[unit->unitId()] = unit->getAvailableHealth();
+		valueOfStack[unit->unitId()] = 0;
+
+		if (cb->battleGetOwner(unit) == playerID && unit->canMove() && !unit->moved())
+			ourRemainingTurns++;
+	}
+
+	LOGFL("I have %d turns left in this round", ourRemainingTurns);
+
+	const bool castNow = ourRemainingTurns <= 1;
+
+	if (castNow)
+		print("I should try to cast a spell now");
+	else
+		print("I could wait better moment to cast a spell");
+
+	auto amount = all.size();
+
+	std::vector<battle::Units> turnOrder;
+
+	cb->battleGetTurnOrder(turnOrder, amount, 2); //no more than 1 turn after current, each unit at least once
+
+	{
+		bool enemyHadTurn = false;
+
+		HypotheticBattle state(cb);
+		evaluateQueue(valueOfStack, turnOrder, &state, 0, &enemyHadTurn);
+
+		if (!enemyHadTurn)
+		{
+			auto battleIsFinishedOpt = state.battleIsFinished();
+
+			if (battleIsFinishedOpt)
+			{
+				print("No need to cast a spell. Battle will finish soon.");
+				return;
+			}
+		}
+	}
+
+	auto evaluateSpellcast = [&](PossibleSpellcast * ps)
+	{
+		HypotheticBattle state(cb);
+
+		spells::BattleCast cast(&state, hero, spells::Mode::HERO, ps->spell);
+		cast.target = ps->dest;
+		cast.cast(&state, rngStub);
+		ValueMap newHealthOfStack;
+		ValueMap newValueOfStack;
+
+		size_t ourUnits = 0;
+
+		for (auto unit : all)
+		{
+			auto unitId = unit->unitId();
+			auto localUnit = state.battleGetUnitByID(unitId);
+
+			newHealthOfStack[unitId] = localUnit->getAvailableHealth();
+			newValueOfStack[unitId] = 0;
+
+			if (state.battleGetOwner(localUnit) == playerID && localUnit->alive() && localUnit->willMove())
+				ourUnits++;
+		}
+
+		size_t minTurnSpan = ourUnits / 3; //todo: tweak this
+
+		std::vector<battle::Units> newTurnOrder;
+		state.battleGetTurnOrder(newTurnOrder, amount, 2);
+
+		const bool turnSpanOK = evaluateQueue(newValueOfStack, newTurnOrder, &state, minTurnSpan, nullptr);
+
+		if (turnSpanOK || castNow)
+		{
+			int64_t totalGain = 0;
+
+			for (auto unit : all)
+			{
+				auto unitId = unit->unitId();
+				auto localUnit = state.battleGetUnitByID(unitId);
+
+				auto newValue = getValOr(newValueOfStack, unitId, 0);
+				auto oldValue = getValOr(valueOfStack, unitId, 0);
+
+				auto healthDiff = newHealthOfStack[unitId] - healthOfStack[unitId];
+
+				if (localUnit->unitOwner() != playerID)
+					healthDiff = -healthDiff;
+
+				if (healthDiff < 0)
+				{
+					ps->value = -1;
+					return; //do not damage own units at all
+				}
+
+				totalGain += (newValue - oldValue + healthDiff);
+			}
+
+			ps->value = totalGain;
+		}
+		else
+		{
+			ps->value = -1;
+		}
+	};
+
+	std::vector<std::function<void()>> tasks;
+
+	for (PossibleSpellcast & psc : possibleCasts)
+		tasks.push_back(std::bind(evaluateSpellcast, &psc));
+
+	uint32_t threadCount = boost::thread::hardware_concurrency();
+
+	if (threadCount == 0)
+	{
+		logGlobal->warn("No information of CPU cores available");
+		threadCount = 1;
+	}
+
+	CStopWatch timer;
+
+	CThreadHelper threadHelper(&tasks, threadCount);
+	threadHelper.run();
+
+	LOGFL("Evaluation took %d ms", timer.getDiff());
+
+	auto pscValue = [](const PossibleSpellcast &ps) -> int64_t
+	{
+		return ps.value;
+	};
+	auto castToPerform = *vstd::maxElementByFun(possibleCasts, pscValue);
+
+	if (castToPerform.value > 0)
+	{
+		LOGFL("Best spell is %s (value %d). Will cast.", castToPerform.spell->name % castToPerform.value);
+		BattleAction spellcast;
+		spellcast.actionType = EActionType::HERO_SPELL;
+		spellcast.actionSubtype = castToPerform.spell->id;
+		spellcast.setTarget(castToPerform.dest);
+		spellcast.side = side;
+		spellcast.stackNumber = (!side) ? -1 : -2;
+		cb->battleMakeAction(&spellcast);
+	}
+	else
+	{
+		LOGFL("Best spell is %s. But it is actually useless (value %d).", castToPerform.spell->name % castToPerform.value);
+	}
+}
 

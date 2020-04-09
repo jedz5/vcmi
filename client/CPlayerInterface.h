@@ -71,7 +71,7 @@ public:
 
 	static boost::recursive_mutex *pim;
 	bool makingTurn; //if player is already making his turn
-	int firstCall; // -1 - just loaded game; 1 - just started game; 0 otherwise
+	static int firstCall; // -1 - just loaded game; 1 - just started game; 0 otherwise
 	int autosaveCount;
 	static const int SAVES_COUNT = 5;
 

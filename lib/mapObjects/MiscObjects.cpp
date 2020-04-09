@@ -1892,28 +1892,22 @@ void CGOutpost::afterAddToMap(CMap* map)
 {
 	map->outpostsOnMap.push_back(this);
 }
-void CGOutpost::updateDaysCost(CCallback* cb)
+void CGOutpost::updateDaysCost(const CGHeroInstance * h)
 {
-	const CGHeroInstance *h = *vstd::maxElementByFun(cb->getPlayer(tempOwner)->heroes, [](const CGHeroInstance* h1) {
-		return h1->level;
-	});
 	if (!h)
 		return;
-	CGHeroInstance* hh = const_cast<CGHeroInstance*>(h);
-	int3 tmp = h->getPosition();
-	hh->pos = pos + getVisitableOffset();
-	std::shared_ptr<CPathsInfo> paths = std::make_shared<CPathsInfo>(cb->getMapSize(), hh);
-	cb->calculatePaths(hh, *paths.get());
+	CPathsInfo paths(cb->getMapSize(), h);
+	CPathfinder pathfinder(paths, cb->gameState(), h);
+	pathfinder.calculatePaths();
 	for (auto t : cb->getPlayer(tempOwner)->towns)
 	{
-		auto tn = paths->getNode(t->pos - int3(2, 0, 0));
+		auto tn = paths.getNode(t->pos - int3(2, 0, 0));
 		int daysCost = (tn->turns + 1) / 2 + 1;
 		int3 tt = t->pos;
 
 		if (!daysToGo.count(t->pos) || daysToGo[t->pos] > daysCost)
 			daysToGo[t->pos] = daysCost;
 	}
-	hh->pos = tmp;
 }
 void CGOutpost::serializeJsonOptions(JsonSerializeFormat& handler)
 {

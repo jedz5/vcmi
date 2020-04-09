@@ -34,6 +34,7 @@ public:
 	StartInfo * scenarioOptionsOfSave; // Options with which scenario has been started (used only with saved games)
 	std::string fileURI;
 	std::string date;
+	std::time_t localtime;
 	int amountOfPlayersOnMap;
 	int amountOfHumanControllablePlayers;
 	int amountOfHumanPlayersInSave;
