@@ -2604,6 +2604,8 @@ void CGameHandler::stopHeroVisitCastle(const CGTownInstance * obj, const CGHeroI
 	sendAndApply(&vc);
 }
 
+
+
 void CGameHandler::removeArtifact(const ArtifactLocation &al)
 {
 	EraseArtifact ea;
@@ -2612,7 +2614,7 @@ void CGameHandler::removeArtifact(const ArtifactLocation &al)
 }
 void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile,
 								const CGHeroInstance *hero1, const CGHeroInstance *hero2, bool creatureBank,
-								const CGTownInstance *town) //use hero=nullptr for no hero
+								const CGTownInstance *town, bool sav) //use hero=nullptr for no hero
 {
 	engageIntoBattle(army1->tempOwner);
 	engageIntoBattle(army2->tempOwner);
@@ -2625,7 +2627,7 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 	heroes[1] = hero2;
 
 	PlayerColor c = hero1->getOwner();
-	if (getPlayer(c)->human && (hero2 || creatureBank))
+	if (getPlayer(c)->human && sav)
 	{
 		save("Saves/002");
 	}
@@ -2640,17 +2642,17 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 		boost::thread(&CGameHandler::runBattle, this);
 }
 
-void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank)
+void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, int3 tile, bool creatureBank, bool save)
 {
 	startBattlePrimary(army1, army2, tile,
 		army1->ID == Obj::HERO ? static_cast<const CGHeroInstance*>(army1) : nullptr,
 		army2->ID == Obj::HERO ? static_cast<const CGHeroInstance*>(army2) : nullptr,
-		creatureBank);
+		creatureBank,nullptr, save);
 }
 
-void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank)
+void CGameHandler::startBattleI(const CArmedInstance *army1, const CArmedInstance *army2, bool creatureBank, bool save)
 {
-	startBattleI(army1, army2, army2->visitablePos(), creatureBank);
+	startBattleI(army1, army2, army2->visitablePos(), creatureBank,save);
 }
 
 void CGameHandler::changeSpells(const CGHeroInstance * hero, bool give, const std::set<SpellID> &spells)

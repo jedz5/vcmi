@@ -443,7 +443,7 @@ void CGCreature::fight( const CGHeroInstance *h ) const
 		}
 	}
 
-	cb->startBattleI(h, this);
+	cb->startBattleI(h, this,false,false);
 
 }
 
