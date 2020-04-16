@@ -22,7 +22,6 @@ class DLL_LINKAGE CCallbackBase
 {
 	const IBattleInfo * battle; //battle to which the player is engaged, nullptr if none or not applicable
 
-	const IBattleInfo * getBattle() const;
 
 protected:
 	boost::optional<PlayerColor> player; // not set gives access to all information, otherwise callback provides only information "visible" for player
@@ -34,6 +33,7 @@ protected:
 	bool duringBattle() const;
 
 public:
+	const IBattleInfo * getBattle() const;
 	boost::optional<PlayerColor> getPlayerID() const;
 
 	friend class CBattleInfoEssentials;

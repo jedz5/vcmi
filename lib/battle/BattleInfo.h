@@ -29,13 +29,13 @@ public:
 	std::vector<CStack*> stacks;
 	std::vector<std::shared_ptr<CObstacleInstance> > obstacles;
 	SiegeInfo si;
-
 	BFieldType battlefieldType; //like !!BA:B
 	ETerrainType terrainType; //used for some stack nativity checks (not the bonus limiters though that have their own copy)
 
 	ui8 tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
-
+	bool isBank;
+	bool arena;
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		h & sides;
@@ -51,6 +51,7 @@ public:
 		h & tacticsSide;
 		h & tacticDistance;
 		h & static_cast<CBonusSystemNode&>(*this);
+		h & isBank;
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,8 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	// IBattleInfo
+	bool isCreatureBank() const override;
+	bool isArena() const override;
 
 	int32_t getActiveStackID() const override;
 

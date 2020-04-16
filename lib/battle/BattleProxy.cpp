@@ -22,6 +22,16 @@ BattleProxy::BattleProxy(Subject subject_)
 
 BattleProxy::~BattleProxy() = default;
 
+bool BattleProxy::isCreatureBank() const
+{
+	return getBattle()->isCreatureBank();
+}
+
+bool BattleProxy::isArena() const
+{
+	return getBattle()->isArena();
+}
+
 int32_t BattleProxy::getActiveStackID() const
 {
 	auto ret = subject->battleActiveUnit();

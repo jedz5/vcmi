@@ -28,8 +28,7 @@
 #include "../serializer/JsonSerializeFormat.h"
 #include "../StringConstants.h"
 #include "../battle/Unit.h"
-
-
+#include "../battle/BattleInfo.h"
 ///helpers
 static void showInfoDialog(const PlayerColor playerID, const ui32 txtID, const ui16 soundID = 0)
 {
@@ -808,7 +807,7 @@ CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &b
 {
 	const ui8 necromancyLevel = getSecSkillLevel(SecondarySkill::NECROMANCY);
 	// need skill or cloak of undead king - lesser artifacts don't work without skill
-	if (necromancyLevel > 0 || hasBonusOfType(Bonus::IMPROVED_NECROMANCY))
+	if (!cb->getBattle()->isArena() && (necromancyLevel > 0 || hasBonusOfType(Bonus::IMPROVED_NECROMANCY)))
 	{
 		double necromancySkill = valOfBonuses(Bonus::SECONDARY_SKILL_PREMY, SecondarySkill::NECROMANCY) / 100.0;
 		vstd::amin(necromancySkill, 1.0); //it's impossible to raise more creatures than all...

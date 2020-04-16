@@ -650,7 +650,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 	//Fill BattleResult structure with exp info
 	giveExp(*battleResult.data,(tile.x+tile.y == -2));
 
-	if (battleResult.get()->result == BattleResult::NORMAL) // give 500 exp for defeating hero, unless he escaped
+	if (battleResult.get()->result == BattleResult::NORMAL && !getBattle()->isArena()) // give 500 exp for defeating hero, unless he escaped
 	{
 		if (hero1)
 			battleResult.data->exp[0] += 500;
@@ -707,7 +707,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 					cs.spells.insert(sp->id);
 		}
 	}
-	if (tile.x + tile.y != -2) {
+	if (!getBattle()->isArena()) {
 
 		if (result == BattleResult::NORMAL && finishingBattle->winnerHero)
 		{
@@ -813,7 +813,7 @@ void CGameHandler::endBattle(int3 tile, const CGHeroInstance *hero1, const CGHer
 		sendAndApply(&iw);
 		sendAndApply(&cs);
 	}
-	if (tile.x + tile.y != -2) {
+	if (!getBattle()->isArena()) {
 		
 		if (arts.size()) //display loot
 		{
@@ -2152,6 +2152,7 @@ void CGameHandler::setupBattle(int3 tile, const CArmedInstance *armies[2], const
 	//send info about battles
 	BattleStart bs;
 	bs.info = BattleInfo::setupBattle(tile, terrain, terType, armies, heroes, creatureBank, town);
+	setBattle(bs.info);
 	sendAndApply(&bs);
 }
 
@@ -2636,7 +2637,7 @@ void CGameHandler::startBattlePrimary(const CArmedInstance *army1, const CArmedI
 
 	auto battleQuery = std::make_shared<CBattleQuery>(this, gs->curB);
 	queries.addQuery(battleQuery);
-	if (tile.x + tile.y == -2)
+	if (getBattle()->isArena())
 		runBattle();
 	else
 		boost::thread(&CGameHandler::runBattle, this);

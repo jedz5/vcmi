@@ -193,7 +193,8 @@ BattleInfo * BattleInfo::setupBattle(int3 tile, ETerrainType terrain, BFieldType
 
 
 	std::vector<CStack*> & stacks = (curB->stacks);
-
+	curB->isBank = creatureBank;
+	curB->arena = (tile.x + tile.y == -2);
 	curB->tile = tile;
 	curB->battlefieldType = battlefieldType;
 	curB->round = -2;
@@ -239,7 +240,7 @@ BattleInfo * BattleInfo::setupBattle(int3 tile, ETerrainType terrain, BFieldType
 
 		RandGen r;
 		auto ourRand = [&](){ return r.rand(); };
-		if(tile.x + tile.y == -2)
+		if(curB->arena)
 			r.srand(tile.z + 2);
 		else
 			r.srand(tile);
@@ -632,13 +633,23 @@ CStack * BattleInfo::getStack(int stackID, bool onlyAlive)
 BattleInfo::BattleInfo()
 	: round(-1), activeStack(-1), town(nullptr), tile(-1,-1,-1),
 	battlefieldType(BFieldType::NONE), terrainType(ETerrainType::WRONG),
-	tacticsSide(0), tacticDistance(0)
+	tacticsSide(0), tacticDistance(0),isBank(false)
 {
 	setBattle(this);
 	setNodeType(BATTLE);
 }
 
 BattleInfo::~BattleInfo() = default;
+
+bool BattleInfo::isCreatureBank() const
+{
+	return isBank;
+}
+
+bool BattleInfo::isArena() const
+{
+	return arena;
+}
 
 int32_t BattleInfo::getActiveStackID() const
 {

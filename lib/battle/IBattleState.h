@@ -34,7 +34,6 @@ public:
 	using ObstacleCList = std::vector<std::shared_ptr<const CObstacleInstance>>;
 
 	virtual ~IBattleInfo() = default;
-
 	virtual int32_t getActiveStackID() const = 0;
 
 	virtual TStacks getStacksIf(TStackFilter predicate) const = 0;
@@ -65,6 +64,8 @@ public:
 	virtual uint32_t nextUnitId() const = 0;
 
 	virtual int64_t getActualDamage(const TDmgRange & damage, int32_t attackerCount, vstd::RNG & rng) const = 0;
+	virtual bool isCreatureBank() const = 0;
+	virtual bool isArena() const = 0;
 };
 
 class DLL_LINKAGE IBattleState : public IBattleInfo

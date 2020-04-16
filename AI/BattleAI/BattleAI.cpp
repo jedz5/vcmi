@@ -667,9 +667,6 @@ CGeniusAI::~CGeniusAI()
 	}
 }
 
-bool start = true;
-bool bank = false;
-const CStack* startStack;
 BattleAction CGeniusAI::activeStack(const CStack * stack)
 {
 	LOG_TRACE_PARAMS(logAi, "stack: %s", stack->nodeName());
@@ -734,11 +731,8 @@ BattleAction CGeniusAI::activeStack(const CStack * stack)
 				}
 			}
 		}
+		bool bank = cb->getBattle()->isCreatureBank();
 		//best action is from effective owner point if view, we are effective owner as we received "activeStack"		
-		if (start) {
-			bank = !(stack->getPosition().getX() == 1 || stack->occupiedHex().getX() == 1);  //if in creature bank then just fight
-			startStack = stack;
-		}
 		HypotheticBattle hb(getCbc());
 		auto reachability = hb.getReachability(stack);
 		auto hexes = hb.battleGetAvailableHexes(reachability, stack);
@@ -776,7 +770,7 @@ BattleAction CGeniusAI::activeStack(const CStack * stack)
 		});
 		const bool tacticPhase = getCbc()->battleTacticDist() && getCbc()->battleGetTacticsSide() == stack->unitSide();
 		if (tacticPhase) {
-			if (start || stack != startStack) {
+			{
 				PotentialTargets targets(stack, &hb);
 				if (melee.size() == 0) {
 					if (stack->isShooter()) {
@@ -806,12 +800,8 @@ BattleAction CGeniusAI::activeStack(const CStack * stack)
 					}
 				}
 			}
-			else {
-				return BattleAction::makeEndOFTacticPhase(side);
-			}
 
 		}
-		start = false;
 		//protect archer in no bank situation
 		if (!bank && melee.size() > 0 && !stack->isShooter() && stack->getCount() < 3 && stack->level() < 5)
 		{

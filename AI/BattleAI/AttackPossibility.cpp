@@ -75,7 +75,7 @@ AttackPossibility AttackPossibility::evaluate(const BattleAttackInfo & attackInf
 
 		ap.damageDealt += (attackDmg.first + attackDmg.second) / 2;
 		//multiple-hex normal attack
-		std::set<const CStack*> attackedCreatures = getCbc()->getAttackedCreatures(getCbc()->battleGetStackByPos(ap.attack.attacker->getPosition()) , hex, ap.attack.shooting); //creatures other than primary target
+		std::set<const CStack*> attackedCreatures = getCbc()->getAttackedCreatures(getCbc()->battleGetStackByPos(ap.attack.attacker->getPosition()) , ap.attack.defender->getPosition(), ap.attack.shooting, hex); //creatures other than primary target
 
 		for (const CStack * stack : attackedCreatures)
 		{

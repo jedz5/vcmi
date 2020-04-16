@@ -22,7 +22,8 @@ public:
 
 	//////////////////////////////////////////////////////////////////////////
 	// IBattleInfo
-
+	bool isCreatureBank() const override;
+	bool isArena() const override;
 	int32_t getActiveStackID() const override;
 
 	TStacks getStacksIf(TStackFilter predicate) const override;
